@@ -1,0 +1,6 @@
+.env
+state/
+data/prec/
+data/law/
+__pycache__/
+*.tmp

@@ -42,7 +42,7 @@ def build_topics(statutes: list[tuple[DocumentMeta, str]], level: str = "article
 
 
 def collect_cases(api, topics: list[str], out_path: Path, date_from: str, date_to: str,
-                  per_topic: int = 5, log_every: int = 50) -> dict:
+                  per_topic: int = 5, log_every: int = 10) -> dict:
     """주제어별 최신 대법원 판례 per_topic 건. 이미 받은 판례는 건너뜀(재시작 가능)."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     seen: set[str] = set()
@@ -59,6 +59,8 @@ def collect_cases(api, topics: list[str], out_path: Path, date_from: str, date_t
             out_path.write_text("".join(good_lines), encoding="utf-8")
             print(f"[info] 잘린 줄 {broken}개 제거 후 이어서 수집")
     stats = {"topics": len(topics), "new": 0, "skipped_existing": len(seen), "no_summary": 0, "errors": 0}
+    print(f"판례 수집 시작: 주제어 {len(topics)}개, 기존 판례 {len(seen)}건 (이미 받은 판례는 건너뜀). "
+          f"{log_every}개마다 진행 상황 출력 — 중단: Ctrl+C, 재실행 시 이어받음", flush=True)
     t0 = time.time()
     with out_path.open("a", encoding="utf-8") as f:
         for i, topic in enumerate(topics, 1):
@@ -102,7 +104,8 @@ def collect_cases(api, topics: list[str], out_path: Path, date_from: str, date_t
             if i % log_every == 0:
                 el = time.time() - t0
                 eta = el / i * (len(topics) - i)
-                print(f"  {i}/{len(topics)} 주제어 · 신규 {stats['new']}건 · 경과 {el / 60:.0f}분 · 남은 예상 {eta / 60:.0f}분")
+                print(f"  {i}/{len(topics)} 주제어 ('{topic}') · 신규 {stats['new']}건 · "
+                      f"경과 {el / 60:.1f}분 · 남은 예상 {eta / 60:.0f}분", flush=True)
     return stats
 
 

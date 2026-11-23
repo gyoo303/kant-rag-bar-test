@@ -26,6 +26,7 @@ class ExamQuestion(BaseModel):
     evidence: list[EvidenceRef] = Field(default_factory=list)
     split: Literal["dev", "test", "extra"] | None = None
     type: Literal["direct", "paraphrase", "no_answer"] | None = None
+    note: str | None = None  # 유형 분류 근거, 근거 표기 메모 등
 
     @model_validator(mode="after")
     def _check(self):

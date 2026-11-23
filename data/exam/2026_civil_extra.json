@@ -20,11 +20,12 @@
         "4": "ㄴ, ㄷ, ㄹ",
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-003",
@@ -44,11 +45,12 @@
         "4": "ㄴ, ㄷ, ㄹ",
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-004",
@@ -67,11 +69,12 @@
         "4": "ㄴ, ㄷ",
         "5": "ㄱ, ㄴ, ㄷ"
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-005",
@@ -91,11 +94,12 @@
         "4": "ㄴ, ㄹ",
         "5": "ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 1,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-007",
@@ -115,11 +119,12 @@
         "4": "ㄴ, ㄷ",
         "5": "ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-008",
@@ -139,11 +144,12 @@
         "4": "ㄱ(×), ㄴ(×), ㄷ(○), ㄹ(×)",
         "5": "ㄱ(×), ㄴ(×), ㄷ(×), ㄹ(×)"
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-014",
@@ -163,11 +169,12 @@
         "4": "ㄱ(○), ㄴ(○), ㄷ(○), ㄹ(×)",
         "5": "ㄱ(×), ㄴ(×), ㄷ(○), ㄹ(○)"
       },
-      "answer": null,
+      "answer": 1,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-015",
@@ -187,11 +194,12 @@
         "4": "ㄱ, ㄷ, ㄹ",
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 4,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-016",
@@ -206,11 +214,12 @@
         "4": "乙이 2020. 4. 5. 丙에게 X 토지를 매도하고 등기를 마쳐 주었고 丁이 2022. 5. 5. X 토지를 甲으로부터 양수하여 점유를 승계한 경우, 丁은 2024. 6. 5. 甲의 취득시효 완성의 효과를 주장하여 직접 자기에게 소유권이전등기를 청구할 수 없다.",
         "5": "乙이 2022. 4. 5. 친구 丙에게 X 토지의 소유명의를 신탁하여 소유권이전등기를 마쳐 준 경우, 甲은 乙을 대위하여 丙에 대하여 그 소유권이전등기의 말소를 청구할 수 있다."
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-018",
@@ -225,11 +234,12 @@
         "4": "과반의 지분을 가진 공유자가 공유물을 제3자에게 임대하여 수익을 얻는 것은 다른 공유자들에 대한 불법행위가 되므로, 다른 공유자들은 이에 대해 손해배상을 구할 수 있고 그 범위는 통상 각 지분 비율에 따른 차임 상당액이다.",
         "5": "과반의 지분을 가진 공유자 甲이 공유물의 전부 또는 특정 부분을 배타적으로 사용·수익하기로 결정한 것은 공유물의 관리방법으로 적법하므로, 다른 공유자 乙은 甲에 대하여 방해제거 또는 부당이득반환을 청구할 수는 없다."
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-019",
@@ -250,11 +260,12 @@
         "4": "ㄱ, ㄹ, ㅁ",
         "5": "ㄴ, ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 4,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-020",
@@ -273,11 +284,12 @@
         "4": "ㄴ, ㄷ",
         "5": "ㄱ, ㄴ, ㄷ"
       },
-      "answer": null,
+      "answer": 1,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-021",
@@ -292,11 +304,12 @@
         "4": "위약벌의 약정은 채무의 이행을 확보하기 위하여 정하는 것으로서 손해배상액의 예정과 그 내용이 다르므로 손해배상액의 예정에 관한 ｢민법｣ 제398조 제2항을 유추적용하여 그 액을 감액할 수 없다.",
         "5": "계약 당시 손해배상액을 예정한 경우, 채무자의 채무불이행으로 인한 손해의 발생 및 확대에 채권자의 과실이 있다면 손해배상 예정액을 ｢민법｣ 제398조 제2항에 따라 감액하는 것과는 별도로 과실상계를 적용하여 직권으로 감경하여야 한다."
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-024",
@@ -316,11 +329,12 @@
         "4": "ㄴ, ㄷ, ㄹ",
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 4,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-026",
@@ -340,11 +354,12 @@
         "4": "ㄴ, ㄷ, ㄹ",
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-028",
@@ -364,11 +379,12 @@
         "4": "ㄱ(×), ㄴ(○), ㄷ(×), ㄹ(○)",
         "5": "ㄱ(○), ㄴ(○), ㄷ(○), ㄹ(×)"
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-029",
@@ -383,11 +399,12 @@
         "4": "도급계약에서 수급인이 도급계약에 따른 의무를 제대로 이행하지 못함으로 말미암아 도급인의 신체 또는 재산에도 손해가 발생한 경우, 이러한 확대손해로 인한 수급인의 손해배상채무와 도급인의 공사대금채무는 동시이행관계에 있다.",
         "5": "채권의 담보를 위하여 채무자 소유 부동산에 가등기가 설정되어 있는 경우, 채무자의 피담보채무 변제의무와 채권자의 담보가등기 말소의무는 동시이행관계에 있다."
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-030",
@@ -406,11 +423,12 @@
         "4": "ㄱ(×), ㄴ(○), ㄷ(×)",
         "5": "ㄱ(×), ㄴ(×), ㄷ(×)"
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-031",
@@ -425,11 +443,12 @@
         "4": "임대차계약에 따른 임대차보증금반환채권을 담보할 목적으로 전세권설정등기를 마친 경우, 임대차계약에 따른 연체차임 공제는 전세권설정계약과 양립할 수 없으므로 전세권설정자는 그와 같은 사정을 알지 못한 채 위 전세권에 관하여 새로이 법률상 이해관계를 가지게 된 제3자에 대해서는 연체차임 공제 주장으로 대항할 수 없다.",
         "5": "임대차보증금이 수수된 임대차계약에서 차임채권에 관하여 압류 및 추심명령이 있었더라도 당해 임대차계약이 종료되어 목적물이 반환될 때까지 추심되지 않은 차임채권액은 임대차보증금에서 당연히 공제된다."
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-033",
@@ -444,11 +463,12 @@
         "4": "친권상실의 청구가 있었으나 가정법원이 판단하기에 친권상실 사유에는 해당하지 않지만 미성년 자녀의 복리를 위하여 친권의 일부 제한이 필요하다고 볼 경우, 가정법원은 청구를 기각하지 않고 친권의 일부 제한을 선고할 수 있다.",
         "5": "가정법원은 이혼 후 자녀에 대한 양육권이 부모 중 어느 일방에, 친권이 다른 일방에 또는 부모에 공동으로 귀속되는 것으로 정할 수 있다."
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-035",
@@ -468,11 +488,12 @@
         "4": "ㄱ(○), ㄴ(○), ㄷ(×), ㄹ(○)",
         "5": "ㄱ(×), ㄴ(○), ㄷ(×), ㄹ(○)"
       },
-      "answer": null,
+      "answer": 4,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-036",
@@ -492,11 +513,12 @@
         "4": "ㄱ(×), ㄴ(×), ㄷ(○), ㄹ(×)",
         "5": "ㄱ(○), ㄴ(×), ㄷ(×), ㄹ(○)"
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-037",
@@ -516,11 +538,12 @@
         "4": "ㄴ, ㄹ",
         "5": "ㄱ, ㄴ, ㄷ"
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-038",
@@ -535,11 +558,12 @@
         "4": "원고 소유의 토지를 도로로 점유하고 있는 시(市)를 상대로 원고가 “시(市)가 그 토지를 매수할 때까지”로 기간을 정하여 차임 상당 부당이득반환청구를 한 경우, 법원이 위 토지에 관한 시(市)의 불법점유사실을 인정한다면 원고의 청구를 전부 인용하여야 한다.",
         "5": "혼인관계는 그것을 전제로 수많은 법률관계가 형성되고 과거의 법률관계인 혼인관계 자체의 무효확인을 구하는 편이 관련된 분쟁을 한꺼번에 해결하는 유효·적절한 수단이므로, 특별한 사정이 없는 한 혼인관계가 이미 해소된 이후라고 하더라도 혼인무효의 확인을 구할 이익이 있다."
       },
-      "answer": null,
+      "answer": 4,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-040",
@@ -554,11 +578,12 @@
         "4": "당사자가 송달장소의 변경신고의무를 이행하지 않아 송달불능이 되는 경우라도, 법원은 적어도 기록에 현출되어 있는 자료로 송달할 장소를 알 수 없는 경우에 한하여 발송송달을 할 수 있다.",
         "5": "판결정본이 당사자인 미성년자에게만 송달된 경우, 판결이 소송무능력을 이유로 소를 각하한 것이라는 등의 특별한 사정이 없는 한 그 송달은 무효이다."
       },
-      "answer": null,
+      "answer": 1,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-041",
@@ -573,11 +598,12 @@
         "4": "당사자가 변론에서 상대방이 주장하는 사실을 명백히 다투지 않았더라도 변론 전체의 취지로 보아 다툰 것으로 인정되는 때에는 자백간주가 성립되지 않는다.",
         "5": "인신사고로 인한 손해배상청구소송에서, 손해배상액을 산정하는데 기초가 되는 피해자의 기대 여명은 간접사실로서 재판상 자백의 대상이 되지 않는다."
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-043",
@@ -597,11 +623,12 @@
         "4": "ㄱ, ㄴ, ㄷ",
         "5": "ㄴ, ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 4,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-044",
@@ -616,11 +643,12 @@
         "4": "피고가 화해조서상의 의무를 이행하지 아니한 경우, 원고는 피고의 위 의무 불이행을 이유로 재판상 화해를 해제하여 화해조서의 취지에 반하는 주장을 할 수 있다.",
         "5": "보조참가인이 피참가인을 보조하여 공동으로 소송을 수행하였으나 그 소송이 화해권고결정에 의하여 종료된 경우 참가적 효력이 발생하지 않는다."
       },
-      "answer": null,
+      "answer": 4,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-046",
@@ -635,11 +663,12 @@
         "4": "가압류에 의한 시효중단의 효력은 가압류의 피보전채권에 관하여 본안의 승소판결이 확정되더라도 이에 흡수되어 소멸되지 않는다.",
         "5": "부동산경매절차에서 집행력 있는 정본을 가진 채권자가 배당요구를 한 경우 그에 관련된 채권에 관하여 소멸시효 중단의 효력이 발생한다."
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-047",
@@ -659,11 +688,12 @@
         "4": "ㄱ, ㄷ, ㄹ",
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-048",
@@ -678,11 +708,12 @@
         "4": "원·피고 및 독립당사자참가인 사이에 화해권고결정이 내려진 경우, 참가인이 화해권고결정에 대하여 이의하면 그 이의의 효력은 원·피고 사이에도 미친다.",
         "5": "독립당사자참가인은 상대방 당사자인 원·피고의 어느 한 쪽을 위하여 보조참가를 할 수 없으므로, 보조참가인이 독립당사자참가를 하였다면 그와 동시에 보조참가는 종료된 것으로 보아야 한다."
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-049",
@@ -697,11 +728,12 @@
         "4": "예비적 공동소송에서 원고가 여러 명의 피고 중 일부에 대한 소를 취하하는 경우, 소를 취하하지 않은 나머지 피고에 대한 청구 부분은 여전히 심판의 대상이 된다.",
         "5": "유언집행자가 여러 명인 경우, 유언집행자를 지정하거나 지정위탁한 유언자나 유언집행자를 선임한 법원에 의한 임무의 분장이 있었다는 등의 특별한 사정이 없는 한, 유언집행자를 상대로 유증의무의 이행을 구하는 소송은 유언집행자 전원을 공동피고로 삼아야 하는 고유필수적 공동소송이다."
       },
-      "answer": null,
+      "answer": 1,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-051",
@@ -716,11 +748,12 @@
         "4": "사해행위의 수익자 또는 전득자에 대하여 회생절차가 개시되는 경우, 채권자는 수익자 또는 전득자의 관리인을 상대로 사해행위의 취소 및 원상회복을 구하는 소를 제기할 수 있다.",
         "5": "상속의 포기는 상속인으로서의 지위 자체를 소멸하게 하는 행위이므로 재산권에 관한 법률행위에 해당하지 아니하여 사해행위취소의 대상이 되지 아니한다."
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-054",
@@ -741,11 +774,12 @@
         "4": "ㄴ, ㄷ, ㄹ",
         "5": "ㄷ, ㄹ, ㅁ"
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-055",
@@ -760,11 +794,12 @@
         "4": "비상장회사의 감사를 주주총회에서 해임하는 결의를 할 때 의결권 없는 주식을 제외한 발행주식총수의 100분의 3을 초과하는 수의 주식을 가진 주주는 그 초과하는 주식에 관하여 의결권을 행사하지 못한다.",
         "5": "비상장회사가 정관이 정하는 바에 따라 감사위원회를 설치한 경우, 감사위원회위원을 해임하는 결의는 이사 총수의 3분의 2 이상의 결의로 하여야 한다."
       },
-      "answer": null,
+      "answer": 5,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-056",
@@ -785,11 +820,12 @@
         "4": "ㄴ, ㄹ, ㅁ",
         "5": "ㄷ, ㄹ, ㅁ"
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-058",
@@ -804,11 +840,12 @@
         "4": "A 회사의 영업상 채권자가 영업양도가 이루어진 뒤 A 회사를 상대로 소를 제기하여 확정판결을 받아 A 회사에 대한 관계에서 소멸시효가 중단되거나 소멸시효 기간이 연장되었다고 하더라도 그와 같은 소멸시효 중단이나 소멸시효 연장의 효과는 상호를 속용하는 B 회사에 미치지 않는다.",
         "5": "A 회사와 B 회사 사이의 영업양도계약에서 경업금지청구권의 양도를 제한하는 등의 특별한 사정이 없다면, 양도된 영업이 다시 동일성을 유지한 채 C 주식회사에 전전양도될 때 B 회사의 경업금지청구권은 영업재산의 일부로서 영업과 함께 그 뒤의 C 회사에 전전양도되고, 그에 수반하여 지명채권인 경업금지청구권의 양도에 관한 통지권한도 전전이전된다."
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-059",
@@ -829,11 +866,12 @@
         "4": "ㄴ, ㄹ, ㅁ",
         "5": "ㄷ, ㄹ, ㅁ"
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-060",
@@ -848,11 +886,12 @@
         "4": "보험자는 피보험자가 책임을 질 사고에 관하여 피보험자가가지는 항변으로써 제3자에 대하여 대항할 수 없다.",
         "5": "보험자는 피보험자가 책임을 질 사고로 인하여 생긴 손해에 대하여 제3자가 그 배상을 받기 전에도 보험금액의 일부를 피보험자에게 지급할 수 있다."
       },
-      "answer": null,
+      "answer": 1,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-061",
@@ -873,11 +912,12 @@
         "4": "ㄴ, ㄹ, ㅁ",
         "5": "ㄷ, ㄹ, ㅁ"
       },
-      "answer": null,
+      "answer": 1,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-064",
@@ -892,11 +932,12 @@
         "4": "A 회사 사내이사 甲이 이사회의 승인을 받지 않고 A 회사 소유의 토지를 염가로 매수하여 회사에 손해가 발생한 경우, A 회사 정관 제40조에 따른 책임감면을 적용할 수 없다.",
         "5": "A 회사 사내이사 甲이 이사회의 승인을 받지 않고 A 회사와 동종영업을 하는 B 주식회사를 설립하고 B 회사의 이사가 되어 영업준비작업을 하여 오다가 영업활동을 개시하기 전에 B 회사의 이사직을 사임하였더라도 A 회사 정관 제40조에 따른 책임감면을 적용할 수 없다."
       },
-      "answer": null,
+      "answer": 2,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-065",
@@ -911,11 +952,12 @@
         "4": "신주발행으로 인한 변경등기 후 A 회사의 주주 甲이 주식인수의 청약을 취소한 때에는 A 회사의 이사가 이를 공동으로 인수한 것으로 본다.",
         "5": "A 회사의 대표이사가 그 권한에 기하여 신주를 발행한 이상 신주발행에 관한 이사회의 결의에 하자가 있다는 것만으로는 해당 신주발행의 무효 사유가 되지 않는다."
       },
-      "answer": null,
+      "answer": 1,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-066",
@@ -936,11 +978,12 @@
         "4": "ㄴ, ㄹ, ㅁ",
         "5": "ㄷ, ㄹ, ㅁ"
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-067",
@@ -960,11 +1003,12 @@
         "4": "ㄱ(×), ㄴ(×), ㄷ(○), ㄹ(○)",
         "5": "ㄱ(×), ㄴ(○), ㄷ(○), ㄹ(×)"
       },
-      "answer": null,
+      "answer": 4,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     },
     {
       "id": "BAR2026-CIV-069",
@@ -979,11 +1023,12 @@
         "4": "약속어음 발행인으로부터 인적 항변의 대항을 받는 어음소지인이 당해 어음을 제3자에게 배서·양도한 후 환배서에 의하여 이를 다시 취득하여 소지하게 되었다고 할지라도 발행인으로부터 여전히 위 항변의 대항을 받는다.",
         "5": "어음채무자는 입질배서의 배서인에게 대항할 수 있는 인적 관계로 인한 항변으로써 어음소지인에게 대항하지 못하지만, 그 소지인이 그 채무자를 해할 것을 알고 어음을 취득한 경우에는 그렇지 않다."
       },
-      "answer": null,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": "extra",
-      "type": null
+      "type": null,
+      "note": null
     }
   ]
 }

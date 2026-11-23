@@ -52,7 +52,7 @@ def collect_cases(api, topics: list[str], out_path: Path, date_from: str, date_t
     with out_path.open("a", encoding="utf-8") as f:
         for i, topic in enumerate(topics, 1):
             try:
-                hits = api.search_precs(topic, date_from, date_to, display=per_topic * 2)
+                hits = api.search_precs(topic, date_from, date_to, want=per_topic * 2)
             except Exception as e:
                 stats["errors"] += 1
                 print(f"[warn] 검색 실패 '{topic}': {e}")

@@ -108,18 +108,23 @@ def main(argv: list[str] | None = None) -> None:
                     first = items[0] if isinstance(items, list) else items
                     print(f"    {k}[0] = {json.dumps(first, ensure_ascii=False)[:300]}")
 
-        print("=== 판례 검색 조건별 ===")
-        probe("P1 query", "lawSearch.do", target="prec", query="표현대리", display=3)
-        probe("P2 +search=2", "lawSearch.do", target="prec", query="표현대리", display=3, search=2)
-        probe("P3 +prncYd", "lawSearch.do", target="prec", query="표현대리", display=3,
-              prncYd="20110101~20251231")
-        probe("P4 +sort=ddes", "lawSearch.do", target="prec", query="표현대리", display=3, sort="ddes")
-        probe("P5 +org 대법원", "lawSearch.do", target="prec", query="표현대리", display=3, org="400201")
-        print("=== 법령 버전 ===")
-        probe("L1 law 현행", "lawSearch.do", target="law", query="민법", display=5)
-        probe("L2 eflaw", "lawSearch.do", target="eflaw", query="민법", display=10)
-        probe("L3 eflaw nw=1,2,3", "lawSearch.do", target="eflaw", query="민법", display=10, nw="1,2,3")
-        probe("L4 lsHistory", "lawSearch.do", target="lsHistory", query="민법", display=10)
+        c = settings.corpus
+        print("=== 법령: 시험일 기준 버전 선택 ===")
+        versions = api.law_versions("민법")
+        print(f"민법 버전 {len(versions)}개, 최근 시행일자: {sorted({str(v.get('시행일자')) for v in versions})[-4:]}")
+        info = api.find_law("민법", c.law_date)
+        print(f"선택: 시행 {info.get('시행일자')} / 공포 {info.get('공포일자')} / MST {info.get('법령일련번호')} "
+              f"/ {info.get('현행연혁코드')}")
+        text = api.law_text(info["법령일련번호"], str(info.get("시행일자", "")))
+        print(f"본문 {len(text.splitlines())}행, 예) {[l for l in text.splitlines() if l.startswith('제750조')][:1]}")
+        print("=== 판례: 본문검색 + 기간·법원 필터 ===")
+        hits = api.search_precs("표현대리", c.case_date_from, c.case_date_to, want=3)
+        for h in hits[:3]:
+            print(f"  {h.get('법원명')} {h.get('선고일자')} {h.get('사건번호')} (ID {h.get('판례일련번호')})")
+        if hits:
+            d = api.prec(str(hits[0].get("판례일련번호")))
+            print("상세 필드:", sorted(d))
+            print("판결요지:", str(d.get("판결요지", ""))[:150])
 
     elif args.cmd == "fetch-laws":
         import csv as _csv
@@ -140,7 +145,7 @@ def main(argv: list[str] | None = None) -> None:
             info = api.find_law(meta.title, settings.corpus.law_date)
             path = settings.resolve(settings.paths.raw_dir) / meta.path
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(api.law_text(info["법령일련번호"]), encoding="utf-8")
+            path.write_text(api.law_text(info["법령일련번호"], str(info.get("시행일자", ""))), encoding="utf-8")
             for r in rows:  # 문서 목록에 시행일자·수집일 기록
                 if r["doc_id"] == meta.doc_id:
                     r["version"] = f"시행 {info.get('시행일자')} (공포 {info.get('공포일자')}, MST {info['법령일련번호']})"

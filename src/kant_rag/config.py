@@ -30,6 +30,14 @@ class Paths(BaseModel):
     cache_db: Path
 
 
+class Corpus(BaseModel):
+    law_date: str = "20260101"
+    case_date_from: str = "20110101"
+    case_date_to: str = "20251231"
+    topic_level: str = "article"
+    cases_per_topic: int = 5
+
+
 class Chunking(BaseModel):
     chunk_size: int = 500
     chunk_overlap: int = 80
@@ -85,6 +93,7 @@ class Models(BaseModel):
 class Settings(BaseModel):
     versions: Versions
     paths: Paths
+    corpus: Corpus = Corpus()
     chunking: Chunking
     retrieval: Retrieval
     rerank: Rerank
@@ -119,8 +128,8 @@ def get_settings(config_path: str | None = None) -> Settings:
         path = ROOT / path
     data: dict[str, Any] = yaml.safe_load(path.read_text(encoding="utf-8"))
     data["models"] = {
-        "llm_provider": os.getenv("LLM_PROVIDER", "anthropic"),
-        "llm_model": os.getenv("LLM_MODEL", "claude-opus-5-5"),
+        "llm_provider": os.getenv("LLM_PROVIDER", "openai"),
+        "llm_model": os.getenv("LLM_MODEL", "gpt-6-luna"),
         "embedding_model": os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3"),
         "reranker_model": os.getenv("RERANKER_MODEL", "BAAI/bge-reranker-v2-m3"),
     }

@@ -14,6 +14,7 @@ dependencies = [
     "langchain-core>=0.3",
     "langchain-community>=0.3",
     "langchain-huggingface>=0.1",
+    "langchain-openai>=0.3",
     "langchain-anthropic>=0.3",
     "faiss-cpu>=1.8",
     "sentence-transformers>=3.0",
@@ -25,8 +26,6 @@ dependencies = [
 [project.optional-dependencies]
 # 한국어 형태소 기반 BM25 토크나이저 (선택)
 ko = ["kiwipiepy>=0.18"]
-# OpenAI 모델을 쓰는 경우 (선택)
-openai = ["langchain-openai>=0.2"]
 
 [dependency-groups]
 dev = ["pytest>=8.0", "ruff>=0.5"]

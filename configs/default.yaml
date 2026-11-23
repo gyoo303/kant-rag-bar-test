@@ -12,6 +12,14 @@ paths:
   results_dir: results
   cache_db: results/cache.sqlite
 
+# 법령·판례 수집 (kant-rag fetch-laws / build-topics / fetch-cases)
+corpus:
+  law_date: "20260101"        # 이 날짜에 시행 중인 법령 버전 (시험일 기준)
+  case_date_from: "20110101"  # 판례 선고일 범위 (최근 15년)
+  case_date_to: "20251231"    # 시험일 이후 판례 제외
+  topic_level: article        # section(편/장/절 제목만) | article(+조문 제목)
+  cases_per_topic: 5
+
 chunking:
   chunk_size: 500          # 문자 기준
   chunk_overlap: 80

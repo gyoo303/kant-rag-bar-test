@@ -27,6 +27,13 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--config", default=None)
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    sub.add_parser("api-check", help="law.go.kr API 연결·응답 구조 점검 (법령 1건, 판례 1건)")
+    fl = sub.add_parser("fetch-laws", help="문서 목록의 법령(doc_type=statute)을 law.go.kr 에서 시험일 기준 버전으로 수집")
+    fl.add_argument("--only", nargs="*", help="법령명 일부만 (기본: 목록 전체)")
+    sub.add_parser("build-topics", help="수집한 법령 구조 → 판례 검색 주제어 (data/cases/topics.txt)")
+    fc = sub.add_parser("fetch-cases", help="주제어별 대법원 판례 판결요지 수집 → data/raw/cases/cases.jsonl (재시작 가능)")
+    fc.add_argument("--limit-topics", type=int, default=None, help="앞에서 N개 주제어만 (시험 실행용)")
+
     sub.add_parser("build-index", help="문서 목록 → 청크 → BM25/벡터 색인 재생성")
     sub.add_parser("chunks", help="청킹 결과만 출력 (모델 불필요)")
 
@@ -69,12 +76,86 @@ def main(argv: list[str] | None = None) -> None:
     eb.add_argument("eval_path")
     eb.add_argument("--modes", nargs="+", default=["vector", "hybrid", "hybrid_rerank"])
     eb.add_argument("--label", default="")
-    eb.add_argument("--rewrite", action="store_true", help="근거 없음 문항 경로에 쿼리 리라이트 적용")
+    eb.add_argument("--rewrite", action="store_true", help="쿼리 리라이트 적용 (선택형 진술별 질의 + 근거 없음 문항)")
 
     args = p.parse_args(argv)
     settings = get_settings(args.config)
 
-    if args.cmd == "build-index":
+    if args.cmd == "api-check":
+        from kant_rag.ingest.lawapi import LawAPI
+
+        api = LawAPI()
+        info = api.find_law("민법", settings.corpus.law_date)
+        print("법령 검색 OK:", {k: info.get(k) for k in ("법령명한글", "법령일련번호", "시행일자", "공포일자")})
+        text = api.law_text(info["법령일련번호"])
+        print(f"법령 본문 OK: {len(text.splitlines())}행, 예) {[l for l in text.splitlines() if l.startswith('제750조')][:1]}")
+        hits = api.search_precs("표현대리", settings.corpus.case_date_from, settings.corpus.case_date_to, display=3)
+        print(f"판례 검색 OK: {len(hits)}건, 필드={sorted(hits[0]) if hits else '-'}")
+        if hits:
+            d = api.prec(str(hits[0].get("판례일련번호")))
+            print("판례 상세 필드:", sorted(d))
+            print("판결요지 앞부분:", str(d.get("판결요지", ""))[:120])
+
+    elif args.cmd == "fetch-laws":
+        import csv as _csv
+        import time as _time
+
+        from kant_rag.ingest.lawapi import LawAPI
+        from kant_rag.ingest.loader import read_manifest
+
+        api = LawAPI()
+        manifest = settings.resolve(settings.paths.manifest)
+        docs = read_manifest(manifest)
+        rows = list(_csv.DictReader(manifest.open(encoding="utf-8")))
+        for meta in docs:
+            if meta.doc_type != "statute" or meta.doc_id.startswith("LAW-SAMPLE"):
+                continue
+            if args.only and not any(o in meta.title for o in args.only):
+                continue
+            info = api.find_law(meta.title, settings.corpus.law_date)
+            path = settings.resolve(settings.paths.raw_dir) / meta.path
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(api.law_text(info["법령일련번호"]), encoding="utf-8")
+            for r in rows:  # 문서 목록에 시행일자·수집일 기록
+                if r["doc_id"] == meta.doc_id:
+                    r["version"] = f"시행 {info.get('시행일자')} (공포 {info.get('공포일자')}, MST {info['법령일련번호']})"
+                    r["collected_at"] = _time.strftime("%Y-%m-%d")
+            print(f"{meta.title}: 시행 {info.get('시행일자')} → {path.relative_to(ROOT)}")
+        with manifest.open("w", encoding="utf-8", newline="") as f:
+            w = _csv.DictWriter(f, fieldnames=list(rows[0]))
+            w.writeheader()
+            w.writerows(rows)
+
+    elif args.cmd == "build-topics":
+        from kant_rag.ingest.cases import build_topics
+        from kant_rag.ingest.loader import read_manifest
+
+        raw = settings.resolve(settings.paths.raw_dir)
+        statutes = [(m, (raw / m.path).read_text(encoding="utf-8"))
+                    for m in read_manifest(settings.resolve(settings.paths.manifest))
+                    if m.doc_type == "statute" and not m.doc_id.startswith("LAW-SAMPLE") and (raw / m.path).exists()]
+        topics = build_topics(statutes, settings.corpus.topic_level)
+        out = ROOT / "data" / "cases" / "topics.txt"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text("# 판례 검색 주제어 — 수집 법령의 편/장/절/관·조문 제목에서 자동 생성 (시험 문장 사용 금지)\n"
+                       + "\n".join(topics) + "\n", encoding="utf-8")
+        print(f"법령 {len(statutes)}개 → 주제어 {len(topics)}개 → {out.relative_to(ROOT)}")
+
+    elif args.cmd == "fetch-cases":
+        from kant_rag.ingest.cases import collect_cases
+        from kant_rag.ingest.lawapi import LawAPI
+
+        topics_path = ROOT / "data" / "cases" / "topics.txt"
+        topics = [t.strip() for t in topics_path.read_text(encoding="utf-8").splitlines()
+                  if t.strip() and not t.startswith("#")]
+        if args.limit_topics:
+            topics = topics[: args.limit_topics]
+        c = settings.corpus
+        stats = collect_cases(LawAPI(), topics, settings.resolve(settings.paths.raw_dir) / "cases" / "cases.jsonl",
+                              c.case_date_from, c.case_date_to, c.cases_per_topic)
+        print(json.dumps(stats, ensure_ascii=False))
+
+    elif args.cmd == "build-index":
         from kant_rag.ingest.build_index import build_index
 
         print(json.dumps(build_index(settings), ensure_ascii=False, indent=2))

@@ -102,3 +102,30 @@ def test_real_exam_file_parses_70():
     assert [q.number for q in qs] == list(range(1, 71))
     assert {q.form for q in qs} == {"single", "combination", "ox"}
     assert all(len(q.options) == 5 for q in qs)
+
+
+def test_rewrite_used_for_retrieval_with_fallback(settings, monkeypatch):
+    q1 = exam().items[0]
+    q1.evidence = [{"doc_id": "LAW", "chunk_id": "LAW#제766조", "location": "SENTINEL-EVIDENCE"}]
+    s = settings.model_copy(deep=True)
+    s.optimization.rewrite.enabled = True
+    calls, queries = [], []
+
+    class FakeLLM:
+        def invoke(self, messages):
+            calls.append(messages[1][1])
+            if len(calls) == 1:  # 리라이트: 3번 키 누락 → fallback
+                return SimpleNamespace(content='{"1": "불법행위 손해배상 민법 제750조", "2": "정신적 손해 위자료",'
+                                               ' "4": "제척기간", "5": "정기금 배상"}')
+            return SimpleNamespace(content='{"judgments": {}}')
+
+    class RecordingRetriever(FakeRetriever):
+        def retrieve(self, query, mode):
+            queries.append(query)
+            return super().retrieve(query, mode)
+
+    monkeypatch.setattr(solver_mod, "get_chat_model", lambda *a, **k: FakeLLM())
+    rec = MCQSolver(s, retriever=RecordingRetriever()).solve(q1, RetrievalMode.C)
+    assert queries[0] == "불법행위 손해배상 민법 제750조"
+    assert rec["rewrite"]["fallback_keys"] == ["3"] and queries[2] == rec["rewrite"]["original"]["3"]
+    assert "rewrite" in rec["timing_ms"] and "SENTINEL-EVIDENCE" not in calls[0]

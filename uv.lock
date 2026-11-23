@@ -1052,6 +1052,7 @@ dependencies = [
     { name = "langchain-community" },
     { name = "langchain-core" },
     { name = "langchain-huggingface" },
+    { name = "langchain-openai" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pydantic" },
@@ -1067,9 +1068,6 @@ dependencies = [
 [package.optional-dependencies]
 ko = [
     { name = "kiwipiepy" },
-]
-openai = [
-    { name = "langchain-openai" },
 ]
 
 [package.dev-dependencies]
@@ -1087,7 +1085,7 @@ requires-dist = [
     { name = "langchain-community", specifier = ">=0.3" },
     { name = "langchain-core", specifier = ">=0.3" },
     { name = "langchain-huggingface", specifier = ">=0.1" },
-    { name = "langchain-openai", marker = "extra == 'openai'", specifier = ">=0.2" },
+    { name = "langchain-openai", specifier = ">=0.3" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },
@@ -1098,7 +1096,7 @@ requires-dist = [
     { name = "sentence-transformers", specifier = ">=3.0" },
     { name = "streamlit", specifier = ">=1.36" },
 ]
-provides-extras = ["ko", "openai"]
+provides-extras = ["ko"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -13,7 +13,7 @@ import time
 from kant_rag.config import Settings
 from kant_rag.generation.llm import get_chat_model
 from kant_rag.mcq.parse import parse_combo, parse_ox
-from kant_rag.mcq.prompts import MCQ_SYSTEM, MCQ_USER
+from kant_rag.mcq.prompts import MCQ_REWRITE_SYSTEM, MCQ_REWRITE_USER, MCQ_SYSTEM, MCQ_USER
 from kant_rag.mcq.schemas import ExamQuestion, StatementJudgment
 from kant_rag.retrieval.pipeline import RetrievalMode, Retriever
 from kant_rag.schemas import RetrievedChunk
@@ -65,6 +65,40 @@ def choose_answer(q: ExamQuestion, judgments: dict[str, StatementJudgment]) -> t
     return best, scores
 
 
+def _text(msg) -> str:
+    c = msg.content
+    return c if isinstance(c, str) else "".join(
+        b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text")
+
+
+def rewrite_statement_queries(q: ExamQuestion, settings: Settings) -> tuple[dict[str, str], dict]:
+    """진술별 검색 질의 생성 (문항당 LLM 1회). 정답·근거는 입력하지 않음. 실패/이상 키는 원래 질의로 fallback."""
+    c = settings.mcq
+    statements = q.statements()
+    original = {k: statement_query(q, v, c.stem_chars_in_query) for k, v in statements.items()}
+    info: dict = {"original": original, "rewritten": {}, "fallback_keys": [], "error": None}
+    try:
+        llm = get_chat_model(settings.models.llm_provider, settings.models.llm_model, 1024)
+        listing = "\n".join(f"{k}. {v}" for k, v in statements.items())
+        raw = _text(llm.invoke([("system", MCQ_REWRITE_SYSTEM), ("human", MCQ_REWRITE_USER.format(
+            stem=q.stem[: c.stem_chars_in_query], statements=listing))]))
+        m = re.search(r"\{.*\}", raw, re.S)
+        data = json.loads(m.group(0)) if m else {}
+    except Exception as e:
+        data = {}
+        info["error"] = f"{type(e).__name__}: {e}"
+    queries = {}
+    for k in statements:
+        v = data.get(k)
+        if isinstance(v, str) and 2 <= len(v.strip()) <= 300:
+            queries[k] = v.strip()
+        else:
+            queries[k] = original[k]
+            info["fallback_keys"].append(k)
+    info["rewritten"] = queries
+    return queries, info
+
+
 def _parse_judgments(raw: str, keys: list[str]) -> dict[str, StatementJudgment]:
     m = re.search(r"\{.*\}", raw, re.S)
     if not m:
@@ -106,12 +140,20 @@ class MCQSolver:
             "timing_ms": {}, "status": "ok", "error": None,
         }
 
+        if self.s.optimization.rewrite.enabled:
+            t = time.perf_counter()
+            queries, rec["rewrite"] = rewrite_statement_queries(q, self.s)
+            rec["timing_ms"]["rewrite"] = round((time.perf_counter() - t) * 1000, 1)
+        else:
+            queries = {k: statement_query(q, v, c.stem_chars_in_query) for k, v in statements.items()}
+        rec["search_queries"] = queries
+
         t = time.perf_counter()
         per_statement: dict[str, list[RetrievedChunk]] = {}
         rec["retrieval"] = {}
         try:
-            for key, text in statements.items():
-                stages = self.retriever.retrieve(statement_query(q, text, c.stem_chars_in_query), mode)
+            for key in statements:
+                stages = self.retriever.retrieve(queries[key], mode)
                 per_statement[key] = stages["final"]
                 rec["retrieval"][key] = [
                     {"rank": r.rank, "chunk_id": r.chunk.chunk_id, "score": r.score, **r.trace}
@@ -132,8 +174,7 @@ class MCQSolver:
             llm = get_chat_model(self.s.models.llm_provider, self.s.models.llm_model, c.max_tokens)
             msg = llm.invoke([("system", MCQ_SYSTEM), ("human", MCQ_USER.format(
                 evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements)))])
-            raw = msg.content if isinstance(msg.content, str) else "".join(
-                b.get("text", "") for b in msg.content if isinstance(b, dict) and b.get("type") == "text")
+            raw = _text(msg)
             rec["raw_output"] = raw
             judgments = _parse_judgments(raw, list(statements))
         except Exception as e:

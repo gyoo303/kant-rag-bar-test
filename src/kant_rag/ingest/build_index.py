@@ -20,9 +20,14 @@ def build_chunks(settings: Settings) -> list[Chunk]:
     for meta in docs:
         path = raw_dir / meta.path
         if not path.exists():
-            # 아직 수집하지 않은 문서(예: scripts/fetch_law.py 미실행)는 건너뛰고 index_info 에 기록
+            # 아직 수집하지 않은 문서(예: kant-rag fetch-laws 미실행)는 건너뛰고 index_info 에 기록
             missing.append(meta.doc_id)
             print(f"[warn] {meta.doc_id}: 원문 파일 없음 → {path} (건너뜀)")
+            continue
+        if meta.doc_type == "cases":
+            from kant_rag.ingest.cases import chunk_cases
+
+            chunks.extend(chunk_cases(path, meta, date_to=settings.corpus.case_date_to))
             continue
         if meta.doc_type == "statute":
             text = "\n".join(clean_text(p.text) for p in load_pages(path))

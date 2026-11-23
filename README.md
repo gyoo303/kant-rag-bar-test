@@ -10,7 +10,7 @@ configs/default.yaml      실험 설정·버전 (단일 출처)
 data/documents.csv        문서 목록 (법령: doc_id, 제목, 출처, 이용 조건, 시행 버전, 수집 시점, 경로, doc_type)
 data/raw/                 원문 — statutes/(법령) · cases/(판례 요지, 선택) · sample/
 data/exam/                시험 문항·정답 (평가 입력 전용, 색인 금지)
-scripts/fetch_law.py      국가법령정보센터 Open API 로 법령 수집 (시험일 기준 시행본)
+data/cases/topics.txt     판례 검색 주제어 (법령 구조에서 자동 생성)
 docs/problem.md           문제·성공 기준 정의 (초안)
 docs/design.md            파이프라인·설정
 eval/dev.json, test.json  평가셋 (선택형 8+근거없음 2 / 선택형 17+근거없음 3) — eval/README.md
@@ -26,23 +26,27 @@ app/streamlit_app.py      UI (질의응답 / 선택형 풀이 탭)
 results/                  실행별 원본 기록 · 채점표 · summary.json
 ```
 
-## 설치
+## 설치 (GPU PC 권장)
 ```bash
 uv sync
-cp .env.example .env       # ANTHROPIC_API_KEY, LAW_OC 등
+cp .env.example .env       # OPENAI_API_KEY, LAW_OC 입력
 ```
-- 생성 모델 기본값 `anthropic / claude-opus-5-5` (`LLM_PROVIDER`, `LLM_MODEL` 로 변경, OpenAI 는 `uv sync --extra openai`)
-- 임베딩 `BAAI/bge-m3`, reranker `BAAI/bge-reranker-v2-m3` — 로컬 실행
+- 생성 모델: OpenAI `gpt-6-luna` (`LLM_PROVIDER`, `LLM_MODEL` 로 변경 가능)
+- 임베딩 `BAAI/bge-m3`, reranker `BAAI/bge-reranker-v2-m3` — 로컬 실행 (GPU 자동 사용, 첫 실행 시 약 4GB 다운로드)
 - 한국어 형태소 BM25: `uv sync --extra ko` 후 `retrieval.bm25_tokenizer: kiwi`
 
-## 1) 데이터 준비
+## 1) 법령·판례 수집 → 색인 (**open.law.go.kr 에 IP 를 등록한 PC 에서 실행**)
+국가법령정보센터 API 는 OC 에 등록된 IP/도메인에서만 응답합니다 (클라우드 세션·다른 PC 에서는 인증 실패).
 ```bash
-# 법령 수집 (시험일 기준 시행본) → data/raw/statutes/*.txt
-uv run python scripts/fetch_law.py 민법 민사소송법 상법 민사집행법 주택임대차보호법 "상가건물 임대차보호법" "가등기담보 등에 관한 법률" --date 20260101
-uv run kant-rag chunks          # 조문 청크·ID 확인
-uv run kant-rag build-index     # 색인 재생성 → index/
+uv run kant-rag api-check        # 연결·응답 구조 점검 (먼저 실행해서 결과 공유)
+uv run kant-rag fetch-laws       # 문서 목록의 법령 → data/raw/statutes/ (2026-01-01 시행본), 목록에 시행일 기록
+uv run kant-rag build-topics     # 법령 편/장/절·조문 제목 → data/cases/topics.txt (시험 문장 미사용)
+uv run kant-rag fetch-cases --limit-topics 20   # 시험 수집
+uv run kant-rag fetch-cases      # 전체 수집 (2011~2025 대법원, 주제어당 5건, 중단 후 재실행하면 이어받음)
+uv run kant-rag build-index      # 청킹 + BM25 + 벡터 색인 → index/
 ```
-수집 후 `data/documents.csv` 의 `version`(시행일자), `collected_at` 을 채우세요. 판례 요지는 `data/raw/cases/` 에 정리해 목록에 추가합니다.
+- 판례는 판결요지 항목 단위 청크(`CASE#2019다12345#2`), 법령은 조문 단위(`LAW-CIVIL#제126조`)입니다.
+- 수집한 `data/raw/statutes/`, `data/raw/cases/cases.jsonl`, `data/cases/topics.txt` 는 커밋해 버전을 고정합니다 (공공저작물). `index/` 는 커밋하지 않고 재생성합니다.
 
 ## 2) 시험 문항 준비 (`data/exam/README.md`)
 ```bash
@@ -50,7 +54,7 @@ uv run kant-rag import-exam data/exam/2026_civil.txt --answers data/exam/2026_ci
 uv run kant-rag split-exam data/exam/2026_civil.json     # eval/dev.json(8) · eval/test.json(17) · extra(45)
 uv run kant-rag check-eval
 ```
-이후 각 문항의 `type`(direct/paraphrase)·`evidence` 를 기입하고, 근거 없음 문항(dev 2 / test 3)을 작성한 뒤 `test.json` 을 `frozen: true` 로 고정합니다.
+이미 분리되어 있습니다 (dev 8 / test 17 / extra 45). 확정 정답은 `uv run kant-rag apply-answers <정답.csv>` 로 반영하고, 각 문항의 `type`(direct/paraphrase)·`evidence` 를 기입하고, 근거 없음 문항(dev 2 / test 3)을 작성한 뒤 `test.json` 을 `frozen: true` 로 고정합니다.
 
 ## 3) 풀이·평가
 ```bash
@@ -58,7 +62,7 @@ uv run kant-rag solve data/exam/2026_civil.json 12 --show-answer   # 문항 1개
 uv run kant-rag ask "불법행위 손해배상청구권의 소멸시효는?"          # 자유 질의응답
 uv run kant-rag eval eval/dev.json --label dev                      # 개발셋 A/B/C
 uv run kant-rag eval eval/test.json --label final                   # 최종: (17+3) × A/B/C = 60건
-uv run kant-rag eval eval/test.json --modes hybrid_rerank --rewrite --label final-rewrite
+uv run kant-rag eval eval/test.json --modes hybrid_rerank --rewrite --label final-rewrite   # 선택 최적화: C+리라이트 20건
 uv run kant-rag grade results/<run_id>/grading.csv                  # 사람 채점(근거 적합·정보 부족 안내) 집계
 uv run streamlit run app/streamlit_app.py
 uv run pytest

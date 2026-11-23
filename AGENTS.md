@@ -13,3 +13,32 @@
 9. 프로젝트 고유 규칙(코드 수준 기준, 특정 결정·마일스톤에 묶인 규칙 등)은 이 섹션에 두지 않는다. 프로파일 제약(C-ID)이나 ARCH 산출물(ADR, `05-structure-conventions.md`)에 두고, ARCH가 이 파일의 디렉토리 지도 섹션에서 위치를 안내한다.
 
 <!-- 디렉토리 지도 섹션(제목 "디렉토리 지도", h2)은 ARCH가 A6에서 프로젝트 설계에 맞춰 만든다. 섹션이 없으면 DB·BE·FE·QA 점검(AR-MAP)이 막힌다. -->
+
+## 디렉토리 지도
+
+> 프로젝트: 민법 선택형 문항 RAG 에이전트(C1). 설계 기준: `docs/02-arch/` (ADR-001 모듈 구조, `05-structure-conventions.md` 트리·금지 패턴·스택 주의). UX 단계: 사용 안 함(C-16).
+
+| 경로 | 책임 |
+|---|---|
+| `src/lawqa/corpus/` | law_collector 출력 가져오기·정제, 청킹, PostgreSQL 저장, PGVector 색인 |
+| `src/lawqa/retrieval/` | 보기별 분해, 쿼리 리라이트, 구성 A/B/C 검색(BM25·PGVector·Ensemble·Reranker) |
+| `src/lawqa/answering/` | 근거 기반 답변, `Answer` 결과(오류 변환 유일 위치) |
+| `src/lawqa/evaluation/` | 평가셋·고정·일괄 실행·채점·지표. **정답(`eval/`)을 읽는 유일한 모듈** |
+| `src/lawqa/shared/` | 설정·DB 연결·버전 해시·시각 |
+| `src/lawqa/entrypoints/` | `cli.py`(`python -m lawqa ...`), `streamlit_app.py` |
+| `config/` | 실험 설정(커밋), 구성 A/B/C/C+R |
+| `eval/`, `results/` | 평가셋·고정 기록, 실행 기록(커밋, append 전용) |
+| `law_collector/` | 파이프라인 밖 수집 도구(사람·팀). `data/prec/*.json`(수집 판례, 커밋 안 함)·`data/law/민법.txt`(내려받은 민법, 커밋됨)가 가져오기 입력(ADR-015). 에이전트는 수정 금지 |
+| `data/` | `MANIFEST.md`(수집 방법·건수·재생성 절차)만 |
+| `tests/` | `unit/`(BE), `integration/db/`·`conftest.py`·`fixtures/raw/`(DB), `acceptance/`(QA) |
+
+**이 작업은 이 폴더만 본다**
+| 단계 | 쓰는 곳 |
+|---|---|
+| DB | `compose.yaml`, `src/lawqa/shared/db.py`, `src/lawqa/corpus/infrastructure/{schema.sql,pg_documents.py,pg_chunks.py,pg_index.py,vector_index.py}`, `src/lawqa/evaluation/infrastructure/files.py`, `tests/conftest.py`, `tests/fixtures/raw/`, `tests/integration/db/`, `docs/03-db/` |
+| BE | 위 DB 파일을 뺀 `src/lawqa/**`(단 `entrypoints/streamlit_app.py` 제외), `config/`, `pyproject.toml`, `uv.lock`, `.python-version`, `.env.example`, `.gitignore`, `results/smoke/`(점검 출력), `tests/unit/`(단 `tests/unit/entrypoints/` 제외), `tests/fixtures/eval/`, `docs/04-backend/` |
+| FE | `src/lawqa/entrypoints/streamlit_app.py`, `tests/unit/entrypoints/test_streamlit_app.py`, `README.md`, `docs/05-frontend/` |
+| QA | `tests/acceptance/`, `docs/06-qa/` |
+| 사람 | `law_collector/**`(수집 실행·코드), `data/MANIFEST.md`, `eval/*.json` 내용, `eval/SCHEMA.md`, `docs/problem.md`, `report.md`, `contributions.md`, `results/*/review.csv` 사람 판정, git 태그 |
+
+공통 파일 담당: `.gitignore`·`.env.example`은 BE 골격 티켓, `compose.yaml`은 DB. 설계 문서: `docs/02-arch/HANDOFF.md`(티켓), `04-interfaces-api.md`(이름·명령·흐름), `03-db-schema.md`(표·파일 형식), `06-quality-gates.md`(명령·통과 기준).

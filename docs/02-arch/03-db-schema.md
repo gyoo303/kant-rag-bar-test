@@ -106,8 +106,8 @@ erDiagram
 | article_title | text | Y | — | | 조문 `조문제목` |
 | body | text | Y | — | | 조문 `조문내용` |
 | effective_on | date | Y | — | | 조문 `시행일자` |
-| source_file | text | N | — | | `raw_dir` 기준 파일 경로(`prec/123456.json`, `law/민법.json`) |
-| source_line | integer | N | — | | 판례 1, 조문은 `조문단위` 순번 |
+| source_file | text | N | — | | `raw_dir` 기준 파일 경로(`prec/123456.json`, `law/민법.txt`) |
+| source_line | integer | N | — | | 판례 1, 조문은 `민법.txt`의 조 머리 줄 번호 |
 | content_sha | text | N | — | | 원문 필드 정규화 후 SHA-256 |
 | imported_at | timestamptz | N | now() | | |
 - CHECK: `kind='PRECEDENT'`이면 `holdings` 또는 `summary`가 NOT NULL·비어 있지 않음, `kind='STATUTE_ARTICLE'`이면 `body`·`article_no` NOT NULL.
@@ -150,7 +150,7 @@ erDiagram
 | index_version | text | N | — | FK → index_versions ON DELETE CASCADE | |
 | source_file | text | N | — | | |
 | source_line | integer | N | — | | |
-| reason | text | N | — | | `MISSING_FIELD:<필드>`, `BAD_DATE:<필드>`, `JSON_ERROR`, `EMPTY_CONTENT`, `OUT_OF_SCOPE` (ADR-015) |
+| reason | text | N | — | | `MISSING_FIELD:<필드>`, `BAD_DATE:<필드>`, `JSON_ERROR`, `EMPTY_CONTENT`, `OUT_OF_SCOPE`, `DUPLICATE_ARTICLE` (ADR-015). 삭제 조문·편장절 제목은 이슈가 아니라 보고의 "제외" 건수 |
 | created_at | timestamptz | N | now() | | |
 
 ### langchain_pg_collection / langchain_pg_embedding (ENT-05)
@@ -219,6 +219,6 @@ erDiagram
 ## 8. 시드 계획
 
 - 운영 데이터는 시드가 아니라 `law_collector` 수집 결과 가져오기(ADR-015)다.
-- 시험용 고정 데이터는 수집기 출력과 같은 모양(ADR-015)으로 둔다: `tests/fixtures/raw/prec/*.json`(`PrecService` 형식 판례 7건: 번호 표시 있는 것 2, 없는 것 1, 판시사항만 1, `<br/>` 태그 포함 1, **지시문이 든 판례 1**(AC-09-7), 형사 사건 1(`OUT_OF_SCOPE`)), `tests/fixtures/raw/law/민법.json`(조문 5개 + `전문` 행 1, 가지번호 1, 항·호 중첩 1, 항이 dict 1건인 경우 1), `tests/fixtures/raw/law/상법.json`(무시돼야 하는 파일), `tests/fixtures/raw/broken/prec/*.json`(필수 필드 없음 1, 날짜 오류 1, JSON 깨짐 1 — AC-05-4). 값은 실제 공개 판례·조문 문구에서 짧게 발췌한다. 실제 수집 파일 1~2개를 받으면 필드 경로를 그 파일로 확인한다.
+- 시험용 고정 데이터는 수집기 출력과 같은 모양(ADR-015)으로 둔다: `tests/fixtures/raw/prec/*.json`(`PrecService` 형식 판례 7건: 번호 표시 있는 것 2, 없는 것 1, 판시사항만 1, `<br/>` 태그 포함 1, **지시문이 든 판례 1**(AC-09-7), 형사 사건 1(`OUT_OF_SCOPE`)), `tests/fixtures/raw/law/민법.txt`(실제 파일에서 발췌: 편·장·절 제목, 한 줄 조문, 머리만 있는 조문+항, `제N조의M`, 대괄호 제목 제50조, 삭제 조문, 호 `1의2.`·삭제 호, `<개정 …>` 표시, 특수 제목 `제1항 협의상 파양`), `tests/fixtures/raw/law/상법.txt`(무시돼야 하는 파일), `tests/fixtures/raw/broken/prec/*.json`(필수 필드 없음 1, 날짜 오류 1, JSON 깨짐 1 — AC-05-4). 값은 실제 공개 판례·조문 문구에서 짧게 발췌한다. 판례 샘플은 실제 수집 파일(2026-11-23 확인, ADR-015)의 형식을 따른다.
 - 중복 주입 방지: `ON CONFLICT (doc_id) DO UPDATE`(원문), `replace_for_version`(청크: 같은 판본 삭제 후 삽입).
 - 비밀값 입력: 없음(`.env`만).

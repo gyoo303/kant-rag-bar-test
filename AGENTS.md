@@ -28,7 +28,7 @@
 | `src/lawqa/entrypoints/` | `cli.py`(`python -m lawqa ...`), `streamlit_app.py` |
 | `config/` | 실험 설정(커밋), 구성 A/B/C/C+R |
 | `eval/`, `results/` | 평가셋·고정 기록, 실행 기록(커밋, append 전용) |
-| `law_collector/` | 파이프라인 밖 수집 도구(사람·팀). 출력 `data/prec/`, `data/law/`가 가져오기 입력(ADR-015), 에이전트는 코드 수정 금지 |
+| `law_collector/` | 파이프라인 밖 수집 도구(사람·팀). `data/prec/*.json`(수집 판례, 커밋 안 함)·`data/law/민법.txt`(내려받은 민법, 커밋됨)가 가져오기 입력(ADR-015). 에이전트는 수정 금지 |
 | `data/` | `MANIFEST.md`(수집 방법·건수·재생성 절차)만 |
 | `tests/` | `unit/`(BE), `integration/db/`·`conftest.py`·`fixtures/raw/`(DB), `acceptance/`(QA) |
 

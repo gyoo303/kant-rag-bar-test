@@ -14,7 +14,7 @@
 │   ├── base.toml                  # 04-interfaces-api §6
 │   └── A.toml  B.toml  C.toml  C+R.toml
 ├── law_collector/                 # 파이프라인 밖 수집 도구(사람·팀). 출력 data/prec/, data/law/는 커밋 안 함(자체 .gitignore)
-│   └── data/prec/*.json  data/law/민법.json   # 가져오기 입력(ADR-015)
+│   └── data/prec/*.json(수집기, 커밋 안 함)  data/law/민법.txt(내려받은 텍스트, 샘플 커밋)   # 가져오기 입력(ADR-015)
 ├── data/                          # MANIFEST.md만 커밋
 │   └── MANIFEST.md                # 사람: 수집 방법·파일 버전·재생성 명령
 ├── eval/                          # 커밋, evaluation 모듈만 읽음
@@ -133,3 +133,4 @@ flowchart TB
 
 ## 개정
 - 2026-11-23: ADR-015(수집기 출력 가져오기)로 트리·제외 목록 세부 수정(§2-8 ②): `law_collector/` 추가, `data/raw` 제거, `text_clean.py`·`collector_reader.py`.
+- 2026-11-23: ADR-015 개정 — 민법 입력 `law/민법.txt`(일반 텍스트, `git add -f`로 샘플 커밋).

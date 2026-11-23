@@ -78,12 +78,12 @@
 **TKT-BE-M2-01: corpus 도메인·청킹**
 - 읽을 것: AGENTS.md, ADR-015, 03-db-schema §3·§4·§8, 04-interfaces-api §1.2, `law_collector/README.md`(출력 구조 참고)
 - 산출: `src/lawqa/corpus/domain/{models,chunking,text_clean,errors,ports}.py`, `src/lawqa/corpus/infrastructure/{collector_reader,kiwi_tokenizer}.py`, `tests/unit/corpus/test_source_document.py`, `test_text_clean.py`, `test_chunking.py`, `test_collector_reader.py`, `docs/04-backend/briefing.md`
-- 완료 조건: `PrecService`·법령 응답 변환(민법만, `전문` 제외, 항·호·목 이어 붙임, dict/list 정규화), 날짜 3형식, HTML 정제, 범위 밖·빈 본문·날짜 오류 → `ImportIssue`(AC-05-4 도메인 부분), 판시사항·판결요지 `[n]` 묶음, `location` 형식(03-db-schema §4), GATE-02·04. 실제 수집 파일이 있으면 필드 경로를 확인하고 브리핑에 적는다
+- 완료 조건: `PrecService` 변환(민사만, 법원명 필터 없음, 필드 매핑), 날짜, HTML 정제, 민법 텍스트 파서(ADR-015 표의 규칙 전부: 편·장·절·관·특수 제목 제외, 조 머리·대괄호 제목·조의N, 삭제 조문·삭제 호 제외, 개정 표시 제거, 항·호 이어 붙임), 범위 밖·빈 본문·날짜 오류·중복 → `ImportIssue`(AC-05-4 도메인 부분), 판시사항·판결요지 `[n]` 묶음, `location` 형식(03-db-schema §4), GATE-02·04. **수용 확인: 커밋된 `law_collector/data/law/민법.txt` 전체를 파싱해 조문 1,116개·삭제 77개·중복 0이 나오는 시험 1개**(ADR-015 확인 수치)
 - 하지 말 것: DB 코드
 
 **TKT-DB-M2-01: 원문·청크·판본·이슈 저장소**
 - 읽을 것: AGENTS.md, ADR-006, 03-db-schema §3·§7, 04-interfaces-api §10
-- 산출: `src/lawqa/corpus/infrastructure/{pg_documents,pg_chunks,pg_index}.py`, `tests/integration/db/test_corpus_repositories.py`, `tests/fixtures/raw/prec/*.json`, `tests/fixtures/raw/law/{민법,상법}.json`, `tests/fixtures/raw/broken/prec/*.json`(03-db-schema §8), `docs/03-db/briefing.md`
+- 산출: `src/lawqa/corpus/infrastructure/{pg_documents,pg_chunks,pg_index}.py`, `tests/integration/db/test_corpus_repositories.py`, `tests/fixtures/raw/prec/*.json`, `tests/fixtures/raw/law/{민법,상법}.txt`, `tests/fixtures/raw/broken/prec/*.json`(03-db-schema §8), `docs/03-db/briefing.md`
 - 완료 조건: upsert 멱등, `replace_for_version` 교체, 행 → 도메인 변환, GATE-04b·08, AC-05-3(같은 입력 두 번 → 같은 청크 ID 집합)
 - 하지 말 것: 커밋을 저장소 안에서 호출
 
@@ -181,7 +181,9 @@
 ## 3. 사람이 할 일 (티켓 아님)
 | 시점 | 할 일 | 근거 |
 |---|---|---|
-| M1 전 | `law_collector`로 대법원 민사 판례 본문(`data/prec/`)과 민법(`python collect.py laws 민법`) 수집, `data/MANIFEST.md` 작성. 실제 판례 파일 1~2개를 BE-M2-01 전에 제공 | ADR-015 |
+| M1 전 | 판례: `law_collector`로 데이터출처 대법원 민사 판례 본문 수집(`fetch --source 대법원`), 결과 `data/prec/`를 이 저장소의 `law_collector/data/prec/`에 모음. 민법: `law_collector/data/law/민법.txt`(커밋됨)를 현행 기준으로 유지. `data/MANIFEST.md`에 판례 수집 날짜·팀원 분담·건수, 민법 내려받은 출처·날짜 기록 | ADR-015 |
+| **작업 필요(수집 완료 후, 가져오기 전)** | **판시사항·판결요지가 모두 빈 판례 파일을 `law_collector/data/prec/`에서 일괄 삭제**(9,984건 샘플 기준 12%, 1,221건). 삭제 건수와 기준을 `data/MANIFEST.md`에 기록. 남아 있으면 가져오기가 `EMPTY_CONTENT`로 기록해 색인이 "불완전"이 되고 `eval freeze --stage final`이 막힌다 | ADR-015, 사용자 결정 2026-11-23 |
+| 가져오기 전 | 저장소 밖 작업 폴더(별도 클론한 `law_collector`)에 받은 판례가 있으면 이 저장소의 `law_collector/data/prec/`로 복사(커밋 대상 아님). `prec/` 밖에 떨어진 판례 파일(예: `data/64441.json`)은 `prec/`로 옮기거나 삭제 | ADR-015 |
 | M1 | `docs/problem.md`, `eval/success_criteria.json`(D-007) → `eval freeze --stage criteria` → 커밋·태그 `freeze-criteria` | US-01·02 |
 | M1 | `eval/SCHEMA.md`, `eval/dev.json`·`test.json` 30문항(DOC-04·05) | US-04 |
 | M3 끝 | dev로 설정 확정 → `eval freeze --stage final` → 커밋·태그 `freeze-final` | US-12 |

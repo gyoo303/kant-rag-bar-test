@@ -19,7 +19,7 @@ flowchart LR
     OAI["OpenAI API\ngpt-6-luna · text-embedding-3-small"]
   end
   subgraph Store["저장 (data/·DB 볼륨·모델 캐시 커밋 안 함 · eval/ results/ 커밋)"]
-    RAW[("law_collector/data\nprec/*.json · law/민법.json")]
+    RAW[("law_collector/data\nprec/*.json · law/민법.txt")]
     SQL[("PostgreSQL 17 (Docker)\nsource_documents · chunks")]
     VEC[("pgvector\nlangchain_pg_embedding")]
     RR["reranker 모델\nbge-reranker-v2-m3 (로컬 GPU)"]
@@ -94,7 +94,7 @@ flowchart LR
 | ADR-012 | 실행 인터페이스 | TR-09, C-10 | Accepted | "A 또는 B" 제약 |
 | ADR-013 | 답변 생성·근거 부족 판정 | 기타(U-1, U-3) | Accepted | 환각 인용 차단 |
 | ADR-014 | 평가 실행·채점·고정 기록 | TR-06, 기타(U-2) | Accepted | 평가 무결성 |
-| ADR-015 | 원문 가져오기: law_collector 출력 직접 읽기(대법원 민사 전부, 민법만) | TR-07 | Accepted | 사용자 선택 A |
+| ADR-015 | 원문 가져오기: 수집 판례 JSON·민법 텍스트 직접 읽기(데이터출처 대법원 민사 전부, 민법만) | TR-07 | Accepted | 사용자 선택 A |
 | — | 외부 연동 어댑터 경계·시험용 대역 | TR-08 | 선택지 없음 → ADR-001 `infrastructure` + A5 | 모듈 계층 구조로 정해짐 |
 | — | 화면 데이터 계약·갱신 방식 | TR-09 | 선택지 없음 → A4 PAGE-01 | Streamlit은 요청마다 다시 그림 |
 | — | 캐시 방식·무효화 | TR-12 | 해당 없음 | 캐싱은 선택 등급(D-005) |

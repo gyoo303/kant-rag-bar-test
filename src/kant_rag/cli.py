@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 from kant_rag.config import ROOT, get_settings
@@ -33,6 +34,10 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("build-topics", help="수집한 법령 구조 → 판례 검색 주제어 (data/cases/topics.txt)")
     fc = sub.add_parser("fetch-cases", help="주제어별 대법원 판례 판결요지 수집 → data/raw/cases/cases.jsonl (재시작 가능)")
     fc.add_argument("--limit-topics", type=int, default=None, help="앞에서 N개 주제어만 (시험 실행용)")
+
+    fd = sub.add_parser("find", help="근거 기입용 원문 검색: 모든 키워드를 포함한 청크 전부 (순위·검색기와 무관)")
+    fd.add_argument("keywords", nargs="+", help="모두 포함(AND). 예: 성명 모용 표현대리")
+    fd.add_argument("--limit", type=int, default=30)
 
     sub.add_parser("build-index", help="문서 목록 → 청크 → BM25/벡터 색인 재생성")
     sub.add_parser("chunks", help="청킹 결과만 출력 (모델 불필요)")
@@ -189,6 +194,18 @@ def main(argv: list[str] | None = None) -> None:
         from kant_rag.ingest.build_index import build_index
 
         print(json.dumps(build_index(settings), ensure_ascii=False, indent=2))
+
+    elif args.cmd == "find":
+        from kant_rag.ingest.build_index import build_chunks
+
+        kws = [k.replace(" ", "") for k in args.keywords]
+        hits = [c for c in build_chunks(settings) if all(k in c.text.replace(" ", "") for k in kws)]
+        print(f"'{' + '.join(args.keywords)}' 포함 청크 {len(hits)}개" + (f" (앞 {args.limit}개)" if len(hits) > args.limit else ""))
+        for c in hits[: args.limit]:
+            body = c.text.replace("\n", " ")
+            m = re.search(r"\s*".join(map(re.escape, kws[0])), body)
+            pos = m.start() if m else 0
+            print(f"\n{c.chunk_id}  |  {c.location()}\n  …{body[max(0, pos - 60): pos + 200]}…")
 
     elif args.cmd == "chunks":
         from kant_rag.ingest.build_index import build_chunks

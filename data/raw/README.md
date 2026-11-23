@@ -4,7 +4,6 @@
 | --- | --- | --- |
 | `statutes/` | 법령 본문 (조문 단위 텍스트) | `uv run kant-rag fetch-laws` (국가법령정보센터 Open API, `LAW_OC` + 등록 IP 필요) |
 | `cases/` | 대법원 판례 판결요지 (`cases.jsonl`) | `uv run kant-rag build-topics` → `fetch-cases` (2011~2025 선고) |
-| `sample/` | 동작 확인용 발췌 | 원문과 대조 전 샘플 — 평가 근거로 쓰지 말 것 |
 
 ## 규칙
 - **법령 버전은 시험일(2026년 1월) 기준 시행본**으로 맞추고 `data/documents.csv` 의 `version`, `collected_at` 을 기입합니다.

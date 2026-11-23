@@ -13,7 +13,14 @@ import time
 from kant_rag.config import Settings
 from kant_rag.generation.llm import get_chat_model
 from kant_rag.mcq.parse import parse_combo, parse_ox
-from kant_rag.mcq.prompts import MCQ_REWRITE_SYSTEM, MCQ_REWRITE_USER, MCQ_SYSTEM, MCQ_USER
+from kant_rag.mcq.prompts import (
+    MCQ_CLOSED_SYSTEM,
+    MCQ_CLOSED_USER,
+    MCQ_REWRITE_SYSTEM,
+    MCQ_REWRITE_USER,
+    MCQ_SYSTEM,
+    MCQ_USER,
+)
 from kant_rag.mcq.schemas import ExamQuestion, StatementJudgment
 from kant_rag.retrieval.pipeline import RetrievalMode, Retriever
 from kant_rag.schemas import RetrievedChunk
@@ -126,7 +133,13 @@ def _evidence_block(per_statement: dict[str, list[RetrievedChunk]], k: int, max_
 class MCQSolver:
     def __init__(self, settings: Settings, retriever: Retriever | None = None):
         self.s = settings
-        self.retriever = retriever or Retriever(settings)
+        self._retriever = retriever
+
+    @property
+    def retriever(self) -> Retriever:  # closed-book 만 돌릴 때는 색인을 읽지 않음
+        if self._retriever is None:
+            self._retriever = Retriever(self.s)
+        return self._retriever
 
     def solve(self, q: ExamQuestion, mode: RetrievalMode = RetrievalMode.C, run_id: str | None = None) -> dict:
         """정답(q.answer)은 입력에 쓰지 않습니다. 반환값은 실행 기록(record)."""
@@ -139,6 +152,12 @@ class MCQSolver:
             "models": self.s.models.model_dump(), "settings_fingerprint": self.s.fingerprint(),
             "timing_ms": {}, "status": "ok", "error": None,
         }
+
+        listing = "\n".join(f"{k}. {v}" for k, v in statements.items())
+        if mode == RetrievalMode.NONE:
+            return self._judge(q, rec, t0, MCQ_CLOSED_SYSTEM,
+                               MCQ_CLOSED_USER.format(stem=q.stem, statements=listing, keys=", ".join(statements)),
+                               used=[])
 
         if self.s.optimization.rewrite.enabled:
             t = time.perf_counter()
@@ -167,13 +186,15 @@ class MCQSolver:
 
         evidence, used = _evidence_block(per_statement, c.per_statement_k, c.max_context_chars)
         rec["context_chunk_ids"] = used
-        listing = "\n".join(f"{k}. {v}" for k, v in statements.items())
+        return self._judge(q, rec, t0, MCQ_SYSTEM, MCQ_USER.format(
+            evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements)), used)
 
+    def _judge(self, q: ExamQuestion, rec: dict, t0: float, system: str, user: str, used: list[str]) -> dict:
+        statements = q.statements()
         t = time.perf_counter()
         try:
-            llm = get_chat_model(self.s.models.llm_provider, self.s.models.llm_model, c.max_tokens)
-            msg = llm.invoke([("system", MCQ_SYSTEM), ("human", MCQ_USER.format(
-                evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements)))])
+            llm = get_chat_model(self.s.models.llm_provider, self.s.models.llm_model, self.s.mcq.max_tokens)
+            msg = llm.invoke([("system", system), ("human", user)])
             raw = _text(msg)
             rec["raw_output"] = raw
             judgments = _parse_judgments(raw, list(statements))

@@ -1,4 +1,4 @@
-# kant-rag-bar-test — 민사법 RAG Agent (프로젝트 3: RAG Agent)
+# kant-rag-bar-test — AI 함정 문제를 푸는 민사법 RAG Agent (프로젝트 3: RAG Agent)
 
 **2026년 제15회 변호사시험 민사법 선택형(70문항)** 을 조문·판례 검색 기반으로 풀이하는 Knowledge Agent.
 보기(진술)마다 근거 조문을 검색해 정오를 판단하고, **근거 조문 ID 와 함께** 정답 번호를 제시하거나 근거가 부족하면 그렇다고 안내합니다.
@@ -62,6 +62,7 @@ uv run kant-rag solve data/exam/2026_civil.json 12 --show-answer   # 문항 1개
 uv run kant-rag ask "불법행위 손해배상청구권의 소멸시효는?"          # 자유 질의응답
 uv run kant-rag eval eval/dev.json --label dev                      # 개발셋 A/B/C
 uv run kant-rag eval eval/test.json --label final                   # 최종: (17+3) × A/B/C = 60건
+uv run kant-rag eval eval/test.json --modes closed_book --label final-closedbook  # 기준선: 검색 없는 풀이 17건
 uv run kant-rag eval eval/test.json --modes hybrid_rerank --rewrite --label final-rewrite   # 선택 최적화: C+리라이트 20건
 uv run kant-rag grade results/<run_id>/grading.csv                  # 사람 채점(근거 적합·정보 부족 안내) 집계
 uv run streamlit run app/streamlit_app.py

@@ -25,7 +25,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-003",
@@ -50,7 +53,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-004",
@@ -74,7 +81,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-005",
@@ -99,7 +110,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-007",
@@ -124,7 +139,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-008",
@@ -149,7 +167,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-014",
@@ -174,7 +195,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-015",
@@ -199,7 +224,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-016",
@@ -219,7 +249,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성"
+      ]
     },
     {
       "id": "BAR2026-CIV-018",
@@ -239,7 +272,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-019",
@@ -265,7 +301,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-020",
@@ -289,7 +330,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-021",
@@ -309,7 +354,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성"
+      ]
     },
     {
       "id": "BAR2026-CIV-024",
@@ -334,7 +382,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-026",
@@ -359,7 +412,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "부정 극성",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-028",
@@ -384,7 +442,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-029",
@@ -404,7 +465,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-030",
@@ -428,7 +493,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-031",
@@ -448,7 +517,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서",
+        "복수 법령"
+      ]
     },
     {
       "id": "BAR2026-CIV-033",
@@ -468,7 +542,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성"
+      ]
     },
     {
       "id": "BAR2026-CIV-035",
@@ -493,7 +570,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-036",
@@ -518,7 +599,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-037",
@@ -543,7 +628,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "부정 극성",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-038",
@@ -563,7 +653,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-040",
@@ -583,7 +677,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "부정 극성",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-041",
@@ -603,7 +702,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-043",
@@ -628,7 +731,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "부정 극성",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-044",
@@ -648,7 +756,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성"
+      ]
     },
     {
       "id": "BAR2026-CIV-046",
@@ -668,7 +779,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-047",
@@ -693,7 +808,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-048",
@@ -713,7 +832,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-049",
@@ -733,7 +856,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-051",
@@ -753,7 +880,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성"
+      ]
     },
     {
       "id": "BAR2026-CIV-054",
@@ -779,7 +909,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-055",
@@ -799,7 +933,10 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간"
+      ]
     },
     {
       "id": "BAR2026-CIV-056",
@@ -825,7 +962,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "전 진술 판단",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-058",
@@ -845,7 +987,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서"
+      ]
     },
     {
       "id": "BAR2026-CIV-059",
@@ -871,7 +1017,12 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "전 진술 판단",
+        "예외·단서",
+        "복수 법령"
+      ]
     },
     {
       "id": "BAR2026-CIV-060",
@@ -891,7 +1042,8 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": []
     },
     {
       "id": "BAR2026-CIV-061",
@@ -917,7 +1069,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-064",
@@ -937,7 +1093,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "부정 극성"
+      ]
     },
     {
       "id": "BAR2026-CIV-065",
@@ -957,7 +1117,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "부정 극성"
+      ]
     },
     {
       "id": "BAR2026-CIV-066",
@@ -983,7 +1147,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-067",
@@ -1008,7 +1176,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "숫자·기간",
+        "전 진술 판단"
+      ]
     },
     {
       "id": "BAR2026-CIV-069",
@@ -1028,7 +1200,11 @@
       "evidence": [],
       "split": "extra",
       "type": null,
-      "note": null
+      "note": null,
+      "traps": [
+        "부정 극성",
+        "예외·단서"
+      ]
     }
   ]
 }

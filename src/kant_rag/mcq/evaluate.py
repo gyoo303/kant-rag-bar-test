@@ -58,7 +58,7 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
     out.mkdir(parents=True, exist_ok=True)
 
     solver = MCQSolver(settings)
-    agent = KnowledgeAgent(settings, solver.retriever)
+    agent = None if modes == [RetrievalMode.NONE] else KnowledgeAgent(settings, solver.retriever)
     mcq_recs: list[dict] = []
     na_recs: list[dict] = []
     with (out / "records.jsonl").open("w", encoding="utf-8") as f:
@@ -66,6 +66,7 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             for q in es.items:
                 r = solver.solve(q, mode, run_id)
                 r["eval"] = {"kind": "mcq", "split": es.split, "version": es.version, "type": q.type,
+                             "traps": q.traps,
                              "answer": q.answer, "correct": int(r.get("predicted") == q.answer),
                              "hit@5": mcq_hit_at_k(r, q), "statement_acc": statement_accuracy(r, q)}
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
@@ -73,7 +74,7 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
                 mcq_recs.append(r)
                 print(f"[{mode.value}] {q.id} pred={r.get('predicted')} ans={q.answer} "
                       f"status={r['status']} hit@5={r['eval']['hit@5']} {r['timing_ms'].get('total')}ms")
-            for item in es.no_answer:
+            for item in es.no_answer if mode != RetrievalMode.NONE else []:  # closed-book 은 선택형만
                 r = agent.ask(item.question, mode=mode, question_id=item.id, run_id=run_id)
                 r["eval"] = {"kind": "no_answer", "split": es.split, "version": es.version, "type": "no_answer"}
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
@@ -112,8 +113,17 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             "latency_mcq": _latency(rs, lambda r: r["status"]),
             "latency_no_answer": _latency(na, lambda r: r["answer"]["status"]),
         }
+    # 함정 유형별 정답률: 'RAG 가 어떤 함정을 막는가'
+    trap_table: dict[str, dict[str, str]] = {}
+    for mode in modes:
+        rs = [r for r in mcq_recs if r["config"] == mode.value]
+        for tag in sorted({t for r in rs for t in r["eval"]["traps"]}):
+            sub = [r for r in rs if tag in r["eval"]["traps"]]
+            trap_table.setdefault(tag, {})[mode.value] = f"{sum(r['eval']['correct'] for r in sub)}/{len(sub)}"
+    summary["accuracy_by_trap"] = trap_table
     (out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(summary["by_config"], ensure_ascii=False, indent=2))
+    print(json.dumps({"by_config": summary["by_config"], "accuracy_by_trap": trap_table},
+                     ensure_ascii=False, indent=2))
     return out
 
 

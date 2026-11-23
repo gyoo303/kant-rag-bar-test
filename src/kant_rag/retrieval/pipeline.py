@@ -22,6 +22,7 @@ class RetrievalMode(str, Enum):
     A = "vector"
     B = "hybrid"
     C = "hybrid_rerank"
+    NONE = "closed_book"  # 기준선: 검색 없이 모델 지식만 (선택형 풀이 전용)
 
 
 class Retriever:
@@ -35,6 +36,8 @@ class Retriever:
 
     def retrieve(self, query: str, mode: RetrievalMode) -> dict[str, list[RetrievedChunk]]:
         """최종 결과(`final`)와 단계별 후보를 모두 반환합니다 (실행 기록용)."""
+        if mode == RetrievalMode.NONE:
+            raise ValueError("closed_book 은 검색을 하지 않는 기준선입니다 (선택형 풀이 전용)")
         r = self.s.retrieval
         vec = self.vector.search(query, r.vector_k)
         if mode == RetrievalMode.A:

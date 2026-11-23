@@ -129,3 +129,32 @@ def test_rewrite_used_for_retrieval_with_fallback(settings, monkeypatch):
     assert queries[0] == "불법행위 손해배상 민법 제750조"
     assert rec["rewrite"]["fallback_keys"] == ["3"] and queries[2] == rec["rewrite"]["original"]["3"]
     assert "rewrite" in rec["timing_ms"] and "SENTINEL-EVIDENCE" not in calls[0]
+
+
+def test_closed_book_baseline_skips_retrieval(settings, monkeypatch):
+    q1 = exam().items[0]
+    prompts = []
+
+    class FakeLLM:
+        def invoke(self, messages):
+            prompts.append(messages)
+            return SimpleNamespace(content='{"judgments": {' + ", ".join(
+                f'"{k}": {{"verdict": "{"false" if k == "3" else "true"}", "confidence": 0.7, "reason": "r"}}'
+                for k in "12345") + "}}")
+
+    class NoRetriever:
+        def retrieve(self, *a, **k):
+            raise AssertionError("closed_book 은 검색하지 않아야 함")
+
+    monkeypatch.setattr(solver_mod, "get_chat_model", lambda *a, **k: FakeLLM())
+    rec = MCQSolver(settings, retriever=NoRetriever()).solve(q1, RetrievalMode.NONE)
+    assert rec["predicted"] == 3 and rec["config"] == "closed_book" and "retrieval" not in rec
+    assert "<evidence>" not in prompts[0][1][1]
+
+
+def test_auto_traps():
+    from kant_rag.mcq.traps import auto_traps
+
+    q1, q2 = exam().items
+    assert "부정 극성" in auto_traps(q1) and "숫자·기간" in auto_traps(q1)
+    assert "전 진술 판단" in auto_traps(q2)

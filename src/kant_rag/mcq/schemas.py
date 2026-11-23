@@ -27,6 +27,7 @@ class ExamQuestion(BaseModel):
     split: Literal["dev", "test", "extra"] | None = None
     type: Literal["direct", "paraphrase", "no_answer"] | None = None
     note: str | None = None  # 유형 분류 근거, 근거 표기 메모 등
+    traps: list[str] = Field(default_factory=list)  # AI 함정 유형 (mcq/traps.py: 자동 + 팀 수동)
 
     @model_validator(mode="after")
     def _check(self):

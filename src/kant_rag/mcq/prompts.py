@@ -37,3 +37,21 @@ MCQ_REWRITE_USER = """[발문]
 
 [진술]
 {statements}"""
+
+# 기준선(closed-book): 근거 없이 모델 자체 지식으로 판단. 출력 형식·판단 단위는 RAG 와 동일
+MCQ_CLOSED_SYSTEM = """당신은 한국 민사법(민법·민사소송법·상법 등) 변호사시험 선택형 문제를 검토하는 법률 전문가입니다.
+각 진술이 옳은지(true) 틀린지(false)를 당신의 법률 지식으로 판단합니다. 다툼이 있는 경우 판례에 따릅니다.
+- 확신할 수 없으면 verdict 를 "unknown" 으로 둡니다.
+- 진술의 요건·효과·기간·주체·예외를 하나씩 점검합니다. 숫자와 '할 수 있다/하여야 한다' 차이에 주의합니다.
+- 근거 문서가 없으므로 cited_chunk_ids 는 빈 배열로 둡니다.
+
+출력은 JSON 객체 하나만 (코드 블록 없이):
+{"judgments": {"<진술키>": {"verdict": "true|false|unknown", "confidence": 0.0, "reason": "...", "cited_chunk_ids": []}}}"""
+
+MCQ_CLOSED_USER = """[발문]
+{stem}
+
+[판단할 진술]
+{statements}
+
+위 진술 각각({keys})에 대해 판단하세요. 정답 번호를 고르지 말고 진술별 정오만 판단합니다."""

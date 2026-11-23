@@ -67,6 +67,7 @@ def main(argv: list[str] | None = None) -> None:
     se.add_argument("--seed", type=int, default=2026)
     se.add_argument("--force", action="store_true", help="이미 있는 평가셋 덮어쓰기")
 
+    sub.add_parser("tag-traps", help="eval/dev·test 문항의 자동 함정 태그 재계산 (팀이 붙인 수동 태그는 유지)")
     aa = sub.add_parser("apply-answers", help="정답 CSV(number,answer)를 문항 JSON·extra·eval/dev·test 에 반영 (분리 유지)")
     aa.add_argument("answers_csv")
     aa.add_argument("--exam-json", default="data/exam/2026_civil.json")
@@ -74,12 +75,14 @@ def main(argv: list[str] | None = None) -> None:
     sv = sub.add_parser("solve", help="시험 문항 1개 풀이")
     sv.add_argument("exam_json")
     sv.add_argument("number", type=int)
-    sv.add_argument("--mode", default="hybrid_rerank", choices=["vector", "hybrid", "hybrid_rerank"])
+    sv.add_argument("--mode", default="hybrid_rerank", choices=["vector", "hybrid", "hybrid_rerank", "closed_book"])
     sv.add_argument("--show-answer", action="store_true")
 
     eb = sub.add_parser("eval", help="평가셋 실행: 선택형 + 근거 없음 문항 × 구성 A/B/C (캐시는 꺼진 상태)")
     eb.add_argument("eval_path")
-    eb.add_argument("--modes", nargs="+", default=["vector", "hybrid", "hybrid_rerank"])
+    eb.add_argument("--modes", nargs="+", default=["vector", "hybrid", "hybrid_rerank"],
+                    choices=["vector", "hybrid", "hybrid_rerank", "closed_book"],
+                    help="closed_book = 검색 없는 기준선 (선택형만, 본 60건과 별도 보고)")
     eb.add_argument("--label", default="")
     eb.add_argument("--rewrite", action="store_true", help="쿼리 리라이트 적용 (선택형 진술별 질의 + 근거 없음 문항)")
 
@@ -292,6 +295,26 @@ def main(argv: list[str] | None = None) -> None:
                          encoding="utf-8")
         print(f"extra: {len(parts['extra'])}문항 → {extra} (본 평가와 분리)")
         print("다음: 각 문항 type(direct/paraphrase)·evidence 기입, no_answer 문항 작성, test 는 frozen=true")
+
+    elif args.cmd == "tag-traps":
+        from collections import Counter
+
+        from kant_rag.mcq.io import BarEvalSet
+        from kant_rag.mcq.traps import AUTO, TRAP_DESCRIPTIONS, auto_traps
+
+        for name in ("dev", "test"):
+            path = ROOT / "eval" / f"{name}.json"
+            es = BarEvalSet.model_validate_json(path.read_text(encoding="utf-8"))
+            if es.frozen:
+                print(f"skip (frozen): {name}")
+                continue
+            for q in es.items:
+                unknown = [t for t in q.traps if t not in TRAP_DESCRIPTIONS]
+                if unknown:
+                    print(f"  ⚠ {q.id}: 정의되지 않은 태그 {unknown} (mcq/traps.py 참고)")
+                q.traps = auto_traps(q) + [t for t in q.traps if t not in AUTO]
+            path.write_text(es.model_dump_json(indent=2), encoding="utf-8")
+            print(name, dict(Counter(t for q in es.items for t in q.traps)))
 
     elif args.cmd == "apply-answers":
         import csv as _csv

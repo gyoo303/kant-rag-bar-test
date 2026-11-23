@@ -21,3 +21,7 @@ build/
 
 # agent pipeline run logs
 .pipeline-logs/
+
+# data
+*.json
+*.txt

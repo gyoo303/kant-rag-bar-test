@@ -63,3 +63,20 @@ def test_search_precs_filters_date_and_court_client_side():
     hits = f.api.search_precs("표현대리", "20110101", "20251231", want=5, page_size=3)
     assert [h["선고일자"] for h in hits] == ["2025.06.05", "2023.03.03"]
     assert all(c["search"] == 2 and "prncYd" not in c for c in f.calls)
+
+
+def test_collect_resumes_after_truncated_line(tmp_path):
+    out = tmp_path / "cases.jsonl"
+    out.write_text('{"prec_id": "11", "summary": "x"}\n{"prec_id": "12", "summ', encoding="utf-8")
+
+    class API:
+        def search_precs(self, *a, **k):
+            return [{"판례일련번호": "11"}, {"판례일련번호": "13"}]
+
+        def prec(self, pid):
+            return {"사건번호": "2020다1", "판결요지": "[1] 요지", "법원명": "대법원", "선고일자": "2020.01.01"}
+
+    from kant_rag.ingest.cases import collect_cases
+    stats = collect_cases(API(), ["t"], out, "20110101", "20251231", per_topic=5)
+    ids = [json.loads(line)["prec_id"] for line in out.read_text(encoding="utf-8").splitlines()]
+    assert ids == ["11", "13"] and stats["new"] == 1

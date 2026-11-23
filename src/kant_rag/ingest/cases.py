@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from pathlib import Path
 
 from kant_rag.ingest.statute import chunk_statute
@@ -45,10 +46,20 @@ def collect_cases(api, topics: list[str], out_path: Path, date_from: str, date_t
     """주제어별 최신 대법원 판례 per_topic 건. 이미 받은 판례는 건너뜀(재시작 가능)."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     seen: set[str] = set()
-    if out_path.exists():
+    good_lines: list[str] = []
+    broken = 0
+    if out_path.exists():  # 중단으로 잘린 줄은 버리고 정상 줄만 유지
         for line in out_path.open(encoding="utf-8"):
-            seen.add(json.loads(line)["prec_id"])
+            try:
+                seen.add(json.loads(line)["prec_id"])
+                good_lines.append(line if line.endswith("\n") else line + "\n")
+            except (ValueError, KeyError):
+                broken += 1
+        if broken:
+            out_path.write_text("".join(good_lines), encoding="utf-8")
+            print(f"[info] 잘린 줄 {broken}개 제거 후 이어서 수집")
     stats = {"topics": len(topics), "new": 0, "skipped_existing": len(seen), "no_summary": 0, "errors": 0}
+    t0 = time.time()
     with out_path.open("a", encoding="utf-8") as f:
         for i, topic in enumerate(topics, 1):
             try:
@@ -87,9 +98,11 @@ def collect_cases(api, topics: list[str], out_path: Path, date_from: str, date_t
                 seen.add(pid)
                 taken += 1
                 stats["new"] += 1
+            f.flush()
             if i % log_every == 0:
-                f.flush()
-                print(f"  {i}/{len(topics)} 주제어, 신규 {stats['new']}건")
+                el = time.time() - t0
+                eta = el / i * (len(topics) - i)
+                print(f"  {i}/{len(topics)} 주제어 · 신규 {stats['new']}건 · 경과 {el / 60:.0f}분 · 남은 예상 {eta / 60:.0f}분")
     return stats
 
 
@@ -104,7 +117,10 @@ def chunk_cases(jsonl_path: Path, meta: DocumentMeta, date_to: str | None = None
     chunks: list[Chunk] = []
     seen_ids: set[str] = set()
     for line_no, line in enumerate(jsonl_path.open(encoding="utf-8"), start=1):
-        c = json.loads(line)
+        try:
+            c = json.loads(line)
+        except ValueError:  # 수집 중단으로 잘린 줄
+            continue
         decided = re.sub(r"\D", "", c.get("decided", ""))
         if date_to and decided and decided > date_to:  # 시험일 이후 판례 제외
             continue

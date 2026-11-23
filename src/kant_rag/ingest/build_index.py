@@ -8,6 +8,7 @@ import time
 from kant_rag.config import Settings
 from kant_rag.ingest.chunker import chunk_text
 from kant_rag.ingest.loader import clean_text, load_pages, read_manifest
+from kant_rag.ingest.statute import chunk_statute
 from kant_rag.schemas import Chunk
 
 
@@ -15,10 +16,18 @@ def build_chunks(settings: Settings) -> list[Chunk]:
     docs = read_manifest(settings.resolve(settings.paths.manifest))
     raw_dir = settings.resolve(settings.paths.raw_dir)
     chunks: list[Chunk] = []
+    missing: list[str] = []
     for meta in docs:
         path = raw_dir / meta.path
         if not path.exists():
-            raise FileNotFoundError(f"{meta.doc_id}: 원문 파일 없음 → {path}")
+            # 아직 수집하지 않은 문서(예: scripts/fetch_law.py 미실행)는 건너뛰고 index_info 에 기록
+            missing.append(meta.doc_id)
+            print(f"[warn] {meta.doc_id}: 원문 파일 없음 → {path} (건너뜀)")
+            continue
+        if meta.doc_type == "statute":
+            text = "\n".join(clean_text(p.text) for p in load_pages(path))
+            chunks.extend(chunk_statute(text, meta, settings.chunking.chunk_size))
+            continue
         for p_idx, page in enumerate(load_pages(path)):
             chunks.extend(
                 chunk_text(
@@ -33,6 +42,7 @@ def build_chunks(settings: Settings) -> list[Chunk]:
     ids = [c.chunk_id for c in chunks]
     if len(ids) != len(set(ids)):
         raise ValueError("청크 ID 충돌")
+    build_chunks.missing = missing  # type: ignore[attr-defined]
     return chunks
 
 
@@ -59,6 +69,7 @@ def build_index(settings: Settings) -> dict:
         "bm25_tokenizer": settings.retrieval.bm25_tokenizer,
         "n_docs": len({c.doc_id for c in chunks}),
         "n_chunks": len(chunks),
+        "missing_docs": getattr(build_chunks, "missing", []),
         "built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "elapsed_s": round(time.perf_counter() - t0, 2),
     }

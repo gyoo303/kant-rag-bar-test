@@ -23,6 +23,22 @@
 | 캐시 | `optimize/cache.py` 정확 일치, 키에 버전·모델·설정·사용자 범위 포함, TTL | `optimization.cache` |
 | 리라이트 | `optimize/rewrite.py` 질문만 입력, 실패 시 원질문 fallback | `optimization.rewrite` |
 
+## 선택형 풀이 (`src/kant_rag/mcq`)
+```
+문항 ─ 진술 분리 (단일형: 보기 ①~⑤ / 조합·개수형: ㄱ~ㅁ)
+     ─ 진술마다 검색 (질의 = 발문 앞부분 + 진술, 구성 A/B/C 동일 적용)
+     ─ 진술별 top-k 근거 합쳐 컨텍스트 (중복 제거)
+     ─ LLM 1회: 진술별 verdict(true/false/unknown) + 근거 조문 ID
+     ─ 규칙으로 정답 결정: 극성(옳은 것/옳지 않은 것) × 형식(단일/조합/개수)
+```
+- LLM 이 번호를 직접 고르지 않으므로 오답 원인을 **검색 누락 → 진술 판단 오류 → 정답 결정** 단계로 나눠 분석할 수 있습니다.
+- 모든 진술이 `unknown` 이면 정답을 내지 않고 `insufficient_evidence`.
+- 정답·허용 근거·진술 라벨은 풀이 입력에 들어가지 않습니다 (`tests/test_mcq.py` 에서 검사).
+
+## 법령 청킹 (`ingest/statute.py`)
+- 조문 단위 청크, ID = `{doc_id}#제750조` (조문 번호 기반 → 청킹 크기와 무관하게 안정적)
+- 편/장/절 경로를 section 으로 보존, 긴 조문은 항(①②…) 경계에서 분할 (`-1`, `-2`)
+
 ## 상태 구분
 `ok` / `insufficient_evidence`(정상적 근거 없음) / `retrieval_error` / `generation_error` / `invalid_citation`
 — 호출 오류를 '올바른 거절'로 세지 않습니다.

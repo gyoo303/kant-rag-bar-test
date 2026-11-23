@@ -2,12 +2,14 @@ import pytest
 from pydantic import ValidationError
 
 from kant_rag.config import ROOT
-from kant_rag.evaluation.dataset import EvalItem, load_evalset
+from kant_rag.evaluation.dataset import EvalItem
 from kant_rag.evaluation.metrics import hit_at_k
+from kant_rag.mcq.io import load_bar_evalset
 
 
-def test_dev_set_loads():
-    assert load_evalset(ROOT / "eval" / "dev.json").split == "dev"
+def test_eval_files_load():
+    assert load_bar_evalset(ROOT / "eval" / "dev.json").split == "dev"
+    assert load_bar_evalset(ROOT / "eval" / "test.json").split == "test"
 
 
 def test_no_answer_requires_empty_evidence():

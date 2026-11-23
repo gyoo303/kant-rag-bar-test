@@ -1,2 +1,9 @@
-doc_id,title,source,license,version,collected_at,path,department
-DOC-SAMPLE-001,[샘플] 가상 반품 정책,가상 문서(팀 작성),팀 자체 작성 - 외부 모델 전송 가능,v1,2026-11-23,sample/return_policy.md,cs
+doc_id,title,source,license,version,collected_at,path,doc_type,department
+LAW-SAMPLE-CIVIL,[샘플] 민법 불법행위 발췌,국가법령정보센터 민법 발췌(동작 확인용 · 원문 대조 전),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,sample,2026-11-23,sample/civil_code_torts.txt,statute,
+LAW-CIVIL,민법,https://www.law.go.kr (scripts/fetch_law.py),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,시험일 기준 시행본(수집 시 기입),,statutes/민법.txt,statute,
+LAW-CIVPRO,민사소송법,https://www.law.go.kr (scripts/fetch_law.py),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,시험일 기준 시행본(수집 시 기입),,statutes/민사소송법.txt,statute,
+LAW-COMM,상법,https://www.law.go.kr (scripts/fetch_law.py),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,시험일 기준 시행본(수집 시 기입),,statutes/상법.txt,statute,
+LAW-CIVEXE,민사집행법,https://www.law.go.kr (scripts/fetch_law.py),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,시험일 기준 시행본(수집 시 기입),,statutes/민사집행법.txt,statute,
+LAW-HOUSE,주택임대차보호법,https://www.law.go.kr (scripts/fetch_law.py),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,시험일 기준 시행본(수집 시 기입),,statutes/주택임대차보호법.txt,statute,
+LAW-SHOP,상가건물 임대차보호법,https://www.law.go.kr (scripts/fetch_law.py),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,시험일 기준 시행본(수집 시 기입),,statutes/상가건물 임대차보호법.txt,statute,
+LAW-PROVREG,가등기담보 등에 관한 법률,https://www.law.go.kr (scripts/fetch_law.py),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,시험일 기준 시행본(수집 시 기입),,statutes/가등기담보 등에 관한 법률.txt,statute,

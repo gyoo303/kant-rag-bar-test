@@ -2,27 +2,6 @@
   "version": "eval-v0.1",
   "split": "dev",
   "frozen": false,
-  "items": [
-    {
-      "id": "DEV-01",
-      "split": "dev",
-      "type": "direct",
-      "question": "개봉한 상품도 반품할 수 있나요?",
-      "expected_facts": ["상품 하자가 있는 경우에만 개봉 상품 반품 가능", "단순 변심 개봉 상품은 반품 불가"],
-      "reference_answer": "개봉 상품은 상품 하자가 있는 경우에만 반품할 수 있고, 단순 변심으로는 반품할 수 없습니다.",
-      "evidence": [
-        {"doc_id": "DOC-SAMPLE-001", "chunk_id": "DOC-SAMPLE-001#02-00", "location": "§ 반품 정책 (가상 샘플 문서) > 2. 개봉 후 반품 / L8-10"}
-      ]
-    },
-    {
-      "id": "DEV-09",
-      "split": "dev",
-      "type": "no_answer",
-      "question": "해외 배송 상품의 관세 환급 절차는?",
-      "expected_facts": [],
-      "reference_answer": "정보 부족 안내",
-      "evidence": [],
-      "no_answer_reason": "문서 범위에 해외 배송·관세 관련 내용이 없음"
-    }
-  ]
+  "items": [],
+  "no_answer": []
 }

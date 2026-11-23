@@ -68,6 +68,13 @@ class Optimization(BaseModel):
     rewrite: RewriteOpt = RewriteOpt()
 
 
+class MCQ(BaseModel):
+    per_statement_k: int = 4
+    stem_chars_in_query: int = 300
+    max_context_chars: int = 16000
+    max_tokens: int = 4096
+
+
 class Models(BaseModel):
     llm_provider: str
     llm_model: str
@@ -83,6 +90,7 @@ class Settings(BaseModel):
     rerank: Rerank
     generation: Generation
     optimization: Optimization
+    mcq: MCQ = MCQ()
     models: Models
 
     def resolve(self, p: Path) -> Path:

@@ -17,8 +17,10 @@ class LoadedPage:
 
 def read_manifest(manifest_path: Path) -> list[DocumentMeta]:
     with manifest_path.open(encoding="utf-8") as f:
-        rows = [DocumentMeta(**{k: (v or None) if k == "department" else v for k, v in r.items()})
-                for r in csv.DictReader(f)]
+        rows = []
+        for r in csv.DictReader(f):
+            r = {k: v for k, v in r.items() if v not in (None, "")}
+            rows.append(DocumentMeta(**r))
     ids = [r.doc_id for r in rows]
     dup = {i for i in ids if ids.count(i) > 1}
     if dup:

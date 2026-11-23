@@ -14,8 +14,9 @@ class DocumentMeta(BaseModel):
     source: str
     license: str
     version: str
-    collected_at: str
+    collected_at: str = ""  # 수집 전이면 빈 값
     path: str
+    doc_type: str = "general"  # statute(법령: 조문 단위 청킹) | case(판례) | general
     department: str | None = None
 
 

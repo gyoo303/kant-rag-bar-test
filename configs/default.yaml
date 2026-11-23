@@ -40,3 +40,10 @@ optimization:
     ttl_seconds: 86400
   rewrite:
     enabled: false
+
+# 변호사시험 선택형 풀이 (src/kant_rag/mcq)
+mcq:
+  per_statement_k: 4         # 진술(보기/ㄱㄴㄷ)마다 검색해 컨텍스트에 넣을 근거 수
+  stem_chars_in_query: 300   # 검색 질의에 붙일 발문(사례) 앞부분 길이
+  max_context_chars: 16000
+  max_tokens: 4096

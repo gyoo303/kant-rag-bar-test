@@ -21,3 +21,8 @@ build/
 
 # agent pipeline run logs
 .pipeline-logs/
+
+# lawqa (05-structure-conventions §7)
+data/*
+!data/MANIFEST.md
+.streamlit/secrets.toml

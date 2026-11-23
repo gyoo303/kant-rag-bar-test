@@ -1,0 +1,65 @@
+[project]
+name = "lawqa"
+version = "0.1.0"
+description = "2026 변호사시험 선택형 민사법 문항 RAG 에이전트 (학습용)"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # LLM 오케스트레이션 (C-01, 02-system-architecture §2)
+    "langchain>=1.5",
+    "langchain-core>=1.8",
+    "langchain-openai>=1.8",
+    "langchain-community>=0.4",
+    "langchain-classic>=1.0",
+    "langchain-postgres",
+    # 저장소 (ADR-006)
+    "psycopg[binary]>=3.2",
+    # 설정 (ADR-003)
+    "python-dotenv>=1.0",
+    # BM25 (ADR-009, 스택 주의 S-02: BM25Retriever는 rank_bm25가 필요)
+    "kiwipiepy>=0.25",
+    "rank-bm25>=0.2.2",
+    # reranker (ADR-010, 스택 주의 S-05: RTX 50 계열은 CUDA 12.8 빌드)
+    "sentence-transformers>=6.3",
+    "torch>=2.7",
+    # 화면 (ADR-012)
+    "streamlit>=1.67",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "lawqa"
+module-root = "src"
+
+# 스택 주의 S-05: PyTorch CUDA 12.8 빌드를 받도록 인덱스 지정 (기본 PyPI는 CPU 빌드)
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128", marker = "sys_platform == 'win32' or sys_platform == 'linux'" }]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live: 실제 OpenAI API·GPU를 쓰는 시험 (기본 게이트에서 제외)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = ["law_collector"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

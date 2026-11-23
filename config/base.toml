@@ -1,0 +1,35 @@
+# 실험 설정 (ADR-003, 04-interfaces-api §6). 커밋 대상이며 내용 해시가 config_sha 로 실행 기록에 남는다.
+
+[models]
+generation = "gpt-6-luna"
+embedding = "text-embedding-3-small"
+embedding_dim = 1536
+reranker = "BAAI/bge-reranker-v2-m3"
+reranker_device = "cuda"
+
+[chunking]
+max_chars = 1500
+overlap_chars = 150
+
+[retrieval]
+n_vec = 20
+n_bm25 = 20
+n_fuse = 20
+k_opt = 4
+rrf_c = 60
+weights = [0.5, 0.5]
+question_list_max = 20
+
+[timeouts]
+generation_s = 60
+rewrite_s = 30
+judge_s = 60
+
+[paths]
+raw_dir = "law_collector/data"   # 판례 prec/*.json(수집기), 민법 law/민법.txt(내려받은 텍스트) (ADR-015)
+eval_dir = "eval"
+results_dir = "results"
+
+[run]
+mode = "C"
+use_rewrite = false

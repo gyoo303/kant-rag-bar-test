@@ -75,3 +75,11 @@ def test_solver_end_to_end_without_answer_leak(settings, monkeypatch):
     # 정답·허용 근거 표기 등 평가용 필드는 풀이 입력에 들어가지 않음
     assert "SENTINEL-EVIDENCE" not in seen["prompt"]
     assert "statement_labels" not in seen["prompt"] and '"answer"' not in seen["prompt"]
+
+
+def test_parse_moj_2026_format():
+    qs = import_exam(FIX / "synthetic_exam_moj.txt", None, "t", "t", "T").items
+    assert [q.number for q in qs] == [1, 2]
+    assert qs[0].form == "combination" and qs[0].polarity == "correct"
+    assert "문 2. 라는 표현" in qs[0].items["ㄴ"]
+    assert qs[1].polarity == "incorrect" and qs[1].options[5] == "마"

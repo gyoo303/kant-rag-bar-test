@@ -10,7 +10,7 @@ from kant_rag.evaluation.dataset import EvidenceRef
 
 CIRCLED = "①②③④⑤"
 Polarity = Literal["correct", "incorrect"]  # "옳은 것은?" / "옳지 않은 것은?"
-Form = Literal["single", "combination", "count"]  # 보기 하나 고르기 / ㄱㄴㄷ 조합 / 옳은 것의 개수
+Form = Literal["single", "combination", "ox", "count"]  # 보기 하나 / ㄱㄴㄷ 조합 / ○× 조합 / 옳은 것의 개수
 
 
 class ExamQuestion(BaseModel):
@@ -42,6 +42,8 @@ class ExamQuestion(BaseModel):
 
     @property
     def form(self) -> Form:
+        if self.items and all("(○)" in o or "(×)" in o for o in self.options.values()):
+            return "ox"
         if self.items and ("몇 개" in self.stem or "개수" in self.stem):
             return "count"
         return "combination" if self.items else "single"

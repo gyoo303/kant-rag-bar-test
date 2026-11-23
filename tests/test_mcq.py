@@ -83,3 +83,22 @@ def test_parse_moj_2026_format():
     assert qs[0].form == "combination" and qs[0].polarity == "correct"
     assert "문 2. 라는 표현" in qs[0].items["ㄴ"]
     assert qs[1].polarity == "incorrect" and qs[1].options[5] == "마"
+
+
+def test_ox_form_and_choice():
+    from kant_rag.mcq.parse import parse_ox
+    from kant_rag.mcq.schemas import ExamQuestion
+
+    opts = {1: "ㄱ(○), ㄴ(○)", 2: "ㄱ(○), ㄴ(×)", 3: "ㄱ(×), ㄴ(○)", 4: "ㄱ(×), ㄴ(×)", 5: "ㄱ(○), ㄴ(○)"}
+    q = ExamQuestion(id="X", number=1, stem="옳은 것(○)과 옳지 않은 것(×)을 올바르게 조합한 것은?",
+                     items={"ㄱ": "a", "ㄴ": "b"}, options=opts)
+    assert q.form == "ox" and parse_ox(opts[2]) == {"ㄱ": True, "ㄴ": False}
+    assert choose_answer(q, {"ㄱ": J("true"), "ㄴ": J("false")})[0] == 2
+
+
+def test_real_exam_file_parses_70():
+    root = Path(__file__).parents[1]
+    qs = import_exam(root / "data/exam/2026_civil.txt", None, "t", "t", "T").items
+    assert [q.number for q in qs] == list(range(1, 71))
+    assert {q.form for q in qs} == {"single", "combination", "ox"}
+    assert all(len(q.options) == 5 for q in qs)

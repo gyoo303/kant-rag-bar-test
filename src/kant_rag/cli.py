@@ -47,11 +47,17 @@ def main(argv: list[str] | None = None) -> None:
     ie.add_argument("--source", default="법무부 공개 문제")
     ie.add_argument("--prefix", default="BAR2026-CIV")
     ie.add_argument("--out", default=None)
+    ie.add_argument("--subjects", default="1-35:민법,36-51:민사소송법,52-70:상법",
+                    help="문항 번호 구간별 과목 (시험지 배치 기준)")
 
     se = sub.add_parser("split-exam", help="문항 JSON → eval/dev.json(8) · eval/test.json(17) · *_extra.json")
     se.add_argument("exam_json")
     se.add_argument("--seed", type=int, default=2026)
     se.add_argument("--force", action="store_true", help="이미 있는 평가셋 덮어쓰기")
+
+    aa = sub.add_parser("apply-answers", help="정답 CSV(number,answer)를 문항 JSON·extra·eval/dev·test 에 반영 (분리 유지)")
+    aa.add_argument("answers_csv")
+    aa.add_argument("--exam-json", default="data/exam/2026_civil.json")
 
     sv = sub.add_parser("solve", help="시험 문항 1개 풀이")
     sv.add_argument("exam_json")
@@ -119,12 +125,21 @@ def main(argv: list[str] | None = None) -> None:
 
         src = Path(args.text_path)
         exam = import_exam(src, Path(args.answers) if args.answers else None, args.exam, args.source, args.prefix)
+        for part in filter(None, args.subjects.split(",")):
+            rng, name = part.split(":")
+            lo, hi = (int(x) for x in rng.split("-"))
+            for q in exam.items:
+                if lo <= q.number <= hi:
+                    q.subject = name
         out = Path(args.out) if args.out else src.with_suffix(".json")
         out.write_text(exam.model_dump_json(indent=2), encoding="utf-8")
         forms: dict[str, int] = {}
+        subjects: dict[str, int] = {}
+        for q in exam.items:
+            subjects[q.subject or "-"] = subjects.get(q.subject or "-", 0) + 1
         for q in exam.items:
             forms[q.form] = forms.get(q.form, 0) + 1
-        print(f"{len(exam.items)}문항 → {out}  형식={forms}  "
+        print(f"{len(exam.items)}문항 → {out}  형식={forms}  과목={subjects}  "
               f"정답 미기입={[q.number for q in exam.items if q.answer is None]}")
         print("⚠ 파싱 결과를 원본과 대조해 발문·보기·subject 를 수정하세요.")
 
@@ -149,6 +164,32 @@ def main(argv: list[str] | None = None) -> None:
                          encoding="utf-8")
         print(f"extra: {len(parts['extra'])}문항 → {extra} (본 평가와 분리)")
         print("다음: 각 문항 type(direct/paraphrase)·evidence 기입, no_answer 문항 작성, test 는 frozen=true")
+
+    elif args.cmd == "apply-answers":
+        import csv as _csv
+
+        from kant_rag.mcq.io import BarEvalSet, Exam
+
+        with open(args.answers_csv, encoding="utf-8-sig") as f:
+            key = {int(r["number"]): int(r["answer"]) for r in _csv.DictReader(f)}
+        exam_path = ROOT / args.exam_json
+        targets = [(exam_path, Exam), (exam_path.with_name(exam_path.stem + "_extra.json"), Exam),
+                   (ROOT / "eval" / "dev.json", BarEvalSet), (ROOT / "eval" / "test.json", BarEvalSet)]
+        for path, model in targets:
+            if not path.exists():
+                continue
+            obj = model.model_validate_json(path.read_text(encoding="utf-8"))
+            if getattr(obj, "frozen", False):
+                print(f"skip (frozen): {path}")
+                continue
+            n = 0
+            for q in obj.items:
+                if q.number in key and q.answer != key[q.number]:
+                    q.answer = key[q.number]
+                    n += 1
+            path.write_text(obj.model_dump_json(indent=2), encoding="utf-8")
+            missing = [q.number for q in obj.items if q.answer is None]
+            print(f"{path.relative_to(ROOT)}: {n}개 반영, 미기입 {missing}")
 
     elif args.cmd == "solve":
         from kant_rag.mcq.io import Exam

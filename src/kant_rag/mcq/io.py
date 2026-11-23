@@ -41,11 +41,26 @@ def import_exam(text_path: Path, answers_csv: Path | None, exam: str, source: st
 
 
 def split_exam(exam: Exam, seed: int = 2026, n_dev: int = 8, n_test: int = 17) -> dict[str, list[ExamQuestion]]:
-    """고정 seed 로 무작위 분리. 결과 파일을 커밋해 고정하고, 이후 재분리하지 않습니다."""
-    pool = sorted(exam.items, key=lambda q: q.number)
+    """고정 seed 로 과목 비례 층화 무작위 분리. 결과 파일을 커밋해 고정하고, 이후 재분리하지 않습니다."""
     rng = random.Random(seed)
-    rng.shuffle(pool)
-    out = {"dev": pool[:n_dev], "test": pool[n_dev:n_dev + n_test], "extra": pool[n_dev + n_test:]}
+    groups: dict[str, list[ExamQuestion]] = {}
+    for q in sorted(exam.items, key=lambda q: q.number):
+        groups.setdefault(q.subject or "-", []).append(q)
+    for g in groups.values():
+        rng.shuffle(g)
+    total = len(exam.items)
+    out: dict[str, list[ExamQuestion]] = {"dev": [], "test": [], "extra": []}
+    # 과목별 할당량: 비율대로 내림 후 남는 자리는 큰 과목부터
+    def quota(n: int) -> dict[str, int]:
+        base = {k: n * len(g) // total for k, g in groups.items()}
+        for k in sorted(groups, key=lambda k: -len(groups[k]))[: n - sum(base.values())]:
+            base[k] += 1
+        return base
+    qd, qt = quota(n_dev), quota(n_test)
+    for k, g in groups.items():
+        out["dev"] += g[: qd[k]]
+        out["test"] += g[qd[k]: qd[k] + qt[k]]
+        out["extra"] += g[qd[k] + qt[k]:]
     for split, qs in out.items():
         for q in qs:
             q.split = split  # type: ignore[assignment]

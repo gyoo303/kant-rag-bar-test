@@ -22,7 +22,10 @@ def _norm(s: str) -> str:
 
 
 # 페이지 머리/꼬리 잡음: '1쪽', '- 3 -', 과목 표제 '민 사 법'
-NOISE = re.compile(r"^[ \t]*(?:\d+[ \t]*쪽|-[ \t]*\d+[ \t]*-|민[ \t]*사[ \t]*법)[ \t]*$", re.M)
+NOISE = re.compile(r"^[ \t]*(?:\d+[ \t]*쪽|-[ \t]*\d+[ \t]*-|민[ \t]*사[ \t]*법|이하부터는[ \t]*여백입니다\.?)[ \t]*$", re.M)
+# ○× 조합형 보기: 'ㄱ(○), ㄴ(×), …'
+OX_PAIR = re.compile(r"([ㄱㄴㄷㄹㅁㅂ])\s*\(\s*([○×Ｏ✕xXoO])\s*\)")
+OX_ONLY = re.compile(r"^(?:\s*[ㄱㄴㄷㄹㅁㅂ]\s*\(\s*[○×Ｏ✕xXoO]\s*\)\s*[,，]?)+\s*$")
 
 
 def parse_exam_text(text: str, id_prefix: str, subject: str | None = None) -> list[ExamQuestion]:
@@ -45,7 +48,7 @@ def parse_exam_text(text: str, id_prefix: str, subject: str | None = None) -> li
                 end = item_marks[k + 1].start() if k + 1 < len(item_marks) else len(head)
                 items[im.group(1)] = _norm(head[im.end(): end])
         # 조합형인데 보기가 'ㄱ, ㄴ' 같은 조합만 있는지 확인 (아니면 ㄱㄴ 은 지문 일부로 간주)
-        if items and not all(COMBO_ONLY.match(v) for v in options.values()):
+        if items and not all(COMBO_ONLY.match(v) or OX_ONLY.match(v) for v in options.values()):
             items, stem = {}, head
 
         out.append(ExamQuestion(id=f"{id_prefix}-{number:03d}", number=number, subject=subject,
@@ -56,3 +59,8 @@ def parse_exam_text(text: str, id_prefix: str, subject: str | None = None) -> li
 def parse_combo(option_text: str) -> set[str]:
     """'ㄱ, ㄷ, ㅁ' → {'ㄱ','ㄷ','ㅁ'}"""
     return set(re.findall(r"[ㄱㄴㄷㄹㅁㅂ]", option_text))
+
+
+def parse_ox(option_text: str) -> dict[str, bool]:
+    """'ㄱ(○), ㄴ(×)' → {'ㄱ': True, 'ㄴ': False}"""
+    return {k: v in "○ＯoO" for k, v in OX_PAIR.findall(option_text)}

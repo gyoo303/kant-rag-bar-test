@@ -12,7 +12,7 @@ import time
 
 from kant_rag.config import Settings
 from kant_rag.generation.llm import get_chat_model
-from kant_rag.mcq.parse import parse_combo
+from kant_rag.mcq.parse import parse_combo, parse_ox
 from kant_rag.mcq.prompts import MCQ_SYSTEM, MCQ_USER
 from kant_rag.mcq.schemas import ExamQuestion, StatementJudgment
 from kant_rag.retrieval.pipeline import RetrievalMode, Retriever
@@ -48,6 +48,13 @@ def choose_answer(q: ExamQuestion, judgments: dict[str, StatementJudgment]) -> t
             s = 1.0
             for key in q.items:
                 s *= _support(judgments.get(key), target if key in chosen else not target)
+            scores[n] = s
+    elif q.form == "ox":
+        for n, text in q.options.items():
+            labels = parse_ox(text)
+            s = 1.0
+            for key in q.items:
+                s *= _support(judgments.get(key), labels[key]) if key in labels else 0.5
             scores[n] = s
     else:  # count
         expected = sum(_support(judgments.get(k), target) for k in q.items)

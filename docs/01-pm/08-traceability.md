@@ -92,21 +92,21 @@
 |---|---|---|---|---|
 | CRT-01 업무 문제·적용 범위 | PM, 사람 | US-01, AC-01-1, 03-domain §1~2 | `docs/problem.md` | 정의됨 |
 | CRT-02 성공·평가 기준 | PM | US-02, AC-02-1~2, D-007, Q-007·Q-008 | 성공 기준 파일, 고정 커밋 | 정의됨 |
-| CRT-03 문서 처리·메타데이터 | ARCH, DB, BE | US-05, AC-05-1~4 | 전처리 코드, 색인 기록 | Architect로 이관 |
-| CRT-04 하이브리드 검색 | ARCH, BE | US-06, US-07, AC-06-1, AC-07-1~2 | A/B 코드·검색 기록 | Architect로 이관 |
-| CRT-05 re-ranking | ARCH, BE | US-08, AC-08-1~2 | reranker 코드, 전후 순위 | Architect로 이관 |
-| CRT-06 근거 기반 응답 | ARCH, BE, FE | US-09, US-11, AC-09-1~8, AC-11-1~3, SCR-01 | 원본 답변·인용, 오류 실행 | Architect로 이관 |
-| CRT-07 캐싱 또는 리라이트 | ARCH, BE | US-10, AC-10-1~3, AC-13-1, D-005 | 리라이트 20건, 원질의·변환 질의 | Architect로 이관 |
-| CRT-08 평가셋·비교 실험 | PM, QA, 사람 | US-04, US-12, US-13, US-14, AC-04-1~4, AC-13-1~4, AC-14-1~4 | 고정 평가셋, 80건 원본·지표 | 정의됨(평가셋 규칙) / Architect로 이관(실행·지표) |
+| CRT-03 문서 처리·메타데이터 | ARCH, DB, BE | US-05, AC-05-1~4 | 전처리 코드, 색인 기록 | Architect로 이관 → ADR-006·007, ENT-01~05, 03-db-schema §3·§4, SEQ-01·02, GATE-10, TKT-BE-M2-01·02, TKT-DB-M2-01·02 |
+| CRT-04 하이브리드 검색 | ARCH, BE | US-06, US-07, AC-06-1, AC-07-1~2 | A/B 코드·검색 기록 | Architect로 이관 → ADR-009·011, SEQ-03, TKT-BE-M2-04 |
+| CRT-05 re-ranking | ARCH, BE | US-08, AC-08-1~2 | reranker 코드, 전후 순위 | Architect로 이관 → ADR-010, SEQ-03, TKT-BE-M3-01 |
+| CRT-06 근거 기반 응답 | ARCH, BE, FE | US-09, US-11, AC-09-1~8, AC-11-1~3, SCR-01 | 원본 답변·인용, 오류 실행 | Architect로 이관 → ADR-004·013, 04-interfaces-api §1.4·§4·§5.1, PAGE-01, TKT-BE-M3-02·03, TKT-FE-M3-01 |
+| CRT-07 캐싱 또는 리라이트 | ARCH, BE | US-10, AC-10-1~3, AC-13-1, D-005 | 리라이트 20건, 원질의·변환 질의 | Architect로 이관 → D-005, 04-interfaces-api §5.2, SEQ-03, TKT-BE-M3-04 |
+| CRT-08 평가셋·비교 실험 | PM, QA, 사람 | US-04, US-12, US-13, US-14, AC-04-1~4, AC-13-1~4, AC-14-1~4 | 고정 평가셋, 80건 원본·지표 | 정의됨(평가셋 규칙) / Architect로 이관 → ADR-014, ENT-06~09, SEQ-04~06, GATE-11, TKT-BE-M3-05·M4-01·M4-02 |
 | CRT-09 도입 판단·한계 | 사람, QA | US-15, AC-15-1~2 | `report.md` | 사람 |
-| CRT-10 보안·데이터 이용 | ARCH, 사람 | US-01, US-17, AC-17-1, NFR-08, INV-04, INV-09 | 이용 조건 기록, 키 관리, 누출 점검 | Architect로 이관 |
+| CRT-10 보안·데이터 이용 | ARCH, 사람 | US-01, US-17, AC-17-1, NFR-08, INV-04, INV-09 | 이용 조건 기록, 키 관리, 누출 점검 | Architect로 이관 → ADR-003·007, 05-structure-conventions §5·§7·§8, GATE-06·09 |
 | CRT-11 협업·재현·시연 | 사람, QA | US-16, US-17, AC-16-1~2, AC-17-1~2, 07-screens §6, D-006 | README, 재실행 기록, 태그, 시연 | 사람 |
 | CRT-12 성공 기준 사전 합의 | PM | US-02, D-007 | 성공 기준 파일 | 정의됨 |
 | CRT-13 30문항 정답·근거·분리 | PM, 사람 | US-04, US-12, AC-04-1~4, AC-12-2 | `eval/` | 정의됨 |
-| CRT-14 출처·원문 위치·재생성 | ARCH, DB, BE | US-05, AC-05-1~3 | 색인 기록 | Architect로 이관 |
-| CRT-15 결합·re-ranking 구현 검증 | BE, QA | US-07, US-08, AC-07-1, AC-08-1~2 | 전후 후보 기록 | Architect로 이관 |
-| CRT-16 출처·근거 부족·최적화 흐름 검증 | BE, QA | US-09, US-10, AC-09-3~6, AC-10-2 | 정상·실패 실행 기록 | Architect로 이관 |
-| CRT-17 60건·분기 실험 기록 | QA, 사람 | US-13, AC-13-1~3, NFR-05 | `results/` | Architect로 이관 |
+| CRT-14 출처·원문 위치·재생성 | ARCH, DB, BE | US-05, AC-05-1~3 | 색인 기록 | Architect로 이관 → 03-db-schema §3·§4, ADR-007, TKT-DB-M2-01 |
+| CRT-15 결합·re-ranking 구현 검증 | BE, QA | US-07, US-08, AC-07-1, AC-08-1~2 | 전후 후보 기록 | Architect로 이관 → ADR-009·010, AC-07·08 시험, TKT-BE-M2-04·M3-01 |
+| CRT-16 출처·근거 부족·최적화 흐름 검증 | BE, QA | US-09, US-10, AC-09-3~6, AC-10-2 | 정상·실패 실행 기록 | Architect로 이관 → ADR-004·013, SEQ-03, TKT-BE-M3-03·04, TKT-QA-M3-01 |
+| CRT-17 60건·분기 실험 기록 | QA, 사람 | US-13, AC-13-1~3, NFR-05 | `results/` | Architect로 이관 → ADR-014, 03-db-schema §5 RunRecord, TKT-BE-M3-05, TKT-QA-M4-01 |
 | CRT-18 검색·생성 실패 구분, 채점 검토 | QA, 사람 | US-14, US-15, AC-14-1, AC-14-3, D-006 | 채점 기록(LLM·사람 분리) | 사람 |
 | CRT-19 비밀정보 제외·태그·타인 재현 | QA, 사람 | US-16, US-17, AC-16-1, AC-17-1 | 재실행 기록, 태그 | 사람 |
 | CRT-20 기여·검증·리뷰 근거 | 사람 | US-17, D-006 | `contributions.md`, PR·리뷰 기록 | 사람 |

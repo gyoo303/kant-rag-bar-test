@@ -41,7 +41,7 @@
 
 **TKT-BE-M1-01: 프로젝트 골격**
 - 읽을 것: AGENTS.md, ADR-003, ADR-005, 02-system-architecture §2, 04-interfaces-api §1.1·§3·§6·§11, 05-structure-conventions §1·§4·§6·§7·§8
-- 산출: `pyproject.toml`, `uv.lock`, `.python-version`, `.gitignore`, `.env.example`, `config/base.toml`, `config/{A,B,C,C+R}.toml`, `data/raw/.gitkeep`, `src/lawqa/__init__.py`, `src/lawqa/__main__.py`, `src/lawqa/shared/{__init__,clock,settings,versioning,logging_setup}.py`, `src/lawqa/entrypoints/{__init__,cli}.py`(명령 그룹 뼈대, 아직 동작 없는 명령은 "미구현" 종료 코드 1), 각 모듈 패키지 `__init__.py`, `tests/unit/shared/test_settings.py`, `docs/04-backend/briefing.md`
+- 산출: `pyproject.toml`, `uv.lock`, `.python-version`, `.gitignore`, `.env.example`, `config/base.toml`, `config/{A,B,C,C+R}.toml`, `src/lawqa/__init__.py`, `src/lawqa/__main__.py`, `src/lawqa/shared/{__init__,clock,settings,versioning,logging_setup}.py`, `src/lawqa/entrypoints/{__init__,cli}.py`(명령 그룹 뼈대, 아직 동작 없는 명령은 "미구현" 종료 코드 1), 각 모듈 패키지 `__init__.py`, `tests/unit/shared/test_settings.py`, `docs/04-backend/briefing.md`
 - 완료 조건: GATE-01(db init 제외: `--help`), GATE-03, GATE-04, GATE-05, GATE-06. `Settings.config_sha`가 구성 파일이 바뀌면 바뀜. PyTorch는 S-05대로 CUDA 인덱스 지정
 - 하지 말 것: 허용 목록 밖 패키지 추가, 비밀값 기본값
 
@@ -76,14 +76,14 @@
 - 하지 말 것: git 태그 생성(사람이 함)
 
 **TKT-BE-M2-01: corpus 도메인·청킹**
-- 읽을 것: AGENTS.md, ADR-007, 03-db-schema §3·§4·§8, 04-interfaces-api §1.2
-- 산출: `src/lawqa/corpus/domain/{models,chunking,errors,ports}.py`, `src/lawqa/corpus/infrastructure/{jsonl_reader,kiwi_tokenizer}.py`, `tests/unit/corpus/test_source_document.py`, `test_chunking.py`, `test_jsonl_reader.py`, `docs/04-backend/briefing.md`
-- 완료 조건: 판시사항·판결요지 `[n]` 묶음, 번호 없음, 조문 항 분할, `location` 형식(03-db-schema §4 예와 같음), 형식 오류 줄 → `ImportIssue`(AC-05-4 도메인 부분), GATE-02·04
+- 읽을 것: AGENTS.md, ADR-015, 03-db-schema §3·§4·§8, 04-interfaces-api §1.2, `law_collector/README.md`(출력 구조 참고)
+- 산출: `src/lawqa/corpus/domain/{models,chunking,text_clean,errors,ports}.py`, `src/lawqa/corpus/infrastructure/{collector_reader,kiwi_tokenizer}.py`, `tests/unit/corpus/test_source_document.py`, `test_text_clean.py`, `test_chunking.py`, `test_collector_reader.py`, `docs/04-backend/briefing.md`
+- 완료 조건: `PrecService`·법령 응답 변환(민법만, `전문` 제외, 항·호·목 이어 붙임, dict/list 정규화), 날짜 3형식, HTML 정제, 범위 밖·빈 본문·날짜 오류 → `ImportIssue`(AC-05-4 도메인 부분), 판시사항·판결요지 `[n]` 묶음, `location` 형식(03-db-schema §4), GATE-02·04. 실제 수집 파일이 있으면 필드 경로를 확인하고 브리핑에 적는다
 - 하지 말 것: DB 코드
 
 **TKT-DB-M2-01: 원문·청크·판본·이슈 저장소**
 - 읽을 것: AGENTS.md, ADR-006, 03-db-schema §3·§7, 04-interfaces-api §10
-- 산출: `src/lawqa/corpus/infrastructure/{pg_documents,pg_chunks,pg_index}.py`, `tests/integration/db/test_corpus_repositories.py`, `tests/fixtures/raw/{precedents_sample,statutes_sample,broken}.jsonl`, `docs/03-db/briefing.md`
+- 산출: `src/lawqa/corpus/infrastructure/{pg_documents,pg_chunks,pg_index}.py`, `tests/integration/db/test_corpus_repositories.py`, `tests/fixtures/raw/prec/*.json`, `tests/fixtures/raw/law/{민법,상법}.json`, `tests/fixtures/raw/broken/prec/*.json`(03-db-schema §8), `docs/03-db/briefing.md`
 - 완료 조건: upsert 멱등, `replace_for_version` 교체, 행 → 도메인 변환, GATE-04b·08, AC-05-3(같은 입력 두 번 → 같은 청크 ID 집합)
 - 하지 말 것: 커밋을 저장소 안에서 호출
 
@@ -94,7 +94,7 @@
 - 하지 말 것: 우리 schema.sql에 벡터 표 추가
 
 **TKT-BE-M2-02: 가져오기·색인 서비스**
-- 읽을 것: AGENTS.md, ADR-007, 04-interfaces-api §2·§3 API-02·03·SEQ-01·02·§9.2, CR-002(change-requests.md)
+- 읽을 것: AGENTS.md, ADR-015, 04-interfaces-api §2·§3 API-02·03·SEQ-01·02·§9.2
 - 산출: `src/lawqa/corpus/application/{import_service,index_service,chunk_query_service}.py`, `src/lawqa/corpus/infrastructure/__init__.py`(`build_*`), cli.py(corpus import/index), `tests/unit/corpus/test_index_service.py`(가짜 저장소), `docs/04-backend/briefing.md`
 - 완료 조건: AC-05-1·2·4, GATE-10 출력 형식, 재실행 시 같은 판본 "이미 있음", GATE-04
 - 하지 말 것: 수집(HTTP) 코드
@@ -170,7 +170,7 @@
 **TKT-FE-M5-01: README**
 - 읽을 것: AGENTS.md, 05-structure-conventions §1·§2, 04-interfaces-api §3, 06-quality-gates GATE-01, docs/06-qa/briefing-TKT-QA-M4-01.md
 - 산출: `README.md`, `docs/05-frontend/briefing-TKT-FE-M5-01.md`
-- 목차(IC-15): 1. 소개(문제·범위, "작은 평가셋 검증" 문장, C-12) 2. 구조도(05 §2 원본) 3. 준비물(uv, Docker Desktop, OpenAI 키, GPU 선택) 4. 설치(`uv sync`, `.env`, `docker compose up -d db`, `db init`) 5. 데이터 준비(`data/raw` 형식 ADR-007, `data/MANIFEST.md`) 6. 색인(`corpus import`, `corpus index`) 7. 실행(`ask`, Streamlit) 8. 평가 재현(`eval freeze/run/grade/review/metrics`, 결과 위치) 9. 대표 사례 재실행(정상 1·근거 없음 1) 10. 한계와 데이터 이용 조건
+- 목차(IC-15): 1. 소개(문제·범위, "작은 평가셋 검증" 문장, C-12) 2. 구조도(05 §2 원본) 3. 준비물(uv, Docker Desktop, OpenAI 키, GPU 선택) 4. 설치(`uv sync`, `.env`, `docker compose up -d db`, `db init`) 5. 데이터 준비(`law_collector` 실행 요약과 출력 위치 ADR-015, `data/MANIFEST.md`) 6. 색인(`corpus import`, `corpus index`) 7. 실행(`ask`, Streamlit) 8. 평가 재현(`eval freeze/run/grade/review/metrics`, 결과 위치) 9. 대표 사례 재실행(정상 1·근거 없음 1) 10. 한계와 데이터 이용 조건
 - 완료 조건: AC-16-1을 README 명령만으로 수행 가능(QA-M5-01이 확인)
 
 **TKT-QA-M5-01: 재현·제출 점검**
@@ -181,7 +181,7 @@
 ## 3. 사람이 할 일 (티켓 아님)
 | 시점 | 할 일 | 근거 |
 |---|---|---|
-| M1 전 | `data/raw/precedents/*.jsonl`, `data/raw/statutes/*.jsonl` 준비(ADR-007 형식), `data/MANIFEST.md` 작성 | ADR-007, CR-002 |
+| M1 전 | `law_collector`로 대법원 민사 판례 본문(`data/prec/`)과 민법(`python collect.py laws 민법`) 수집, `data/MANIFEST.md` 작성. 실제 판례 파일 1~2개를 BE-M2-01 전에 제공 | ADR-015 |
 | M1 | `docs/problem.md`, `eval/success_criteria.json`(D-007) → `eval freeze --stage criteria` → 커밋·태그 `freeze-criteria` | US-01·02 |
 | M1 | `eval/SCHEMA.md`, `eval/dev.json`·`test.json` 30문항(DOC-04·05) | US-04 |
 | M3 끝 | dev로 설정 확정 → `eval freeze --stage final` → 커밋·태그 `freeze-final` | US-12 |
@@ -200,11 +200,11 @@
 | AQ-007 | 03-db-schema §4 `location` |
 | AQ-008 | 04-interfaces-api §10, 06-quality-gates §3 |
 | AQ-009 | ADR-006, 05-structure-conventions §1·§7 |
-| AQ-010 | ADR-003, ADR-007(OPEN API 인증 값 불필요), 05 §8 |
+| AQ-010 | ADR-003, ADR-015(수집은 law_collector, RAG 코드는 OPEN API 인증 값 불필요), 05 §8 |
 | AQ-011 | 03-db-schema §5 |
 | AQ-012 | ADR-014, SEQ-06, §9.3 |
 | AQ-013 | 04-interfaces-api §5.2, SEQ-03 |
-| AQ-014 | ADR-007(별도 수집, 사용자 지시) |
+| AQ-014 | ADR-015(law_collector 별도 수집) |
 | AQ-015 | ADR-011 |
 
 ## 5. 구현 계약 체크리스트 (A8-1)

@@ -14,13 +14,14 @@
 | 클래스 | 생성 인자·검증 | 메서드 | INV |
 |---|---|---|---|
 | `DocumentKind(StrEnum)` | `STATUTE_ARTICLE`, `PRECEDENT` | | |
-| `SourceDocument` (frozen dataclass) | `doc_id: str`, `kind`, `title: str`, 판례 필드(`case_number`, `decided_on: date \| None`, `court`, `case_type`, `holdings`, `summary`, `referenced_articles`), 조문 필드(`law_name`, `article_no: int \| None`, `article_branch_no: int`, `article_title`, `body`, `effective_on`), `source_file: str`, `source_line: int`, `content_sha: str`. 판례는 `holdings` 또는 `summary` 필수, 조문은 `body`·`article_no` 필수, 아니면 `InvalidSourceDocumentError` | `@classmethod from_precedent_record(rec: dict, source_file: str, line: int) -> SourceDocument`, `@classmethod from_statute_record(...)` (필드 이름은 ADR-007 계약) | INV-02 |
+| `SourceDocument` (frozen dataclass) | `doc_id: str`, `kind`, `title: str`, 판례 필드(`case_number`, `decided_on: date \| None`, `court`, `case_type`, `holdings`, `summary`, `referenced_articles`), 조문 필드(`law_name`, `article_no: int \| None`, `article_branch_no: int`, `article_title`, `body`, `effective_on`), `source_file: str`, `source_line: int`, `content_sha: str`. 판례는 `holdings` 또는 `summary` 필수, 조문은 `body`·`article_no` 필수, 아니면 `InvalidSourceDocumentError` | `@classmethod from_prec_service(obj: dict, source_file: str) -> SourceDocument` (`PrecService` 응답, 선별·매핑·날짜 규칙 ADR-015), `@staticmethod statute_articles_from_law_service(obj: dict, source_file: str) -> list[SourceDocument]` (민법만, `조문여부=조문`만, 항·호·목 이어 붙임, ADR-015). 범위 밖이면 `OutOfScopeError`(InvalidSourceDocumentError 하위) | INV-02 |
 | `SourceLocation` (frozen) | `text: str` 비어 있지 않음 | `@staticmethod for_article(no: int, branch: int, paragraph_range: str \| None) -> SourceLocation`, `@staticmethod for_precedent(decided_on: date, case_number: str, item_no: int \| None)` | INV-02 |
 | `Chunk` (frozen) | `index_version`, `chunk_id`, `doc_id`, `kind`, `section: Literal["ARTICLE","HOLDING"]`, `seq >= 1`, `location: SourceLocation`, `text` 비어 있지 않음, `referenced_articles: str \| None`, `bm25_tokens: tuple[str, ...]` | | INV-02 |
 | `ChunkingPolicy` (frozen) | `max_chars > 0`, `overlap_chars >= 0`, `overlap_chars < max_chars` | `split(doc: SourceDocument, index_version: str, tokenize: Callable[[str], list[str]]) -> list[Chunk]` (03-db-schema §4 규칙, 순수 함수) | INV-02 |
+| `text_clean.clean_text` (함수, `corpus/domain/text_clean.py`) | — | `clean_text(s: str | None) -> str`: HTML 태그 제거·`<br>`→줄바꿈·엔티티 해제·공백 정리(ADR-015) | INV-02 |
 | `IndexVersion` (frozen) | `index_version`, `corpus_version`, `max_chars`, `overlap_chars`, `embedding_model`, `embedding_dim`, `doc_count`, `chunk_count`, `skipped_count`, `complete`, `created_at` | `@staticmethod compute_id(corpus_version: str, policy: ChunkingPolicy, embedding_model: str, embedding_dim: int) -> str` | INV-11 |
 | `ImportIssue` (frozen) | `source_file`, `source_line >= 1`, `reason` | | REJ-06 |
-- 계약(`corpus/domain/ports.py`, Protocol): `SourceDocumentRepository`, `ChunkRepository`, `IndexVersionRepository`, `ImportIssueRepository`, `VectorIndex`, `Tokenizer(Protocol): def __call__(self, text: str) -> list[str]` — 시그니처는 03-db-schema §7.
+- 계약(`corpus/domain/ports.py`, Protocol): `CollectorReader`(`iter_prec_files(raw_dir) -> Iterator[tuple[str, dict]]`, `read_law(raw_dir, name="민법") -> tuple[str, dict] | None`, `list_law_files(raw_dir) -> list[str]`; 구현 `corpus/infrastructure/collector_reader.py`), `SourceDocumentRepository`, `ChunkRepository`, `IndexVersionRepository`, `ImportIssueRepository`, `VectorIndex`, `Tokenizer(Protocol): def __call__(self, text: str) -> list[str]` — 시그니처는 03-db-schema §7.
 
 ### 1.3 `lawqa.retrieval.domain`
 | 클래스 | 생성 인자·검증 | 메서드 | INV |
@@ -91,7 +92,7 @@
 | API | 명령 | 인자 | 출력 | 종료 코드 | 관련 US/AC |
 |---|---|---|---|---|---|
 | API-01 | `db init` | — | 스키마·확장 생성 결과 | 0 성공 / 2 DB 연결 실패 | US-05 |
-| API-02 | `corpus import` | `--raw-dir data/raw` | 가져온 수·건너뛴 수·`corpus_version` | 0(건너뜀 있어도 0, 경고 출력) / 2 | US-05, AC-05-4 |
+| API-02 | `corpus import` | `--raw-dir law_collector/data` (기본값은 설정) | 가져온 수·건너뛴 수(사유별)·무시한 범위 밖 법령 파일·`corpus_version` | 0(건너뜀 있어도 0, 경고 출력) / 2 | US-05, AC-05-4 |
 | API-03 | `corpus index` | `--config base` | `index_version=… chunks=… embeddings=… skipped=… complete=true 또는 false` 한 줄 | 0 / 2(임베딩 호출 실패) | US-05, AC-05-1~3 |
 | API-04 | `check smoke` | — | 생성 1건·임베딩 1건(모델명·버전·성공), GPU 재정렬 1건 지연, BM25·벡터 시험 출력 | 0 / 2 | US-03, AC-03-1~2 |
 | API-05 | `ask` | `--config A\|B\|C\|C+R --file item.json` | `AnswerEnvelope` JSON | 0(오류 결과도 0, 결과 종류로 표시) | US-09, US-10 |
@@ -161,7 +162,7 @@ rewrite_s = 30
 judge_s = 60
 
 [paths]
-raw_dir = "data/raw"
+raw_dir = "law_collector/data"   # 수집기 출력: prec/*.json, law/민법.json (ADR-015)
 eval_dir = "eval"
 results_dir = "results"
 ```
@@ -183,7 +184,7 @@ results_dir = "results"
 ## 8. 실행 흐름 (SEQ)
 
 ### SEQ-01 가져오기 (`corpus import`)
-`CLI → ImportService.import_files → (파일마다) JSONL 줄 읽기 → SourceDocument.from_*_record → 성공: 모아 PgSourceDocumentRepository.upsert_many / 실패: ImportIssue 모음 → 파일 트랜잭션 커밋 → corpus_version = 전체 content_sha 정렬 해시 → ImportReport 출력`
+`CLI → ImportService.import_files(raw_dir) → ① prec/*.json 파일마다 CollectorReader.read_prec → clean_text → SourceDocument.from_prec_service (범위 밖·빈 본문·날짜 오류 → ImportIssue) ② law/민법.json → SourceDocument.statute_articles_from_law_service (다른 법령 파일은 이름만 보고에 기록) → 성공 문서를 500건 묶음으로 PgSourceDocumentRepository.upsert_many(묶음 = 트랜잭션 1) → corpus_version = 전체 content_sha 정렬 해시 → ImportReport 출력`
 
 ### SEQ-02 색인 (`corpus index`)
 `CLI → IndexService.build_index → IndexVersion.compute_id → 같은 id가 complete=true면 "이미 있음" 종료 → index_versions 저장(complete=false) → 문서 순회 ChunkingPolicy.split(Kiwi 토큰화) → PgChunkRepository.replace_for_version → PgVectorIndex.add_chunks(100개씩, OpenAI 임베딩; 실패 시 RetrievalFailedError로 중단, 재실행 시 컬렉션 삭제 후 다시) → 임베딩 수 = 청크 수 확인 → mark_complete(skipped = import_issues 수)`

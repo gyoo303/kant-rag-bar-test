@@ -13,9 +13,10 @@
 ├── config/
 │   ├── base.toml                  # 04-interfaces-api §6
 │   └── A.toml  B.toml  C.toml  C+R.toml
-├── data/                          # 커밋 안 함(단 MANIFEST.md, raw/.gitkeep 커밋)
-│   ├── MANIFEST.md                # 사람: 수집 방법·파일 버전·재생성 명령
-│   └── raw/precedents/*.jsonl  raw/statutes/*.jsonl
+├── law_collector/                 # 파이프라인 밖 수집 도구(사람·팀). 출력 data/prec/, data/law/는 커밋 안 함(자체 .gitignore)
+│   └── data/prec/*.json  data/law/민법.json   # 가져오기 입력(ADR-015)
+├── data/                          # MANIFEST.md만 커밋
+│   └── MANIFEST.md                # 사람: 수집 방법·파일 버전·재생성 명령
 ├── eval/                          # 커밋, evaluation 모듈만 읽음
 │   ├── SCHEMA.md  dev.json  test.json  success_criteria.json  FREEZE.json
 ├── results/<run_id>/              # 커밋: run.json records.jsonl grades.jsonl review.csv metrics.csv
@@ -27,9 +28,9 @@
 │   │   ├── __init__.py  clock.py  settings.py  versioning.py  logging_setup.py
 │   │   └── db.py                  # psycopg 연결 팩토리(DB)
 │   ├── corpus/
-│   │   ├── domain/       __init__.py models.py chunking.py errors.py ports.py
+│   │   ├── domain/       __init__.py models.py chunking.py text_clean.py errors.py ports.py
 │   │   ├── application/  __init__.py import_service.py index_service.py chunk_query_service.py
-│   │   └── infrastructure/ __init__.py schema.sql jsonl_reader.py pg_documents.py pg_chunks.py pg_index.py vector_index.py kiwi_tokenizer.py
+│   │   └── infrastructure/ __init__.py schema.sql collector_reader.py pg_documents.py pg_chunks.py pg_index.py vector_index.py kiwi_tokenizer.py
 │   ├── retrieval/
 │   │   ├── domain/       __init__.py models.py decomposer.py errors.py ports.py
 │   │   ├── application/  __init__.py retrieval_service.py
@@ -121,7 +122,7 @@ flowchart TB
 | S-10 | `bge-reranker-v2-m3` 첫 다운로드 약 2.3GB → Hugging Face 캐시(저장소 밖) | huggingface.co/BAAI/bge-reranker-v2-m3(조사) |
 
 ## 7. 버전 관리 제외 (`.gitignore`, BE 골격 티켓)
-`.venv/`, `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.ruff_cache/`, `.env`, `data/*`(예외 `!data/MANIFEST.md`, `!data/raw/`, `data/raw/*`, `!data/raw/.gitkeep`), `.streamlit/secrets.toml`. `eval/`·`results/`는 커밋 대상.
+`.venv/`, `__pycache__/`, `*.pyc`, `.pytest_cache/`, `.ruff_cache/`, `.env`, `data/*`(예외 `!data/MANIFEST.md`). `law_collector/`의 수집 결과는 그 폴더의 `.gitignore`가 이미 제외, `.streamlit/secrets.toml`. `eval/`·`results/`는 커밋 대상.
 
 ## 8. 환경변수 (`.env.example`, 이름과 용도만)
 - `OPENAI_API_KEY` — 생성·리라이트·채점·임베딩
@@ -129,3 +130,6 @@ flowchart TB
 - `DATABASE_URL` — 형식 `postgresql://lawqa:<POSTGRES_PASSWORD>@localhost:5432/lawqa` (로컬 Docker)
 - `DATABASE_URL_TEST` — 시험용 `lawqa_test`
 - `HF_HOME` — (선택) reranker 모델 캐시 위치
+
+## 개정
+- 2026-11-23: ADR-015(수집기 출력 가져오기)로 트리·제외 목록 세부 수정(§2-8 ②): `law_collector/` 추가, `data/raw` 제거, `text_clean.py`·`collector_reader.py`.

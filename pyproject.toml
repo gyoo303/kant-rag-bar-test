@@ -1,0 +1,37 @@
+[project]
+name = "civil-rag"
+version = "0.1.0"
+description = "변호사시험 민사법 판례·조문 기반 Knowledge Agent (프로젝트 3 RAG)"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+# 교안 「RAG 파이프라인 설계」 스택. 버전은 uv.lock 으로 고정.
+dependencies = [
+    "langchain",
+    "langchain-core",
+    "langchain-community",
+    "langchain-classic",
+    "langchain-openai",
+    "langchain-text-splitters",
+    "langchain-postgres",
+    "psycopg[binary,pool]",
+    "python-dotenv",
+    "rank-bm25",
+    "sentence-transformers",
+    "ragas",
+    "datasets",
+    "pandas",
+    "streamlit",
+]
+
+[project.scripts]
+civil-rag = "civil_rag.cli:main"
+
+[dependency-groups]
+dev = [
+    "ipykernel",
+    "pytest",
+]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.13"]
+build-backend = "uv_build"

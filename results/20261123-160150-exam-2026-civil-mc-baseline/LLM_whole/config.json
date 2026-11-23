@@ -1,0 +1,62 @@
+{
+  "batch_id": "20261123-160150-exam-2026-civil-mc-baseline",
+  "exam_id": "2026-civil-mc",
+  "exam_file": "exams\\2026-civil-mc.json",
+  "run_config": "LLM",
+  "strategy": "whole",
+  "n_items": 70,
+  "started_at": "2026-11-23T16:01:50",
+  "settings": {
+    "llm_model": "gpt-6-luna",
+    "llm_temperature": null,
+    "embedding_model": "text-embedding-3-small",
+    "reranker_model": "Dongjin-kr/ko-reranker",
+    "vector_backend": "pgvector",
+    "index_version": "v1",
+    "collection": "civil_precedents_v1",
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "first_stage_k": 20,
+    "final_k": 5,
+    "ensemble_weights": [
+      0.5,
+      0.5
+    ],
+    "rrf_c": 60,
+    "bm25_tokenizer": "whitespace",
+    "min_vector_similarity": null,
+    "min_rerank_score": null
+  },
+  "index_manifest": {
+    "built_at": "2026-11-23T15:46:46",
+    "index_version": "v1",
+    "collection": "civil_precedents_v1",
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "filters": {
+      "limit": 300,
+      "court": "대법원",
+      "keywords": [],
+      "ids_file": null,
+      "laws": "all"
+    },
+    "prec_docs": 300,
+    "prec_chunks": 4144,
+    "laws": [
+      "민법"
+    ],
+    "law_chunks": 1193,
+    "total_chunks": 5337,
+    "source": "법제처 국가법령정보센터 (open.law.go.kr)",
+    "vector_index": {
+      "backend": "memory",
+      "num_added": 5337,
+      "path": "C:\\Users\\qodba\\Documents\\civil-law-rag\\data\\index\\memory_store.json",
+      "indexed_at": "2026-11-23T15:47:37"
+    }
+  },
+  "git": {
+    "commit": "HEAD",
+    "dirty": true
+  }
+}

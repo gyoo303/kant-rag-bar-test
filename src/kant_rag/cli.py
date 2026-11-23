@@ -85,16 +85,41 @@ def main(argv: list[str] | None = None) -> None:
         from kant_rag.ingest.lawapi import LawAPI
 
         api = LawAPI()
-        info = api.find_law("민법", settings.corpus.law_date)
-        print("법령 검색 OK:", {k: info.get(k) for k in ("법령명한글", "법령일련번호", "시행일자", "공포일자")})
-        text = api.law_text(info["법령일련번호"])
-        print(f"법령 본문 OK: {len(text.splitlines())}행, 예) {[l for l in text.splitlines() if l.startswith('제750조')][:1]}")
-        hits = api.search_precs("표현대리", settings.corpus.case_date_from, settings.corpus.case_date_to, display=3)
-        print(f"판례 검색 OK: {len(hits)}건, 필드={sorted(hits[0]) if hits else '-'}")
-        if hits:
-            d = api.prec(str(hits[0].get("판례일련번호")))
-            print("판례 상세 필드:", sorted(d))
-            print("판결요지 앞부분:", str(d.get("판결요지", ""))[:120])
+
+        def probe(label: str, endpoint: str, **params) -> None:
+            try:
+                body = api.raw(endpoint, **params)
+            except Exception as e:
+                print(f"[{label}] 오류 {type(e).__name__}: {e}")
+                return
+            try:
+                data = json.loads(body)
+            except ValueError:
+                print(f"[{label}] JSON 아님: {body[:150]!r}")
+                return
+            top = list(data)[:3] if isinstance(data, dict) else type(data).__name__
+            inner = data.get(top[0]) if isinstance(data, dict) and top else None
+            keys = list(inner)[:12] if isinstance(inner, dict) else None
+            cnt = inner.get("totalCnt") if isinstance(inner, dict) else None
+            print(f"[{label}] top={top} totalCnt={cnt} keys={keys}")
+            for k in ("law", "prec"):
+                items = inner.get(k) if isinstance(inner, dict) else None
+                if items:
+                    first = items[0] if isinstance(items, list) else items
+                    print(f"    {k}[0] = {json.dumps(first, ensure_ascii=False)[:300]}")
+
+        print("=== 판례 검색 조건별 ===")
+        probe("P1 query", "lawSearch.do", target="prec", query="표현대리", display=3)
+        probe("P2 +search=2", "lawSearch.do", target="prec", query="표현대리", display=3, search=2)
+        probe("P3 +prncYd", "lawSearch.do", target="prec", query="표현대리", display=3,
+              prncYd="20110101~20251231")
+        probe("P4 +sort=ddes", "lawSearch.do", target="prec", query="표현대리", display=3, sort="ddes")
+        probe("P5 +org 대법원", "lawSearch.do", target="prec", query="표현대리", display=3, org="400201")
+        print("=== 법령 버전 ===")
+        probe("L1 law 현행", "lawSearch.do", target="law", query="민법", display=5)
+        probe("L2 eflaw", "lawSearch.do", target="eflaw", query="민법", display=10)
+        probe("L3 eflaw nw=1,2,3", "lawSearch.do", target="eflaw", query="민법", display=10, nw="1,2,3")
+        probe("L4 lsHistory", "lawSearch.do", target="lsHistory", query="민법", display=10)
 
     elif args.cmd == "fetch-laws":
         import csv as _csv

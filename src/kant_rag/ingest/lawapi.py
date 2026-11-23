@@ -27,6 +27,12 @@ class LawAPI:
             raise SystemExit("LAW_OC 환경변수(국가법령정보센터 Open API OC)가 필요합니다 (.env)")
         self.sleep, self.retries = sleep, retries
 
+    def raw(self, endpoint: str, **params) -> str:
+        """진단용: 가공 없이 응답 본문."""
+        url = f"{BASE}/{endpoint}?" + urllib.parse.urlencode({"OC": self.oc, "type": "JSON", **params})
+        with urllib.request.urlopen(url, timeout=60) as r:
+            return r.read().decode("utf-8")
+
     def _get(self, endpoint: str, **params) -> dict:
         url = f"{BASE}/{endpoint}?" + urllib.parse.urlencode({"OC": self.oc, "type": "JSON", **params})
         last: Exception | None = None

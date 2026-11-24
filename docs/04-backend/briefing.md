@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01, TKT-BE-M3-02]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -625,3 +625,55 @@ next_readers: [DB, FE, QA]
 | GATE-04b | `uv run pytest tests/integration -q` | 46 passed |
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | 실제 연동 | 시험 DB 16청크, 구성 C로 5개 보기 검색(OpenAI 임베딩·PGVector·`bge-reranker-v2-m3` GPU, 캐시된 모델) | 보기마다 4개(`k_opt`), 재정렬 점수 내림차순, 결합 순위 7위 청크가 1위로 오르는 등 B 순서와 다름, 모델 적재 후 문항 1개 검색 3.8초 |
+
+### TKT-BE-M3-02 (answering 도메인)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M3-02 | INV-01 후보 밖 인용 제거 | 충족 | `test_citations_outside_candidates_are_dropped_and_counted`, `test_only_invented_citations_for_answer_becomes_insufficient` |
+| TKT-BE-M3-02 | INV-13 정답 보기 인용 0 → 근거 부족(R-2: 다른 보기 판단은 참고로 유지) | 충족 | `test_answer_option_without_citation_is_insufficient`, `test_insufficient_cases` |
+| TKT-BE-M3-02 | INV-03 오류 결과는 번호 없음, 결과 종류별 오류 코드 | 충족 | `test_error_results_have_no_number`, `test_error_code_must_match_outcome` |
+| TKT-BE-M3-02 | GATE-02·04, 모델 호출 없음 | 충족 | §검증 결과 |
+
+#### 만든 것
+- `answering/domain/errors.py`: `ModelCallError`, `ModelTimeoutError`(`ModelCallError` 하위), `ModelOutputFormatError`
+- `answering/domain/models.py`
+  - `Outcome`(+`is_error`), `ErrorCode`(§4 표 8종), `Verdict`(값 `correct/incorrect/insufficient` = 출력 스키마 낱말), `Citation`, `OptionJudgment`
+  - `ModelOption`, `ModelAnswer(answer, sufficient, options, raw_output)` + `from_dict(data, raw_output)`(타입이 틀리면 `ModelOutputFormatError`)
+  - `Answer(outcome, answer_no, judgments, error_code, user_message, dropped_citations)` — 생성 시 결과 종류별 규칙 검사, `Answer.error(outcome, code, message)`, `Answer.from_model_output(output, candidate_ids, locations)`(ADR-013 ①~④)
+- `answering/domain/ports.py`: `AnswerGenerator.generate(item, context) -> ModelAnswer`
+- 시험 `tests/unit/answering/test_answer_rules.py` 20개
+
+#### 계층 확인 포인트
+- `answering/domain`은 표준 라이브러리와 `retrieval.domain`(포트의 `ExamItem`·`Candidate`)만 import(모듈 방향 answering → retrieval).
+
+#### 구현 중 자율 결정
+##### TKT-BE-M3-02 고른 보기의 판단이 "incorrect"여도 답변
+- 결정: 근거 부족 판정은 고른 보기가 `insufficient`이거나 인용이 없을 때만. `correct`/`incorrect`는 모두 답변 가능 — ADR-013 ③ "정답 판단 보기가 insufficient이면"
+- 선택지: **A. insufficient만 근거 부족 (권장·채택)** / B. 고른 보기가 `correct`여야 답변
+- 권장 이유: 선택형 문항의 절반가량은 "옳지 않은 것은?"이라 틀린 보기를 고르는 것이 정답이다.
+- trade-off: A — 판단과 문항 방향(옳은/옳지 않은)의 일치는 검사하지 않음(프롬프트 몫, 실패 분석 대상). B — "옳지 않은 것" 문항이 모두 근거 부족이 됨.
+
+##### TKT-BE-M3-02 오류 결과에 보기 판단을 두지 않음
+- 결정: `INPUT_ERROR`·`RETRIEVAL_ERROR`·`MODEL_ERROR`는 `judgments=()`만 허용
+- 선택지: **A. 비움 (권장·채택)** / B. 허용
+- 권장 이유: 오류는 모델 판단이 없거나 믿을 수 없는 경우라 화면·채점에 판단이 섞이지 않게 한다(INV-03).
+- trade-off: A — 형식 오류 때 모델이 낸 일부 판단은 `raw_output`(기록)으로만 남음. B — 오류 결과가 답처럼 보일 수 있음.
+
+##### TKT-BE-M3-02 사용자 문구
+- 결정: 답변 `"정답: N번"`, 근거 부족 `"정보 부족: 근거를 찾지 못했습니다"`(§4 표 문구). 오류 문구는 서비스가 §4 문구로 넘김
+- 선택지: **A. §4 핵심 낱말 그대로 (권장·채택)** / B. 화면(FE)에서 만듦
+- 권장 이유: CLI·화면·기록이 같은 문구를 쓴다(ADR-004).
+- trade-off: A — 문구를 바꾸려면 도메인을 고쳐야 함. B — 표시 경로마다 문구가 달라질 수 있음.
+
+#### 설계와 다르게 한 것 / 질문
+- `ModelAnswer`에 `raw_output`(비교 제외)과 `from_dict`를 더했다. `AnswerEnvelope.raw_output`(§2)을 생성기 한 번의 반환으로 넘기기 위해서다.
+- 인용 중복(같은 보기에 같은 청크 두 번)은 한 번만 남기고 `dropped_citations`에 세지 않는다.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b·07·09 | 06-quality-gates 명령 | 각 0줄 |
+| GATE-04 | `uv run pytest tests/unit -q` | 224 passed(이번 티켓 20개) |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |

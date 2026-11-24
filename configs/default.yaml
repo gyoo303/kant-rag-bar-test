@@ -1,7 +1,7 @@
 # 모든 실험 설정의 단일 출처. 값을 바꾸면 versions.* 도 올려서 기록에 남깁니다.
 versions:
   docs: "docs-v0.1"        # data/documents.csv 및 원문 버전
-  index: "index-v0.1"      # 청킹/임베딩 설정이 바뀌면 올림
+  index: "index-v0.2"      # 청킹/임베딩 설정이 바뀌면 올림 (v0.2: 긴 청크 분할, 임베딩 1024토큰)
   prompt: "prompt-v0.1"    # src/kant_rag/generation/prompts.py 변경 시 올림
   eval: "eval-v0.1"        # eval/*.json 고정 버전
 
@@ -23,6 +23,7 @@ corpus:
 chunking:
   chunk_size: 500          # 문자 기준
   chunk_overlap: 80
+  max_chars: 1000          # 이보다 긴 조문·판결요지는 문장 경계에서 분할 (임베딩 max_tokens 잘림 방지)
 
 # 로컬 임베딩·reranker 메모리 설정 (8GB GPU 기준). 메모리 부족 시 batch_size 를 4 로
 embedding:

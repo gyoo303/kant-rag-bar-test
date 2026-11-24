@@ -41,6 +41,7 @@ class Corpus(BaseModel):
 class Chunking(BaseModel):
     chunk_size: int = 500
     chunk_overlap: int = 80
+    max_chars: int = 1000
 
 
 class Embedding(BaseModel):

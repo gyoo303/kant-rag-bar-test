@@ -8,6 +8,7 @@ import time
 from kant_rag.config import Settings
 from kant_rag.ingest.chunker import chunk_text
 from kant_rag.ingest.loader import clean_text, load_pages, read_manifest
+from kant_rag.ingest.split import split_long
 from kant_rag.ingest.statute import chunk_statute
 from kant_rag.schemas import Chunk
 
@@ -44,6 +45,7 @@ def build_chunks(settings: Settings) -> list[Chunk]:
                     section_offset=0 if page.page is None else p_idx * 100,
                 )
             )
+    chunks = [part for c in chunks for part in split_long(c, settings.chunking.max_chars)]
     ids = [c.chunk_id for c in chunks]
     if len(ids) != len(set(ids)):
         raise ValueError("청크 ID 충돌")
@@ -68,9 +70,9 @@ def build_index(settings: Settings) -> dict:
     for c in chunks:
         t = c.metadata.get("doc_type", "general")
         by_type[t] = by_type.get(t, 0) + 1
-    long_n = sum(len(c.text) > 1500 for c in chunks)
+    split_n = len({c.metadata["parent_id"] for c in chunks if "parent_id" in c.metadata})
     print(f"[1/3] 청크 {len(chunks)}개 생성 {by_type} · 최장 {max((len(c.text) for c in chunks), default=0)}자 · "
-          f"1500자 초과 {long_n}개(임베딩 시 max_tokens 에서 잘릴 수 있음)", flush=True)
+          f"긴 청크 {split_n}개를 {settings.chunking.max_chars}자 이하로 분할", flush=True)
     BM25Index.build(chunks, settings.retrieval.bm25_tokenizer).save(index_dir / "bm25.pkl")
     print("[2/3] BM25 색인 완료", flush=True)
     print(f"[3/3] 벡터 임베딩 시작 ({settings.models.embedding_model}) — 진행률이 표시됩니다", flush=True)

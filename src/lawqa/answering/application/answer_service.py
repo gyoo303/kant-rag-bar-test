@@ -50,6 +50,8 @@ class AnswerEnvelope:
     raw_output: str
     latency_ms: int
     queries: tuple[OptionQuery, ...] = field(default=())
+    retrieval_ms: int | None = None  # 리라이트·검색·재정렬 포함
+    generation_ms: int | None = None
 
     @property
     def context_chars(self) -> int:
@@ -95,6 +97,8 @@ class AnswerEnvelope:
             "prompt_sha": self.prompt_sha,
             "raw_output": self.raw_output,
             "latency_ms": self.latency_ms,
+            "retrieval_ms": self.retrieval_ms,
+            "generation_ms": self.generation_ms,
         }
 
 
@@ -120,11 +124,17 @@ class AnswerService:
         result: RetrievalResult | None = None
         context: tuple[Candidate, ...] = ()
         raw_output = ""
+        retrieval_ms: int | None = None
+        generation_ms: int | None = None
         try:
             item = _exam_item(item_input)
+            stage = self._timer()
             result = self._retrieval.retrieve(item, config)  # C+R 리라이트·fallback 포함
+            retrieval_ms = self._elapsed_ms(stage)
             context = tuple(result.context(config.k_opt))
+            stage = self._timer()
             model_answer = self._generator.generate(item, context)
+            generation_ms = self._elapsed_ms(stage)
             raw_output = model_answer.raw_output
             answer = Answer.from_model_output(
                 model_answer,
@@ -147,7 +157,7 @@ class AnswerService:
         except Exception:  # ADR-004 유일한 최종 변환: 로그 후 결과로
             log.exception("answer_crash config=%s", config_name)
             answer = Answer.error(Outcome.MODEL_ERROR, ErrorCode.UNEXPECTED, MODEL_MESSAGE)
-        latency_ms = round((self._timer() - started) * 1000)
+        latency_ms = self._elapsed_ms(started)
         log_event(
             log,
             "answer",
@@ -165,7 +175,12 @@ class AnswerService:
             raw_output=raw_output,
             latency_ms=latency_ms,
             queries=tuple(o.query for o in result.options) if result else (),
+            retrieval_ms=retrieval_ms,
+            generation_ms=generation_ms,
         )
+
+    def _elapsed_ms(self, since: float) -> int:
+        return round((self._timer() - since) * 1000)
 
     @staticmethod
     def _failed(outcome: Outcome, code: ErrorCode, exc: Exception) -> Answer:

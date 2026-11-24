@@ -6,9 +6,12 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from lawqa.evaluation.application.freeze_service import FreezeService
+from lawqa.evaluation.application.run_service import Answerer, EvalRunService
+from lawqa.evaluation.domain.models import FreezeRecord
 from lawqa.evaluation.infrastructure.files import (
     FreezeFile,
     JsonEvalSetRepository,
+    RunStore,
     SuccessCriteriaFile,
 )
 from lawqa.evaluation.infrastructure.git_info import SubprocessGitInfo
@@ -17,6 +20,25 @@ from lawqa.shared.settings import Settings
 
 FREEZE_FILE = "FREEZE.json"
 SUCCESS_CRITERIA_FILE = "success_criteria.json"
+
+
+def build_run_service(
+    settings: Settings,
+    *,
+    current_freeze: Callable[[], FreezeRecord],
+    versions_for: Callable[[str], Mapping[str, str]],
+    answerer: Callable[[], Answerer],
+) -> EvalRunService:
+    """`eval run`용 서비스. 답변기(answering 조립)는 진입점이 넘긴다."""
+    return EvalRunService(
+        evalsets=JsonEvalSetRepository(settings.paths.eval_dir),
+        freeze_store=FreezeFile(settings.paths.eval_dir / FREEZE_FILE),
+        current_freeze=current_freeze,
+        store=RunStore(settings.paths.results_dir),
+        versions_for=versions_for,
+        answerer=answerer,
+        clock=SystemClock(),
+    )
 
 
 def build_freeze_service(

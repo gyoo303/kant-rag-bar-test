@@ -88,7 +88,7 @@ class Run:
         kind: RunKind,
         split: Split,
         freeze: FreezeRecord | None,
-        current: FreezeRecord,
+        current: FreezeRecord | None,
         retry_of: str | None = None,
     ) -> None:
         """실행을 시작해도 되는지 검사한다(INV-05·06). 안 되면 `RuleViolationError`.
@@ -115,6 +115,8 @@ class Run:
                     FROZEN_MISMATCH,
                     "본 평가 전에 `eval freeze --stage final`로 최종 고정을 해야 합니다(INV-06).",
                 )
+            if current is None:
+                raise ValueError("본 평가·재시도 검사에는 현재 고정 값(current)이 필요합니다.")
             freeze.verify(current)
 
 

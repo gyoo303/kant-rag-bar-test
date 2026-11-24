@@ -25,7 +25,9 @@ from lawqa.corpus.infrastructure import (
     chunking_policy,
 )
 from lawqa.evaluation.domain.errors import InvalidEvalDataError, RuleViolationError
-from lawqa.evaluation.infrastructure import FREEZE_FILE, build_freeze_service
+from lawqa.evaluation.domain.models import Split
+from lawqa.evaluation.domain.run import RunKind
+from lawqa.evaluation.infrastructure import FREEZE_FILE, build_freeze_service, build_run_service
 from lawqa.evaluation.infrastructure.git_info import GitCommandError
 from lawqa.shared.clock import SystemClock
 from lawqa.shared.db import connect, init_schema
@@ -49,7 +51,6 @@ RUN_CONFIG_CHOICES = ("A", "B", "C", "C+R")
 
 # (그룹, 명령) → 구현할 티켓 (임시: 명령을 구현하는 티켓에서 항목을 지운다)
 _PENDING_TICKETS: dict[tuple[str, str | None], str] = {
-    ("eval", "run"): "TKT-BE-M3-05",
     ("eval", "grade"): "TKT-BE-M4-01",
     ("eval", "review"): "TKT-BE-M4-01",
     ("eval", "metrics"): "TKT-BE-M4-02",
@@ -286,6 +287,77 @@ def _cmd_eval_freeze(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _cmd_eval_run(args: argparse.Namespace) -> int:
+    """API-07: 일괄 실행. 규칙 위반 3, 입력 오류 1, DB 연결 실패 2."""
+    from lawqa.entrypoints.composition import AnswerRuntime, build_answer_runtime
+
+    only = [q.strip() for q in args.only.split(",") if q.strip()] if args.only else None
+    try:
+        settings = load_settings("base")
+        split, kind = Split(args.split), RunKind(args.kind)
+        freeze = build_freeze_service(
+            settings,
+            config_shas=_config_shas,
+            prompt_sha=_prompt_sha,
+            index_version=_complete_index_version,
+        )
+        url = settings.secrets.require("database_url")
+        with connect(url) as conn:
+            runtime_cache: list[AnswerRuntime] = []
+
+            def runtime() -> AnswerRuntime:
+                if not runtime_cache:
+                    runtime_cache.append(build_answer_runtime(conn, url, settings=settings))
+                    warning = runtime_cache[0].index_warning()
+                    if warning:
+                        print(f"경고: {warning}", file=sys.stderr)
+                return runtime_cache[0]
+
+            def versions_for(config_name: str) -> dict[str, str]:
+                version = runtime().index_version
+                models = load_settings(config_name).models
+                return {
+                    "corpus": version.corpus_version if version else "",
+                    "index": version.index_version if version else "",
+                    "config_sha": load_settings(config_name).config_sha,
+                    "prompt_sha": _prompt_sha(),
+                    "gen_model": models.generation,
+                    "embedding_model": f"{models.embedding}/{models.embedding_dim}",
+                    "reranker_model": models.reranker,
+                }
+
+            service = build_run_service(
+                settings,
+                current_freeze=freeze.current,
+                versions_for=versions_for,
+                answerer=lambda: runtime().service,
+            )
+            options = {"retry_of": args.retry_of, "resume_run_id": args.resume, "only": only}
+            if args.dry_run:
+                plan = service.plan(split, args.config, kind, **options)
+                print(f"검사 통과(--dry-run): 실행 {plan.run_id}, 문항 {len(plan.question_ids)}개")
+                if plan.question_ids:
+                    print("대상: " + ", ".join(plan.question_ids))
+                return EXIT_OK
+            summary = service.run(split, args.config, kind, **options)
+    except RuleViolationError as exc:
+        print(f"규칙 위반: {exc}", file=sys.stderr)
+        return EXIT_RULE_VIOLATION
+    except (SettingsError, InvalidEvalDataError, GitCommandError, FileExistsError) as exc:
+        print(f"입력 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except psycopg.OperationalError as exc:
+        print(f"DB 연결 실패: {exc}".strip(), file=sys.stderr)
+        return EXIT_EXTERNAL_ERROR
+    plan = summary.plan
+    run_dir = settings.paths.results_dir / plan.run_id
+    counts = ", ".join(f"{k} {v}" for k, v in sorted(summary.outcomes.items())) or "없음"
+    resumed = f"(이어 하기, 이미 기록 {len(plan.already_done)}건)" if plan.resumed else ""
+    print(f"실행 {plan.run_id}{resumed}: 이번 기록 {summary.recorded}건 — {counts}")
+    print(f"기록: {run_dir.as_posix()}/records.jsonl")
+    return EXIT_OK
+
+
 _HANDLERS: dict[tuple[str, str | None], Callable[[argparse.Namespace], int]] = {
     ("db", "init"): _cmd_db_init,
     ("corpus", "import"): _cmd_corpus_import,
@@ -293,6 +365,7 @@ _HANDLERS: dict[tuple[str, str | None], Callable[[argparse.Namespace], int]] = {
     ("check", "smoke"): _cmd_check_smoke,
     ("ask", None): _cmd_ask,
     ("eval", "freeze"): _cmd_eval_freeze,
+    ("eval", "run"): _cmd_eval_run,
 }
 
 

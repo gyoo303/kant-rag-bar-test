@@ -90,15 +90,19 @@ def _model(answer=2, cites=("c2a",), sufficient=True) -> ModelAnswer:
     )
 
 
-def _service(retriever=None, generator=None, rewriter=None, ticks=(0.0, 0.25)):
-    clock = iter(ticks)
+def _service(retriever=None, generator=None, rewriter=None, ticks=(0.0, 0.0, 0.1, 0.1, 0.2, 0.25)):
+    values = list(ticks)
+
+    def clock() -> float:  # 시작·검색 전후·생성 전후·끝, 다 쓰면 마지막 값
+        return values.pop(0) if len(values) > 1 else values[0]
+
     return AnswerService(
         retrieval=RetrievalService(
             retriever_for=lambda c: retriever or FakeRetriever(), rewriter=rewriter
         ),
         generator=generator or FakeGenerator(_model()),
         configs=CONFIGS,
-        timer=lambda: next(clock),
+        timer=clock,
     )
 
 
@@ -120,6 +124,7 @@ def test_answered_with_citations_inside_candidates_and_context_record():
     assert len(env.context) == 10
     assert env.context_chars == sum(len(c.text) for c in env.context)
     assert env.latency_ms == 250 and env.prompt_sha == "sha-test"
+    assert (env.retrieval_ms, env.generation_ms) == (100, 100)
     assert env.raw_output == '{"answer": 2}'
     assert gen.calls[0][1] == env.context  # 모델이 받은 근거 = 기록된 컨텍스트
 

@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01, TKT-BE-M3-02, TKT-BE-M3-03, TKT-BE-M3-04]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01, TKT-BE-M3-02, TKT-BE-M3-03, TKT-BE-M3-04, TKT-BE-M3-05]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -792,3 +792,66 @@ next_readers: [DB, FE, QA]
 | GATE-04b | `uv run pytest tests/integration -q` | 47 passed |
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | 실제 연동 | 시험 DB, `ask --config C+R`(민법 제2조 문항) | 보기 5개 모두 리라이트(예: "민법 제2조 권리남용 금지 원칙"), fallback 0, ANSWERED 1번, 28.2초(재정렬 모델 적재 포함). 색인이 없을 때는 RETRIEVAL_ERROR/INDEX_NOT_READY로 끝남도 확인 |
+
+### TKT-BE-M3-05 (평가 실행 `eval run`)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M3-05 | AC-12-1 본 평가 기록 버전 = 고정 값 | 충족(대역) | `test_main_runs_records_twenty_per_config_with_same_versions` — 본 평가는 `verify` 통과 뒤에만 시작, 기록 `versions`는 실행 머리와 같음 |
+| TKT-BE-M3-05 | AC-12-2 test를 개발·튜닝(warmup)에 쓰면 거부 | 충족 | `test_test_split_warmup_is_refused_without_files_or_models`, CLI 종료 3 |
+| TKT-BE-M3-05 | AC-12-3 고정 뒤 설정 변경 → 본 평가 거부, 추가 실험은 허용 | 충족 | `test_main_refused_when_settings_changed_after_freeze` |
+| TKT-BE-M3-05 | AC-13-1 A·B·C·C+R × 20 = 80건 | 충족(대역) | 같은 본 평가 시험 |
+| TKT-BE-M3-05 | AC-13-2 기록 필드(실행·질문 ID·구성·버전·후보와 점수·재정렬 전후·원본 답변·출처·시간·상태·종류) | 충족 | `test_dev_warmup_records_every_question_with_all_fields`, 실제 실행 기록 |
+| TKT-BE-M3-05 | AC-13-3 재시도는 원 기록 유지 + 별도 RETRY, 본 지표 제외 | 충족 | `test_retry_records_failed_questions_separately_and_keeps_originals` |
+| TKT-BE-M3-05 | AC-13-4 구성 간 생성 모델·프롬프트 버전 같음 | 충족(대역) | 본 평가 시험의 `versions` 비교 |
+| TKT-BE-M3-05 | 중단 후 `--resume` | 충족 | `test_interrupted_run_resumes_without_duplicates`, 버전이 바뀌면 거부 |
+| TKT-BE-M3-05 | GATE-04·11 | GATE-04 충족 / GATE-11 확인 못 함 | GATE-11은 `eval/`(평가셋·성공 기준·FREEZE.json, 사람 작업)이 없어 실행 불가. 같은 경로(`--dry-run`이 고정 비교까지 하고 파일·모델을 만들지 않음)는 `test_dry_run_plan_creates_nothing`으로 확인 |
+
+#### 만든 것
+- `evaluation/application/run_service.py`
+  - `EvalRunService.plan(split, config, kind, *, retry_of, resume_run_id, only) -> RunPlan`(실행 전 검사만, `--dry-run`), `run(...) -> RunSummary`
+  - 대상: `--only`(없는 ID는 입력 오류), 재시도면 원 본 평가 실행에서 `status != OK`인 문항(같은 split·구성 확인)
+  - 이어 하기: 같은 split·구성·종류·retry_of인지, 버전이 같은지 확인 뒤 기록 없는 문항만
+  - `build_record(run, question_id, started_at, envelope)` — 03-db-schema §5 필드로 변환. `status`: 검색·모델 오류 ERROR, `MODEL_TIMEOUT`은 TIMEOUT, 그 밖 OK. 재시도 기록 `attempt=2`
+  - 답변기·현재 고정 값은 필요할 때만 만든다(규칙 위반이면 모델·DB 검색 자원을 적재하지 않음)
+- `evaluation/infrastructure/__init__.py`: `build_run_service(settings, *, current_freeze, versions_for, answerer)`
+- `entrypoints/cli.py` `eval run`(API-07): `--split --config --kind [--retry-of] [--resume] [--only] [--dry-run]`. 종료 코드: 규칙 위반 3, 입력 오류 1(파일 없음·이미 있는 실행 등), DB 연결 실패 2
+  - 기록 `versions`: `corpus`·`index`(검색 판본), `config_sha`(구성별), `prompt_sha`(answer+rewrite, `eval freeze`와 같은 계산), `gen_model`, `embedding_model`(`모델/차원`), `reranker_model`
+- 보강: `AnswerEnvelope.retrieval_ms`·`generation_ms`(단계 시간), `Run.check_allowed(current=None 허용)`
+- 시험 `tests/unit/evaluation/test_run_service.py` 12개(임시 폴더의 실제 파일 저장소 + 대역 답변기)
+
+#### 구현 중 자율 결정
+##### TKT-BE-M3-05 단계별 시간
+- 결정: `latency_ms`의 `retrieval`(리라이트·검색·재정렬 포함)과 `generation`만 잰다. `rewrite`·`rerank`는 `null`
+- 선택지: **A. 두 단계만 (권장·채택)** / B. 네 단계 모두(검색 서비스 안에 시간 측정 추가)
+- 권장 이유: 지표(REQ-075)는 전체 시간 중앙값만 쓴다. 단계 시간은 분석용이라 서비스 경계에서 재는 것으로 충분하다.
+- trade-off: A — 리라이트·재정렬 시간을 따로 볼 수 없음(필요하면 나중에 검색 서비스에 추가). B — 측정 코드가 검색 내부로 퍼짐.
+
+##### TKT-BE-M3-05 재시도 대상 기본값
+- 결정: `--kind retry --retry-of RUN`은 원 실행의 오류·시간 초과 문항만 다시 한다(`--only`를 주면 그 문항)
+- 선택지: **A. 실패 건만 (권장·채택)** / B. 전 문항
+- 권장 이유: R-1·AC-13-3의 재시도는 "호출 오류가 난 건"이다.
+- trade-off: A — 정상 건 재측정은 `--only`로 지정해야 함. B — 불필요한 호출·비용.
+
+##### TKT-BE-M3-05 규칙 검사 순서
+- 결정: 분할·종류·고정 기록 검사를 먼저 하고, 현재 값(평가셋·성공 기준·색인 판본)은 그 뒤에만 계산
+- 선택지: **A. 규칙 먼저 (권장·채택)** / B. 현재 값 먼저
+- 권장 이유: dev로 본 평가를 하려는 실수 같은 규칙 위반을 입력 파일 상태와 상관없이 종료 3으로 알린다.
+- trade-off: A — 없음에 가까움. B — 평가셋이 없으면 규칙 위반이 입력 오류로 가려짐(실제 CLI에서 확인 후 고침).
+
+#### 설계와 다르게 한 것 / 질문
+- 기록 `versions.index`는 CR-008의 검색 판본(완료 우선, 없으면 끝난 최근)이다. 본 평가는 `eval freeze --stage final`이 완료 판본만 허용하고 `verify`가 같아야 하므로 본 평가 기록은 항상 완료 판본이다.
+- `RunRecord.details`에 §5 목록 외에 `context`(청크 ID·위치·글자 수)를 더했다(AC-09-8의 위치 정보).
+- `eval/`이 아직 없어 실제 명령으로는 규칙 위반·입력 오류 경로만 확인했다. 실제 모델 실행은 아래처럼 시험용 평가셋으로 확인.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b·07·08·09 | 06-quality-gates 명령 | 각 0줄 |
+| GATE-04 | `uv run pytest tests/unit -q` | 271 passed(이번 티켓 12개) |
+| GATE-04b | `uv run pytest tests/integration -q` | 47 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-11 | `eval run --split test --config C --kind main --only TEST-01 --dry-run` | 확인 못 함: `eval/success_criteria.json` 없음(종료 1). 사람이 평가셋·성공 기준·final 고정을 만든 뒤 실행 |
+| CLI 종료 코드 | `eval run --split test --config C --kind warmup` / `--split dev --config C --kind main` | 둘 다 규칙 위반 종료 3 |
+| 실제 연동 | 시험 DB(16청크)·시험용 평가셋(`tests/fixtures/eval`)으로 C+R 워밍업 2문항(실제 리라이트·임베딩·재정렬·생성), 결과는 임시 폴더 | 2건 즉시 기록, `status=OK`, 보기별 후보·리라이트(fallback 0)·컨텍스트·단계 시간(첫 문항 26.0초: 재정렬 모델 적재 포함, 둘째 9.4초) |

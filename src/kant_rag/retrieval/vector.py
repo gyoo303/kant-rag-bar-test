@@ -9,11 +9,24 @@ from kant_rag.schemas import Chunk, RetrievedChunk
 
 
 @lru_cache
-def get_embeddings(model_name: str):
+def get_embeddings(model_name: str, max_tokens: int = 1024, batch_size: int = 8, fp16: bool = True):
+    import torch
     from langchain_huggingface import HuggingFaceEmbeddings
 
-    return HuggingFaceEmbeddings(model_name=model_name, show_progress=True,
-                                 encode_kwargs={"normalize_embeddings": True, "batch_size": 32})
+    cuda = torch.cuda.is_available()
+    model_kwargs = {"device": "cuda" if cuda else "cpu"}
+    if cuda and fp16:
+        model_kwargs["model_kwargs"] = {"torch_dtype": torch.float16}
+    emb = HuggingFaceEmbeddings(model_name=model_name, show_progress=True, model_kwargs=model_kwargs,
+                                encode_kwargs={"normalize_embeddings": True, "batch_size": batch_size})
+    emb._client.max_seq_length = max_tokens  # bge-m3 기본 8192 → 8GB GPU 에서 OOM
+    print(f"[embedding] {model_name} device={model_kwargs['device']} fp16={cuda and fp16} "
+          f"max_tokens={max_tokens} batch={batch_size}", flush=True)
+    return emb
+
+
+def _cfg(emb_cfg) -> tuple:
+    return (emb_cfg.max_tokens, emb_cfg.batch_size, emb_cfg.fp16) if emb_cfg else ()
 
 
 class VectorIndex:
@@ -22,13 +35,13 @@ class VectorIndex:
         self.chunks_by_id = chunks_by_id
 
     @classmethod
-    def build(cls, chunks: list[Chunk], embedding_model: str) -> VectorIndex:
+    def build(cls, chunks: list[Chunk], embedding_model: str, emb_cfg=None) -> VectorIndex:
         from langchain_community.vectorstores import FAISS
         from langchain_community.vectorstores.utils import DistanceStrategy
 
         store = FAISS.from_texts(
             texts=[c.text for c in chunks],
-            embedding=get_embeddings(embedding_model),
+            embedding=get_embeddings(embedding_model, *_cfg(emb_cfg)),
             metadatas=[{"chunk_id": c.chunk_id} for c in chunks],
             ids=[c.chunk_id for c in chunks],
             distance_strategy=DistanceStrategy.MAX_INNER_PRODUCT,  # 정규화 벡터 → 코사인
@@ -39,11 +52,11 @@ class VectorIndex:
         self.store.save_local(str(path))
 
     @classmethod
-    def load(cls, path: Path, embedding_model: str, chunks: list[Chunk]) -> VectorIndex:
+    def load(cls, path: Path, embedding_model: str, chunks: list[Chunk], emb_cfg=None) -> VectorIndex:
         from langchain_community.vectorstores import FAISS
 
         store = FAISS.load_local(
-            str(path), get_embeddings(embedding_model), allow_dangerous_deserialization=True
+            str(path), get_embeddings(embedding_model, *_cfg(emb_cfg)), allow_dangerous_deserialization=True
         )
         return cls(store, {c.chunk_id: c for c in chunks})
 

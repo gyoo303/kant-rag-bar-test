@@ -24,6 +24,12 @@ chunking:
   chunk_size: 500          # 문자 기준
   chunk_overlap: 80
 
+# 로컬 임베딩·reranker 메모리 설정 (8GB GPU 기준). 메모리 부족 시 batch_size 를 4 로
+embedding:
+  max_tokens: 1024     # 청크 최대 토큰 (넘는 부분은 잘림, 길이를 바꾸면 versions.index 올림)
+  batch_size: 8
+  fp16: true           # GPU 에서 반정밀도 (메모리 절반)
+
 retrieval:
   # A: vector / B: hybrid / C: hybrid_rerank
   vector_k: 20             # 벡터 후보 수

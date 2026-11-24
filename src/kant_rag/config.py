@@ -43,6 +43,12 @@ class Chunking(BaseModel):
     chunk_overlap: int = 80
 
 
+class Embedding(BaseModel):
+    max_tokens: int = 1024
+    batch_size: int = 8
+    fp16: bool = True
+
+
 class Retrieval(BaseModel):
     vector_k: int = 20
     bm25_k: int = 20
@@ -95,6 +101,7 @@ class Settings(BaseModel):
     paths: Paths
     corpus: Corpus = Corpus()
     chunking: Chunking
+    embedding: Embedding = Embedding()
     retrieval: Retrieval
     rerank: Rerank
     generation: Generation

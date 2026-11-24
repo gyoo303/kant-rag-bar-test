@@ -68,17 +68,20 @@ def build_index(settings: Settings) -> dict:
     for c in chunks:
         t = c.metadata.get("doc_type", "general")
         by_type[t] = by_type.get(t, 0) + 1
-    print(f"[1/3] 청크 {len(chunks)}개 생성 {by_type}", flush=True)
+    long_n = sum(len(c.text) > 1500 for c in chunks)
+    print(f"[1/3] 청크 {len(chunks)}개 생성 {by_type} · 최장 {max((len(c.text) for c in chunks), default=0)}자 · "
+          f"1500자 초과 {long_n}개(임베딩 시 max_tokens 에서 잘릴 수 있음)", flush=True)
     BM25Index.build(chunks, settings.retrieval.bm25_tokenizer).save(index_dir / "bm25.pkl")
     print("[2/3] BM25 색인 완료", flush=True)
     print(f"[3/3] 벡터 임베딩 시작 ({settings.models.embedding_model}) — 진행률이 표시됩니다", flush=True)
-    VectorIndex.build(chunks, settings.models.embedding_model).save(index_dir / "faiss")
+    VectorIndex.build(chunks, settings.models.embedding_model, settings.embedding).save(index_dir / "faiss")
     print("벡터 색인 완료", flush=True)
 
     info = {
         "versions": settings.versions.model_dump(),
         "chunking": settings.chunking.model_dump(),
         "embedding_model": settings.models.embedding_model,
+        "embedding": settings.embedding.model_dump(),
         "bm25_tokenizer": settings.retrieval.bm25_tokenizer,
         "n_docs": len({c.doc_id for c in chunks}),
         "n_chunks": len(chunks),

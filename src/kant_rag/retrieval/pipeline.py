@@ -36,8 +36,9 @@ class Retriever:
                              "→ `uv run kant-rag build-index` 를 끝까지 실행한 뒤 다시 시도하세요.")
         chunks = load_chunks(settings)
         self.bm25 = BM25Index.load(index_dir / "bm25.pkl")
-        self.vector = VectorIndex.load(index_dir / "faiss", settings.models.embedding_model, chunks)
-        self.reranker = Reranker(settings.models.reranker_model)
+        e = settings.embedding
+        self.vector = VectorIndex.load(index_dir / "faiss", settings.models.embedding_model, chunks, e)
+        self.reranker = Reranker(settings.models.reranker_model, e.max_tokens, e.batch_size, e.fp16)
 
     def retrieve(self, query: str, mode: RetrievalMode) -> dict[str, list[RetrievedChunk]]:
         """최종 결과(`final`)와 단계별 후보를 모두 반환합니다 (실행 기록용)."""

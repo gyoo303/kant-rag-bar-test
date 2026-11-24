@@ -1,6 +1,6 @@
 ---
 stage: DB
-tickets: [TKT-DB-M1-01, TKT-DB-M1-02, TKT-DB-M2-01, TKT-DB-M2-02]
+tickets: [TKT-DB-M1-01, TKT-DB-M1-02, TKT-DB-M2-01, TKT-DB-M2-02, CR-008]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-DB, AR-API, AR-CONV, AR-GATE, CR-LOG]
 next_readers: [BE, QA]
@@ -261,3 +261,8 @@ next_readers: [BE, QA]
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | GATE-08 | `application`·`domain`의 저장 계층·LangChain import | 0줄 |
 | 벡터 표 미정의 | `schema.sql`의 `langchain_pg` 표 정의 | 없음(주석만) |
+
+### CR-008 반영 (`PgIndexVersionRepository.latest_finished`)
+- 승인된 CR-008(사용자 2026-11-24)대로 `latest_finished() -> IndexVersion | None` 추가: 완료이거나 건너뜀이 기록된(끝난 불완전) 판본 중 가장 최근. 중단된 판본(`complete=false`·`skipped_count=0`)은 빠진다.
+- 스키마 변경 없음. 커밋하지 않음(트랜잭션은 BE 서비스).
+- 시험: `tests/integration/db/test_corpus_repositories.py`에 1개 추가·1개 보강 — `uv run pytest tests/integration -q` 통과.

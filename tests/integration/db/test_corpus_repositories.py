@@ -106,6 +106,17 @@ def test_index_version_save_get_and_mark_complete(db_conn: psycopg.Connection) -
     incomplete = repo.get(version.index_version)
     assert incomplete and not incomplete.complete and incomplete.skipped_count == 3
     assert repo.latest_complete() is None
+    assert repo.latest_finished() == incomplete  # CR-008: 끝난 불완전 판본
+
+
+def test_latest_finished_skips_interrupted_versions(db_conn: psycopg.Connection) -> None:
+    repo = PgIndexVersionRepository(db_conn)
+    repo.save(_version("idx-interrupted"))  # mark_complete 전 = 중단
+    assert repo.latest_finished() is None
+    repo.save(_version("idx-done"))
+    repo.mark_complete("idx-done", chunk_count=5, skipped=0)
+    finished = repo.latest_finished()
+    assert finished is not None and finished.index_version == "idx-done"
 
 
 def test_replace_for_version_replaces_only_that_version(db_conn: psycopg.Connection) -> None:

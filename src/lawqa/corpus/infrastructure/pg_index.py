@@ -68,6 +68,20 @@ class PgIndexVersionRepository:
             row = cur.fetchone()
         return _row_to_version(row) if row else None
 
+    def latest_finished(self) -> IndexVersion | None:
+        """끝까지 만들어진 가장 최근 판본(완료, 또는 건너뜀이 기록된 불완전). CR-008.
+
+        중단된 판본은 `mark_complete` 전이라 `complete=false`·`skipped_count=0`이므로 빠진다.
+        """
+        with self._conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                f"SELECT {', '.join(_VERSION_COLUMNS)} FROM index_versions "
+                "WHERE complete OR skipped_count > 0 "
+                "ORDER BY created_at DESC, index_version DESC LIMIT 1"
+            )
+            row = cur.fetchone()
+        return _row_to_version(row) if row else None
+
 
 class PgImportIssueRepository:
     """CR-007: 가져오기 문제는 corpus_version으로 묶는다(색인 판본보다 먼저 생기므로 FK 없음)."""

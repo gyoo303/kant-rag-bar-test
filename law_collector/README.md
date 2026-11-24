@@ -38,7 +38,9 @@ python collect.py fetch --member 3 --source 대법원     # 팀원 3
 ```
 python collect.py laws               # 민법·민사소송법·민사집행법·상법 등 기본 목록
 python collect.py laws 민법 신탁법    # 원하는 법만
+python collect.py laws --as-of 20260101   # 시험일(2026.1.1)에 시행 중이던 버전으로 → data/law_20260101/
 ```
+- RAG 색인은 기본으로 `data/law_20260101/`(시험 시점 버전)을 씁니다. 현행본(`data/law/`)은 시험 이후 개정이 섞일 수 있어요.
 
 ## 진행 상황
 ```

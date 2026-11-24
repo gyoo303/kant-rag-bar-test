@@ -19,7 +19,11 @@ docker compose up -d
 
 ## 실행 순서
 ```powershell
-# 1) 원문 → 청크 (비용 없음). 범위를 줄이려면 --limit / --keywords "임대차,소멸시효" / --court 대법원
+# 0) 시험 시점 법령 받기 (한 번만)
+python law_collector/collect.py laws --as-of 20260101
+
+# 1) 원문 → 청크 (비용 없음). 기본으로 시험 시점 필터 적용(판례 ~2025-12-31, 법령 2026-01-01 시행본)
+#    범위를 줄이려면 --limit / --keywords "임대차,소멸시효" / --court 대법원, 필터 끄기 --no-date-filter
 uv run civil-rag ingest
 
 # 2) 청크 → 벡터 색인 (OpenAI 임베딩 비용 발생, 캐시되므로 재색인은 무료)

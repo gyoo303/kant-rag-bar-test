@@ -35,6 +35,8 @@ def _ingest(a):
         keywords=[k for k in (a.keywords or "").split(",") if k.strip()],
         ids_file=Path(a.ids_file) if a.ids_file else None,
         laws=a.laws,
+        date_from="" if a.no_date_filter else a.date_from,
+        date_to="" if a.no_date_filter else a.date_to,
     )
 
 
@@ -127,6 +129,9 @@ def main(argv: list[str] | None = None) -> None:
     s.add_argument("--keywords", default=None, help='사건명·판시사항·판결요지·참조조문에 포함될 단어(쉼표 구분), 예: "임대차,소멸시효"')
     s.add_argument("--ids-file", default=None, help="판례일련번호 목록 파일(줄마다 1개)")
     s.add_argument("--laws", nargs="*", default=None, help="포함할 법령명 (생략 시 수집된 법령 전부)")
+    s.add_argument("--date-from", default=None, help="판례 선고일 하한 YYYYMMDD (기본: config PREC_DATE_FROM)")
+    s.add_argument("--date-to", default=None, help="판례 선고일 상한 YYYYMMDD (기본: config PREC_DATE_TO=시험일 전날)")
+    s.add_argument("--no-date-filter", action="store_true", help="시험 시점 필터 끄기 (비교 실험용)")
     s.set_defaults(func=_ingest)
 
     s = sub.add_parser("index", help="청크 → 벡터 저장소 (임베딩)")

@@ -43,6 +43,7 @@
 | 평가셋 형식 | CSV, 필드명 강의마다 다름 | 노션 요구대로 `eval/dev.json`(10) · `eval/test.json`(20), 필드: id, type, question, expected_facts, allowed_evidence(청크 ID), source_location | 노션 산출물 규격 |
 | 답변 정답 | 교안에 정답 충족 지표 없음 | 시험 정답(선지/OX) 일치 = 정답 충족 1/0, 인용이 실제 검색 결과에 있는지 = 근거 적합 1/0 | 노션 채점 기준 |
 | 생성·판정 모델 | gpt-5-mini / gpt-4o-mini 혼재 | 생성·RAGAS 판정 모두 **gpt-6-luna** | 팀 통일 (교안·발제 표기 오류 확인, 2026-11-23) |
+| 시험 시점 | 교안에 없음 (규정 문서는 시점 문제가 없음) | 판례는 선고일 2025-12-31까지, 법령은 2026-01-01 시행 버전(eflaw)만 색인 | 시험 이후 판례·개정 법령이 근거로 섞이면 출제 당시 정답과 어긋남 |
 | Postgres 계정 | 2-5에서 docker(postgress)·DBeaver(password)·.env(postgres) 불일치 | `.env` 기준 `POSTGRES_PASSWORD=postgres`, `POSTGRES_DB=postgres`로 통일 | 교안 오타 정리 |
 | PGVector import | 경로 2가지 혼재 | `from langchain_postgres import PGVector` | 3-6/3-7 기준 |
 | 쿼리 리라이트(최적화) | 4-4 Rewrite | 교안 Rewrite 방식 사용, 원질문·변환질의 저장, 실패 시 원질문 fallback | 노션 STEP 5 |

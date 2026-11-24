@@ -1,5 +1,15 @@
 from civil_rag import config
+from civil_rag.ingest.build import decision_date, in_date_range
 from civil_rag.ingest.chunking import clean_text, law_to_chunks, prec_to_chunks
+
+
+def test_exam_date_filter():
+    assert decision_date({"선고일자": "2025.12.31"}) == "20251231"
+    assert in_date_range({"선고일자": "20251231"}, "", "20251231")
+    assert not in_date_range({"선고일자": "20260105"}, "", "20251231")   # 시험 이후 판례 제외
+    assert not in_date_range({"선고일자": "20100101"}, "20110101", "")
+    assert not in_date_range({"선고일자": ""}, "", "20251231")           # 날짜 모르면 필터 켜졌을 때 제외
+    assert in_date_range({"선고일자": ""}, "", "")                       # 필터 끄면 통과
 
 PREC = {
     "판례정보일련번호": "625343",

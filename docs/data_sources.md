@@ -15,7 +15,8 @@
 | 판례 목록 수집 | 2026-11-23, 전체 175,894건 중 사건종류 "민사"(400101) 52,333건 → `law_collector/data/civil_ids.jsonl` |
 | 본문 수집 대상 | 데이터출처 "대법원" 42,537건 (팀원 3명 `판례일련번호 % 3` 분담) |
 | 본문 수집 기간 | 2026-11-23 ~ (진행 중) |
-| 법령 | 민법 (MST 284415, 시행 2026-03-17) 외 — `python law_collector/collect.py laws` |
+| 법령 | **시험일(2026-01-01) 시행 버전** — `python law_collector/collect.py laws --as-of 20260101` → `data/law_20260101/` (현행본 `data/law/`는 2026-03-17 시행 민법 등, 시험 이후 개정 포함 가능) |
+| 시험 시점 필터 | 판례 선고일 2025-12-31 이전만 색인 (`PREC_DATE_TO`), 법령은 `LAW_AS_OF=20260101` 버전. 끄려면 `civil-rag ingest --no-date-filter` |
 | 원문 저장 위치 | 각자 `law_collector/data/prec/{판례일련번호}.json` → 공유 드라이브로 통합 (git 제외) |
 | 재수집 방법 | [law_collector/README.md](../law_collector/README.md) |
 

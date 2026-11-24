@@ -301,6 +301,8 @@ def cmd_fetch(args) -> None:
 # ───────────────────────── 3) 법령 ─────────────────────────
 def cmd_laws(args) -> None:
     names = args.names or CIVIL_LAWS
+    if args.as_of:
+        return _laws_as_of(names, args.as_of)
     LAW_DIR.mkdir(parents=True, exist_ok=True)
     try:
         for name in names:
@@ -319,6 +321,41 @@ def cmd_laws(args) -> None:
             body = call("lawService.do", {"target": "law", "MST": hit["법령일련번호"]})
             write_json_atomic(out, body)
             print(f"  + {name} (MST {hit['법령일련번호']}, 시행 {hit.get('시행일자')})")
+    except StopCollecting as e:
+        print(f"\n중단: {e}")
+
+
+def _laws_as_of(names: list[str], as_of: str) -> None:
+    """as_of(YYYYMMDD) 에 시행 중이던 버전으로 받기 → data/law_<as_of>/.
+    target=eflaw 목록(현행+연혁)에서 법령명이 정확히 같고 시행일자 <= as_of 인 것 중 가장 최신 버전."""
+    out_dir = DATA / f"law_{as_of}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        for name in names:
+            out = out_dir / f"{name.replace(' ', '_')}.json"
+            if out.exists():
+                print(f"  = {name} (이미 있음)")
+                continue
+            versions = []
+            for page in range(1, 11):
+                data = call("lawSearch.do", {"target": "eflaw", "query": name, "display": 100, "page": page})
+                rows = data.get("LawSearch", {}).get("law") or []
+                if isinstance(rows, dict):
+                    rows = [rows]
+                versions += [r for r in rows if r.get("법령명한글") == name]
+                if len(rows) < 100:
+                    break
+            eligible = [v for v in versions if str(v.get("시행일자") or "99999999") <= as_of]
+            if not eligible:
+                print(f"  ? {name}: {as_of} 이전에 시행된 버전 없음 (이름 확인)")
+                continue
+            hit = max(eligible, key=lambda v: (str(v.get("시행일자")), str(v.get("공포일자", ""))))
+            body = call("lawService.do", {"target": "eflaw", "MST": hit["법령일련번호"], "efYd": hit["시행일자"]})
+            if not body.get("법령"):
+                print(f"  ! {name}: 본문이 비어 있음 (MST {hit['법령일련번호']}, 시행 {hit['시행일자']})")
+                continue
+            write_json_atomic(out, body)
+            print(f"  + {name} (MST {hit['법령일련번호']}, 시행 {hit['시행일자']} — {as_of} 기준)")
     except StopCollecting as e:
         print(f"\n중단: {e}")
 
@@ -363,6 +400,7 @@ def main() -> None:
 
     l = sub.add_parser("laws", help="민법 등 법령 본문 수집")
     l.add_argument("names", nargs="*", help="법령명 (생략 시 기본 민사 법령 목록)")
+    l.add_argument("--as-of", default=None, help="YYYYMMDD 에 시행 중이던 버전으로 받기 (예: 시험일 20260101) → data/law_<날짜>/")
 
     sub.add_parser("status", help="진행 상황 보기")
 

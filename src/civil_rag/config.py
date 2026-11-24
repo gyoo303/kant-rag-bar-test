@@ -19,9 +19,16 @@ def _env(name: str, default: str) -> str:
     return os.environ.get(name, default).strip()
 
 
+# ── 시험 시점 (시험 이후 판례·개정 법령이 근거로 섞이지 않게) ─────────
+# 2026년 제15회 변호사시험 기준. 빈 값("")이면 필터를 끈다.
+LAW_AS_OF = _env("LAW_AS_OF", "20260101")        # 이 날짜에 시행 중이던 법령 버전 사용
+PREC_DATE_FROM = _env("PREC_DATE_FROM", "")      # 판례 선고일 하한 (기본: 제한 없음)
+PREC_DATE_TO = _env("PREC_DATE_TO", "20251231")  # 판례 선고일 상한 (시험일 이후 판례 제외)
+
 # ── 경로 ─────────────────────────────────────────────
 PREC_DIR = ROOT / "law_collector" / "data" / "prec"   # 수집한 판례 원문 (git 제외)
-LAW_DIR = ROOT / "law_collector" / "data" / "law"     # 수집한 법령 원문 (git 제외)
+# 법령: collect.py laws --as-of <LAW_AS_OF> 로 받은 시점 버전 폴더. LAW_AS_OF 가 비면 현행(data/law)
+LAW_DIR = ROOT / "law_collector" / "data" / (f"law_{LAW_AS_OF}" if LAW_AS_OF else "law")
 INDEX_DIR = ROOT / "data" / "index"                   # chunks.jsonl, 메모리 벡터 저장소 (git 제외)
 CACHE_DIR = ROOT / "cache"                            # 임베딩 캐시 (git 제외)
 EVAL_DIR = ROOT / "eval"
@@ -74,6 +81,9 @@ def snapshot() -> dict:
         "reranker_model": RERANKER_MODEL,
         "vector_backend": VECTOR_BACKEND,
         "index_version": INDEX_VERSION,
+        "law_as_of": LAW_AS_OF,
+        "prec_date_from": PREC_DATE_FROM,
+        "prec_date_to": PREC_DATE_TO,
         "collection": COLLECTION_NAME,
         "chunk_size": CHUNK_SIZE,
         "chunk_overlap": CHUNK_OVERLAP,

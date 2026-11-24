@@ -28,13 +28,33 @@ def _mtime(path: Path) -> str:
     return dt.datetime.fromtimestamp(path.stat().st_mtime).isoformat(timespec="seconds")
 
 
+def decision_date(prec: dict) -> str:
+    """선고일자 → 'YYYYMMDD' (형식이 이상하면 빈 문자열)."""
+    d = "".join(ch for ch in str(prec.get("선고일자") or "") if ch.isdigit())
+    return d if len(d) == 8 else ""
+
+
+def in_date_range(prec: dict, date_from: str = "", date_to: str = "") -> bool:
+    """시험 시점 필터. 선고일자를 알 수 없는 판례는 범위를 확인할 수 없으므로 필터가 켜져 있으면 제외."""
+    if not date_from and not date_to:
+        return True
+    d = decision_date(prec)
+    if not d:
+        return False
+    return (not date_from or d >= date_from) and (not date_to or d <= date_to)
+
+
 def select_prec_files(
     limit: int = 0,
     court: str | None = None,
     keywords: list[str] | None = None,
     ids_file: Path | None = None,
+    date_from: str = "",
+    date_to: str = "",
+    skipped: dict | None = None,
 ) -> Iterator[tuple[Path, dict]]:
-    """색인할 판례 고르기. 조건을 모두 만족하는 파일만."""
+    """색인할 판례 고르기. 조건을 모두 만족하는 파일만. skipped 에 제외 사유별 건수를 센다."""
+    skipped = skipped if skipped is not None else {}
     wanted: set[str] | None = None
     if ids_file:
         wanted = {line.strip() for line in ids_file.read_text(encoding="utf-8").splitlines() if line.strip()}
@@ -48,6 +68,9 @@ def select_prec_files(
         except (OSError, json.JSONDecodeError):
             continue
         if court and (prec.get("법원명") or "") != court:
+            continue
+        if not in_date_range(prec, date_from, date_to):
+            skipped["date"] = skipped.get("date", 0) + 1
             continue
         if kws:
             hay = " ".join(str(prec.get(f) or "") for f in SEARCHABLE_FIELDS)
@@ -65,14 +88,22 @@ def build_chunks(
     keywords: list[str] | None = None,
     ids_file: Path | None = None,
     laws: list[str] | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
 ) -> dict:
-    """원문 → chunks.jsonl. 반환: manifest dict."""
+    """원문 → chunks.jsonl. 반환: manifest dict. 날짜 인자를 생략하면 config 의 시험 시점 필터를 쓴다."""
     config.INDEX_DIR.mkdir(parents=True, exist_ok=True)
+    date_from = config.PREC_DATE_FROM if date_from is None else date_from
+    date_to = config.PREC_DATE_TO if date_to is None else date_to
+    if not config.LAW_DIR.exists():
+        print(f"  ! 법령 폴더 없음: {config.LAW_DIR.relative_to(config.ROOT)} — "
+              f"`python law_collector/collect.py laws --as-of {config.LAW_AS_OF}` 먼저 실행 (법령 없이 진행)")
     n_prec = n_prec_chunks = n_law_chunks = 0
     law_names: list[str] = []
+    skipped: dict = {}
     tmp = CHUNKS_FILE.with_suffix(".tmp")
     with tmp.open("w", encoding="utf-8") as f:
-        for path, prec in select_prec_files(limit, court, keywords, ids_file):
+        for path, prec in select_prec_files(limit, court, keywords, ids_file, date_from, date_to, skipped):
             chunks = prec_to_chunks(prec, fetched_at=_mtime(path))
             for c in chunks:
                 f.write(json.dumps(c.to_dict(), ensure_ascii=False) + "\n")
@@ -103,7 +134,12 @@ def build_chunks(
             "keywords": keywords or [],
             "ids_file": str(ids_file) if ids_file else None,
             "laws": laws or "all",
+            "prec_date_from": date_from,
+            "prec_date_to": date_to,
+            "law_as_of": config.LAW_AS_OF,
+            "law_dir": str(config.LAW_DIR.relative_to(config.ROOT)),
         },
+        "skipped": skipped,
         "prec_docs": n_prec,
         "prec_chunks": n_prec_chunks,
         "laws": law_names,
@@ -114,6 +150,8 @@ def build_chunks(
     MANIFEST_FILE.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"청크 저장: 판례 {n_prec:,}건 → {n_prec_chunks:,}개, 법령 {len(law_names)}개 → {n_law_chunks:,}개 "
           f"→ {CHUNKS_FILE.relative_to(config.ROOT)}")
+    if skipped.get("date"):
+        print(f"  시험 시점 필터로 제외한 판례: {skipped['date']:,}건 (선고일 {date_from or '…'} ~ {date_to or '…'} 밖)")
     return manifest
 
 

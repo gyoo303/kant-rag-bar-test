@@ -1,6 +1,55 @@
-from civil_rag import config
+﻿from civil_rag import config
 from civil_rag.ingest.build import decision_date, in_date_range
-from civil_rag.ingest.chunking import clean_text, law_to_chunks, prec_to_chunks
+from civil_rag.ingest.chunking import (
+    clean_text,
+    law_to_chunks,
+    parse_ref_articles,
+    parse_ref_cases,
+    prec_to_chunks,
+    split_items,
+)
+
+
+def test_parse_ref_articles_carries_law_name():
+    assert parse_ref_articles("민법 제750조, 제751조 / 민사소송법 제208조") == [
+        "law:민법:750", "law:민법:751", "law:민사소송법:208"]
+    assert parse_ref_articles("가.나.민사소송법 제204조, 민법 제213조 / 나. 제226조[소의제기]") == [
+        "law:민사소송법:204", "law:민법:213", "law:민법:226"]
+    assert parse_ref_articles("구 민법(1990. 1. 13. 법률 제4199호로 개정되기 전의 것) 제1008조의3") == ["law:민법:1008-3"]
+    assert parse_ref_articles("") == []
+
+
+def test_parse_ref_cases():
+    assert parse_ref_cases("대법원 2003. 7. 11. 선고 99다24218 판결, 대법원 2023. 6. 1. 선고 2021다2022 판결") == [
+        "99다24218", "2021다2022"]
+
+
+def test_split_items_numbered_and_hangul():
+    assert split_items("[1] 첫째 법리 [2] 둘째 법리") == [("[1]", "첫째 법리"), ("[2]", "둘째 법리")]
+    assert split_items("가. 첫째 법리 나. 둘째 법리") == [("가.", "첫째 법리"), ("나.", "둘째 법리")]
+    assert split_items("항목 표시 없는 요지") == [("", "항목 표시 없는 요지")]
+    assert split_items("[1] 하나뿐") == [("", "[1] 하나뿐")]          # 항목이 1개면 나누지 않음
+    assert split_items("") == []
+
+
+def test_field_strategy_items_meta_and_no_fulltext():
+    prec = {**PREC, "판결요지": "[1] 첫째 요지 [2] 둘째 요지", "참조조문": "[1] 국가배상법 제2조 / [2] 민법 제750조",
+            "참조판례": "대법원 2003. 7. 11. 선고 99다24218 판결"}
+    chunks = prec_to_chunks(prec, strategy="field")
+    ids = [c.chunk_id for c in chunks]
+    assert ids == ["625343:판시사항:0", "625343:판결요지:0", "625343:판결요지:1"]   # 전문·참조조문은 조각 아님
+    second = chunks[2]
+    assert second.text.startswith("[2025다212572 손해배상(기) | 판결요지 [2]]\n둘째 요지")
+    assert "참조조문: 국가배상법 제2조, 민법 제750조" in second.text
+    assert second.metadata["ref_articles"] == ["law:국가배상법:2", "law:민법:750"]
+    assert second.metadata["ref_articles_str"] == "|law:국가배상법:2|law:민법:750|"
+    assert second.metadata["ref_cases"] == ["99다24218"]
+    assert second.metadata["item"] == "[2]"
+
+
+def test_field_strategy_skips_case_without_summary():
+    prec = {**PREC, "판시사항": "", "판결요지": ""}
+    assert prec_to_chunks(prec, strategy="field") == []
 
 
 def test_exam_date_filter():
@@ -31,7 +80,7 @@ def test_clean_text_removes_tags_and_entities():
 
 
 def test_prec_chunks_ids_sections_and_header():
-    chunks = prec_to_chunks(PREC, fetched_at="2026-11-23T10:00:00")
+    chunks = prec_to_chunks(PREC, fetched_at="2026-11-23T10:00:00", strategy="split")
     ids = [c.chunk_id for c in chunks]
     assert ids[0] == "625343:판시사항:0"
     assert "625343:참조판례:0" not in ids                 # 빈 필드는 건너뜀
@@ -46,8 +95,8 @@ def test_prec_chunks_ids_sections_and_header():
 
 
 def test_prec_chunk_ids_are_stable():
-    a = [c.chunk_id for c in prec_to_chunks(PREC)]
-    b = [c.chunk_id for c in prec_to_chunks(PREC)]
+    a = [c.chunk_id for c in prec_to_chunks(PREC, strategy="split")]
+    b = [c.chunk_id for c in prec_to_chunks(PREC, strategy="split")]
     assert a == b
 
 

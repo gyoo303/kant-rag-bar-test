@@ -105,6 +105,9 @@ def build_chunks(
     with tmp.open("w", encoding="utf-8") as f:
         for path, prec in select_prec_files(limit, court, keywords, ids_file, date_from, date_to, skipped):
             chunks = prec_to_chunks(prec, fetched_at=_mtime(path))
+            if not chunks:  # field 전략에서 판시사항·판결요지가 모두 없는 판례
+                skipped["no_summary"] = skipped.get("no_summary", 0) + 1
+                continue
             for c in chunks:
                 f.write(json.dumps(c.to_dict(), ensure_ascii=False) + "\n")
             n_prec += 1
@@ -126,6 +129,8 @@ def build_chunks(
         "built_at": dt.datetime.now().isoformat(timespec="seconds"),
         "index_version": config.INDEX_VERSION,
         "collection": config.COLLECTION_NAME,
+        "chunk_strategy": config.CHUNK_STRATEGY,
+        "field_fulltext_fallback": config.FIELD_FULLTEXT_FALLBACK,
         "chunk_size": config.CHUNK_SIZE,
         "chunk_overlap": config.CHUNK_OVERLAP,
         "filters": {
@@ -152,6 +157,9 @@ def build_chunks(
           f"→ {CHUNKS_FILE.relative_to(config.ROOT)}")
     if skipped.get("date"):
         print(f"  시험 시점 필터로 제외한 판례: {skipped['date']:,}건 (선고일 {date_from or '…'} ~ {date_to or '…'} 밖)")
+    if skipped.get("no_summary"):
+        print(f"  판시사항·판결요지가 없어 제외한 판례: {skipped['no_summary']:,}건 "
+              f"(전문으로 대신 넣으려면 FIELD_FULLTEXT_FALLBACK=true)")
     return manifest
 
 

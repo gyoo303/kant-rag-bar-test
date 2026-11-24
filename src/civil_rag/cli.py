@@ -51,12 +51,18 @@ def _search(a):
 
     r = Retriever(backend=a.backend)
     if a.mode == "bm25":
-        hits = r.bm25_search(a.query, a.k)
+        key = None
+        if a.article:
+            from civil_rag.ingest.chunking import parse_ref_articles
+
+            key = a.article if a.article.startswith("law:") else (parse_ref_articles(a.article) or [None])[0]
+            print(f"조문 필터: {key}")
+        hits = r.bm25_search(a.query, a.k, key)
         for rank, (cid, score) in enumerate(hits, 1):
             c = r._candidate(cid)
             print(f"{rank:>2}. {score:7.2f}  {cid}\n    {c.cite_label()}\n    {c.text.split(chr(10), 1)[-1][:160]}")
         return
-    res = r.retrieve(a.query, mode=a.mode, rewrite=a.rewrite)
+    res = r.retrieve(a.query, mode=a.mode, rewrite=a.rewrite, article=a.article)
     if res.rewritten_query:
         print(f"변환 질의: {res.rewritten_query}")
     for rank, c in enumerate(res.final, 1):
@@ -70,7 +76,7 @@ def _search(a):
 def _ask(a):
     from civil_rag.agent import LegalRAG
 
-    res = LegalRAG().ask(a.question, a.config)
+    res = LegalRAG().ask(a.question, a.config, article=a.article)
     if a.json:
         print(json.dumps(res.to_record(), ensure_ascii=False, indent=2))
         return
@@ -143,6 +149,7 @@ def main(argv: list[str] | None = None) -> None:
     s.add_argument("--mode", choices=["bm25", "A", "B", "C"], default="bm25")
     s.add_argument("--rewrite", action="store_true")
     s.add_argument("--k", type=int, default=10, help="bm25 모드 결과 수")
+    s.add_argument("--article", default=None, help='조문 필터, 예: "민법 제750조" (그 조문을 참조하는 판례·조문만)')
     s.add_argument("--backend", choices=["pgvector", "memory"], default=None)
     s.set_defaults(func=_search)
 
@@ -150,6 +157,7 @@ def main(argv: list[str] | None = None) -> None:
     s.add_argument("question")
     s.add_argument("--config", choices=list(RUN_CONFIGS), default="C")
     s.add_argument("--json", action="store_true", help="원본 기록 JSON 출력")
+    s.add_argument("--article", default=None, help='조문 필터, 예: "민법 제750조"')
     s.set_defaults(func=_ask)
 
     s = sub.add_parser("check-eval", help="평가셋 점검")

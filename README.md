@@ -24,6 +24,7 @@ python law_collector/collect.py laws --as-of 20260101
 
 # 1) 원문 → 청크 (비용 없음). 기본으로 시험 시점 필터 적용(판례 ~2025-12-31, 법령 2026-01-01 시행본)
 #    범위를 줄이려면 --limit / --keywords "임대차,소멸시효" / --court 대법원, 필터 끄기 --no-date-filter
+#    청킹: 기본 field(판시사항·판결요지 항목 단위, 전문 제외) / 비교용 CHUNK_STRATEGY=split(500자 분할, 전문 포함)
 uv run civil-rag ingest
 
 # 2) 청크 → 벡터 색인 (OpenAI 임베딩 비용 발생, 캐시되므로 재색인은 무료)
@@ -33,6 +34,7 @@ uv run civil-rag index --backend memory     # Docker 없이 (.env 에 VECTOR_BAC
 # 3) 검색만 확인 — 평가셋 근거 매핑할 때 (bm25 는 비용 없음)
 uv run civil-rag search "임대차보증금 반환 동시이행" --mode bm25
 uv run civil-rag search "임대차보증금 반환 동시이행" --mode C
+uv run civil-rag search "손해배상 과실" --article "민법 제750조"   # 그 조문을 참조한 판례만
 
 # 4) 질문하기 / 화면
 uv run civil-rag ask "…지문… 옳은가?" --config C

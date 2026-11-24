@@ -51,7 +51,7 @@ class LegalRAG:
             self._retriever = Retriever()
         return self._retriever
 
-    def ask(self, question: str, run_config: str = "C") -> AgentResult:
+    def ask(self, question: str, run_config: str = "C", article: str | None = None) -> AgentResult:
         if run_config not in RUN_CONFIGS:
             raise ValueError(f"run_config 는 {list(RUN_CONFIGS)} 중 하나")
         spec = RUN_CONFIGS[run_config]
@@ -61,7 +61,7 @@ class LegalRAG:
             return AgentResult(question, run_config, None, ans, time.perf_counter() - t0)
 
         try:
-            ret = self.retriever.retrieve(question, mode=spec["mode"], rewrite=spec["rewrite"])
+            ret = self.retriever.retrieve(question, mode=spec["mode"], rewrite=spec["rewrite"], article=article)
         except Exception as e:  # noqa: BLE001 — 검색 실패는 '근거 없음'이 아니라 error
             ans = AnswerResult(status="error", verdict=None, answer="", error=f"retrieval: {type(e).__name__}: {e}"[:500])
             return AgentResult(question, run_config, None, ans, time.perf_counter() - t0)

@@ -74,18 +74,32 @@ class Retriever:
             use_jsonb=True,
         )
 
-    def bm25_search(self, query: str, k: int) -> list[tuple[str, float]]:
-        """BM25Retriever 내부 BM25Okapi 점수를 그대로 사용 (점수 기록용). 점수 0(겹치는 단어 없음)은 제외."""
+    def article_mask(self, key: str) -> np.ndarray:
+        """BM25 문서 순서 기준으로, 참조조문(또는 조문 자체)이 key 인 청크만 True."""
+        docs = self.bm25.docs
+        return np.array([key in self.chunks[d.metadata["chunk_id"]].metadata.get("ref_articles", []) for d in docs])
+
+    def bm25_search(self, query: str, k: int, article: str | None = None) -> list[tuple[str, float]]:
+        """BM25Retriever 내부 BM25Okapi 점수를 그대로 사용 (점수 기록용). 점수 0(겹치는 단어 없음)은 제외.
+        article(조문 키) 가 있으면 그 조문을 참조하는 청크 안에서만 찾는다 (교안 3-4 메타데이터 필터)."""
         retriever = self.bm25
         scores = retriever.vectorizer.get_scores(retriever.preprocess_func(query))
         if len(scores) == 0:
             return []
+        if article:
+            scores = np.where(self.article_mask(article), scores, 0.0)
         top = np.argsort(scores)[::-1][:k]
         return [(retriever.docs[i].metadata["chunk_id"], float(scores[i])) for i in top if scores[i] > 0]
 
-    def vector_search(self, query: str, k: int) -> list[tuple[str, float]]:
-        """반환 점수는 코사인 유사도로 통일 (pgvector는 거리 → 1-거리)."""
-        pairs = self.vector_store.similarity_search_with_score(query, k=k)
+    def vector_search(self, query: str, k: int, article: str | None = None) -> list[tuple[str, float]]:
+        """반환 점수는 코사인 유사도로 통일 (pgvector는 거리 → 1-거리). article 이 있으면 메타데이터 필터."""
+        kwargs = {}
+        if article:
+            if self.backend == "pgvector":
+                kwargs["filter"] = {"ref_articles_str": {"$like": f"%|{article}|%"}}
+            else:
+                kwargs["filter"] = lambda doc: article in doc.metadata.get("ref_articles", [])
+        pairs = self.vector_store.similarity_search_with_score(query, k=k, **kwargs)
         out = []
         for doc, score in pairs:
             cid = doc.metadata.get("chunk_id") or doc.id
@@ -113,9 +127,18 @@ class Retriever:
         ch = self.chunks[cid]
         return Candidate(chunk_id=cid, doc_id=ch.doc_id, section=ch.section, text=ch.text, metadata=ch.metadata)
 
-    def retrieve(self, question: str, mode: str = "C", rewrite: bool = False) -> RetrievalResult:
+    def retrieve(self, question: str, mode: str = "C", rewrite: bool = False,
+                 article: str | None = None) -> RetrievalResult:
+        """article: '민법 제750조' 또는 'law:민법:750' — 주면 그 조문 관련 청크에서만 검색."""
         if mode not in CONFIGS:
             raise ValueError(f"mode 는 {CONFIGS} 중 하나")
+        if article and not article.startswith("law:"):
+            from civil_rag.ingest.chunking import parse_ref_articles
+
+            keys = parse_ref_articles(article)
+            if not keys:
+                raise ValueError(f"조문을 알아볼 수 없습니다: {article!r} (예: '민법 제750조')")
+            article = keys[0]
         timings: dict[str, float] = {}
         stages: dict[str, list[str]] = {}
 
@@ -129,7 +152,7 @@ class Retriever:
             timings["rewrite"] = time.perf_counter() - t
 
         t = time.perf_counter()
-        vec = self.vector_search(query, self.final_k if mode == "A" else self.first_stage_k)
+        vec = self.vector_search(query, self.final_k if mode == "A" else self.first_stage_k, article)
         timings["vector"] = time.perf_counter() - t
         stages["vector"] = [cid for cid, _ in vec]
         vec_score = {cid: s for cid, s in vec}
@@ -139,7 +162,7 @@ class Retriever:
         bm_rank: dict[str, int] = {}
         if mode in ("B", "C"):
             t = time.perf_counter()
-            bm = self.bm25_search(query, self.first_stage_k)
+            bm = self.bm25_search(query, self.first_stage_k, article)
             timings["bm25"] = time.perf_counter() - t
             stages["bm25"] = [cid for cid, _ in bm]
             bm_score = {cid: s for cid, s in bm}
@@ -180,6 +203,8 @@ class Retriever:
             gated, final = (len(kept) == 0 and len(final) > 0), kept
 
         timings["retrieval_total"] = sum(v for k, v in timings.items())
+        if article:
+            stages["article_filter"] = [article]
         return RetrievalResult(
             config=mode,
             query=query,

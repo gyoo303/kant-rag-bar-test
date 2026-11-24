@@ -66,24 +66,141 @@ def _fmt_date(yyyymmdd: str | None) -> str:
     return f"{s[:4]}.{s[4:6]}.{s[6:8]}" if len(s) == 8 and s.isdigit() else (yyyymmdd or "")
 
 
-def prec_to_chunks(prec: dict, fetched_at: str | None = None) -> list[Chunk]:
-    """판례 본문 JSON(PrecService) 하나를 필드 단위 청크로."""
-    doc_id = str(prec.get("판례정보일련번호") or "").strip()
-    if not doc_id:
+# ── 참조조문·참조판례 → 메타데이터 ─────────────────────
+_ARTICLE = re.compile(
+    r"(?:(구\s*)?([가-힣·]+?(?:법률|법|령|규칙))\s*(?:\([^)]*\))?\s*)?제\s*(\d+)\s*조(?:\s*의\s*(\d+))?"
+)
+_SAME_LAW = {"동법", "같은법", "동"}
+_CASE_NO = re.compile(r"\b(\d{2,4}\s*[가-힣]{1,3}\s*\d{1,6})\b")
+
+
+def parse_ref_articles(text: str | None) -> list[str]:
+    """'민법 제750조, 제751조 / 민사소송법 제208조' → ['law:민법:750', 'law:민법:751', 'law:민사소송법:208'].
+    법령명이 생략되면 바로 앞 법령명을 이어 쓴다. 조문 청크 ID(law:법령명:조번호[-가지번호])와 같은 형식."""
+    out: list[str] = []
+    law = None
+    for m in _ARTICLE.finditer(text or ""):
+        name = m.group(2)
+        if name and name not in _SAME_LAW:
+            law = name
+        if not law:
+            continue
+        key = f"law:{law}:{m.group(3)}" + (f"-{m.group(4)}" if m.group(4) else "")
+        if key not in out:
+            out.append(key)
+    return out
+
+
+def parse_ref_cases(text: str | None) -> list[str]:
+    """참조판례의 사건번호 목록 (예: '99다24218')."""
+    out = []
+    for m in _CASE_NO.finditer(text or ""):
+        no = re.sub(r"\s+", "", m.group(1))
+        if no not in out:
+            out.append(no)
+    return out
+
+
+def article_label(key: str) -> str:
+    """'law:민법:750-2' → '민법 제750조의2'."""
+    _, law, num = key.split(":", 2)
+    base, _, branch = num.partition("-")
+    return f"{law} 제{base}조" + (f"의{branch}" if branch else "")
+
+
+# ── 판결요지 항목 나누기 ([1] [2] … 또는 가. 나. …) ───────
+_HANGUL_SEQ = "가나다라마바사아자차카타파하"
+
+
+def split_items(text: str) -> list[tuple[str, str]]:
+    """원문 구조의 항목 표시를 순서대로만 인정해서 나눈다. 반환: [(표시, 본문)]. 표시가 없으면 [('', 전문)]."""
+    text = text.strip()
+    if not text:
         return []
-    case_no = clean_text(prec.get("사건번호"))
-    case_name = clean_text(prec.get("사건명"))
-    base_meta = {
-        "doc_id": doc_id,
+    for kind in ("num", "hangul"):
+        marks = []
+        pos = 0
+        for i in range(20):
+            if kind == "num":
+                label, pat = f"[{i + 1}]", re.compile(rf"(?:^|(?<=\s)|(?<=/))\[{i + 1}\]")
+            else:
+                if i >= len(_HANGUL_SEQ):
+                    break
+                ch = _HANGUL_SEQ[i]
+                label, pat = f"{ch}.", re.compile(rf"(?:^|(?<=\s)|(?<=/)|(?<=\.)){ch}\.(?=\s|[가-힣])")
+            m = pat.search(text, pos)
+            if not m:
+                break
+            marks.append((label, m.start(), m.end()))
+            pos = m.end()
+        if len(marks) >= 2 and marks[0][1] <= 3:
+            items = []
+            for j, (label, _s, e) in enumerate(marks):
+                end = marks[j + 1][1] if j + 1 < len(marks) else len(text)
+                body = text[e:end].strip().rstrip("/").strip()
+                if body:
+                    items.append((label, body))
+            return items
+    return [("", text)]
+
+
+def _prec_base_meta(prec: dict, fetched_at: str | None) -> dict:
+    refs = parse_ref_articles(clean_text(prec.get("참조조문")))
+    return {
+        "doc_id": str(prec.get("판례정보일련번호") or "").strip(),
         "doc_type": "prec",
-        "case_no": case_no,
-        "case_name": case_name,
+        "case_no": clean_text(prec.get("사건번호")),
+        "case_name": clean_text(prec.get("사건명")),
         "court": clean_text(prec.get("법원명")),
         "decision_date": _fmt_date(prec.get("선고일자")),
         "judgment_type": clean_text(prec.get("판결유형")),
+        "ref_articles": refs,
+        "ref_articles_str": "|" + "|".join(refs) + "|" if refs else "",   # PGVector $like 필터용
+        "ref_cases": parse_ref_cases(clean_text(prec.get("참조판례"))),
         "source": SOURCE_NAME,
         "fetched_at": fetched_at or "",
     }
+
+
+def prec_to_chunks(prec: dict, fetched_at: str | None = None, strategy: str | None = None) -> list[Chunk]:
+    """판례 본문 JSON(PrecService) 하나 → 청크. strategy 생략 시 config.CHUNK_STRATEGY."""
+    strategy = strategy or config.CHUNK_STRATEGY
+    if strategy == "field":
+        return prec_to_chunks_field(prec, fetched_at)
+    if strategy == "split":
+        return prec_to_chunks_split(prec, fetched_at)
+    raise ValueError(f"알 수 없는 CHUNK_STRATEGY: {strategy}")
+
+
+def prec_to_chunks_field(prec: dict, fetched_at: str | None = None) -> list[Chunk]:
+    """팀 결정 방식: 판시사항·판결요지를 원래 항목 단위로 한 조각씩. 글자 수로 자르지 않는다.
+    참조조문은 메타데이터(ref_articles)로 두고, 검색에 도움이 되도록 조각 끝에 조문명 한 줄을 붙인다."""
+    base = _prec_base_meta(prec, fetched_at)
+    doc_id = base["doc_id"]
+    if not doc_id:
+        return []
+    refs_line = ", ".join(article_label(k) for k in base["ref_articles"])
+    chunks: list[Chunk] = []
+    for section in config.FIELD_SECTIONS:
+        for i, (label, body) in enumerate(split_items(clean_text(prec.get(section)))):
+            cid = f"{doc_id}:{section}:{i}"
+            header = f"[{base['case_no']} {base['case_name']} | {section}{' ' + label if label else ''}]"
+            text = f"{header}\n{body}" + (f"\n참조조문: {refs_line}" if refs_line else "")
+            meta = {**base, "chunk_id": cid, "section": section, "item": label, "part": i}
+            chunks.append(Chunk(cid, doc_id, "prec", section, text, meta))
+    if not chunks and config.FIELD_FULLTEXT_FALLBACK:
+        return prec_to_chunks_split({k: v for k, v in prec.items() if k in ("판례정보일련번호", "사건번호", "사건명",
+                                     "법원명", "선고일자", "판결유형", "참조조문", "참조판례", "판례내용")}, fetched_at)
+    return chunks
+
+
+def prec_to_chunks_split(prec: dict, fetched_at: str | None = None) -> list[Chunk]:
+    """교안 2장 방식(비교용): 모든 필드(전문 포함)를 RecursiveCharacterTextSplitter 로 500자 분할."""
+    base_meta = _prec_base_meta(prec, fetched_at)
+    doc_id = base_meta["doc_id"]
+    if not doc_id:
+        return []
+    case_no, case_name = base_meta["case_no"], base_meta["case_name"]
     splitter = _splitter()
     chunks: list[Chunk] = []
     for section in config.PREC_SECTIONS:
@@ -137,6 +254,8 @@ def law_to_chunks(law_json: dict, fetched_at: str | None = None) -> list[Chunk]:
             continue
         cid = f"law:{name}:{article}"
         meta = {
+            "ref_articles": [cid],
+            "ref_articles_str": f"|{cid}|",
             "chunk_id": cid,
             "doc_id": f"law:{name}",
             "doc_type": "law",

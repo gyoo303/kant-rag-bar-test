@@ -50,12 +50,20 @@ EMBEDDING_MODEL = "text-embedding-3-small"
 RERANKER_MODEL = "Dongjin-kr/ko-reranker"
 JUDGE_MODEL = _env("JUDGE_MODEL", "gpt-6-luna")  # RAGAS 판정용 (교안 7장은 gpt-4o-mini, 팀 모델로 통일)
 
-# ── 청킹 (교안 2장 RecursiveCharacterTextSplitter) ───
-INDEX_VERSION = _env("INDEX_VERSION", "v1")           # 청킹·색인 설정이 바뀌면 올린다
-COLLECTION_NAME = f"civil_precedents_{INDEX_VERSION}"
+# ── 청킹 ─────────────────────────────────────────────
+# field: 판례의 원래 구조를 그대로 조각으로 (판시사항·판결요지를 [1][2]/가.나. 항목 단위로, 전문 제외,
+#        참조조문·참조판례는 메타데이터로)  ← 팀 결정 기본값
+# split: 교안 2장 RecursiveCharacterTextSplitter 로 모든 필드(전문 포함)를 500자 분할  ← 비교용
+CHUNK_STRATEGY = _env("CHUNK_STRATEGY", "field")
+INDEX_VERSION = _env("INDEX_VERSION", "v2")           # 청킹·색인 설정이 바뀌면 올린다
+COLLECTION_NAME = f"civil_precedents_{INDEX_VERSION}_{CHUNK_STRATEGY}"
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
-PREC_SECTIONS = ("판시사항", "판결요지", "참조조문", "참조판례", "판례내용")
+PREC_SECTIONS = ("판시사항", "판결요지", "참조조문", "참조판례", "판례내용")   # split 전략
+FIELD_SECTIONS = ("판시사항", "판결요지")                                    # field 전략: 조각이 되는 필드
+# field 전략에서 판시사항·판결요지가 둘 다 없는 판례(주로 하급심): 기본은 제외하고 건수를 기록.
+# true 면 판례 전문을 500자 분할해서 대신 넣는다.
+FIELD_FULLTEXT_FALLBACK = _env("FIELD_FULLTEXT_FALLBACK", "false").lower() == "true"
 
 # ── 검색 (STACK.md 「프로젝트 결정」) ────────────────
 FIRST_STAGE_K = 20             # BM25·Vector 각각 1차 후보 수
@@ -85,6 +93,8 @@ def snapshot() -> dict:
         "prec_date_from": PREC_DATE_FROM,
         "prec_date_to": PREC_DATE_TO,
         "collection": COLLECTION_NAME,
+        "chunk_strategy": CHUNK_STRATEGY,
+        "field_fulltext_fallback": FIELD_FULLTEXT_FALLBACK,
         "chunk_size": CHUNK_SIZE,
         "chunk_overlap": CHUNK_OVERLAP,
         "first_stage_k": FIRST_STAGE_K,

@@ -82,6 +82,8 @@ def main(argv: list[str] | None = None) -> None:
     sv.add_argument("number", type=int)
     sv.add_argument("--mode", default="hybrid_rerank", choices=["vector", "hybrid", "hybrid_rerank", "closed_book"])
     sv.add_argument("--show-answer", action="store_true")
+    sv.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3)")
+    sv.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value")
 
     eb = sub.add_parser("eval", help="평가셋 실행: 선택형 + 근거 없음 문항 × 구성 A/B/C (캐시는 꺼진 상태)")
     eb.add_argument("eval_path")
@@ -90,6 +92,8 @@ def main(argv: list[str] | None = None) -> None:
                     help="closed_book = 검색 없는 기준선 (선택형만, 본 60건과 별도 보고)")
     eb.add_argument("--label", default="")
     eb.add_argument("--rewrite", action="store_true", help="쿼리 리라이트 적용 (선택형 진술별 질의 + 근거 없음 문항)")
+    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) — mcq/presets.py")
+    eb.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value (여러 번)")
 
     args = p.parse_args(argv)
     settings = get_settings(args.config)
@@ -383,12 +387,18 @@ def main(argv: list[str] | None = None) -> None:
         from kant_rag.mcq.solver import MCQSolver
         from kant_rag.retrieval.pipeline import RetrievalMode
 
+        from kant_rag.mcq.presets import PRESETS, apply_overrides, parse_sets
+
         exam = Exam.model_validate_json(Path(args.exam_json).read_text(encoding="utf-8"))
         q = next(x for x in exam.items if x.number == args.number)
-        rec = MCQSolver(settings).solve(q, RetrievalMode(args.mode))
+        s = apply_overrides(settings, {**PRESETS.get(args.preset or "", {}), **parse_sets(args.sets)})
+        rec = MCQSolver(s).solve(q, RetrievalMode(args.mode))
         print(f"[문 {q.number}] form={q.form} polarity={q.polarity} status={rec['status']}")
         for k, j in (rec.get("judgments") or {}).items():
-            print(f"  {k}: {j['verdict']} ({j['confidence']:.2f}) {j['reason'][:80]} {j['cited_chunk_ids']}")
+            src = " [지식]" if j.get("source") == "knowledge" else ""
+            print(f"  {k}: {j['verdict']} ({j['confidence']:.2f}){src} {j['reason'][:80]} {j['cited_chunk_ids']}")
+        if rec.get("context_expansions"):
+            print("확장 근거:", rec["context_expansions"])
         print("예측:", rec.get("predicted"), "| 보기 점수:", rec.get("option_scores"))
         if args.show_answer:
             print("정답:", q.answer)
@@ -398,11 +408,20 @@ def main(argv: list[str] | None = None) -> None:
         from kant_rag.mcq.evaluate import run_bar_eval
         from kant_rag.retrieval.pipeline import RetrievalMode
 
+        from kant_rag.mcq.presets import PRESETS, apply_overrides, parse_sets
+
         s = settings.model_copy(deep=True)
         if s.optimization.cache.enabled:
             raise SystemExit("품질 비교 실행에서는 캐시를 꺼야 합니다 (optimization.cache.enabled=false)")
         s.optimization.rewrite.enabled = args.rewrite
-        print("saved:", run_bar_eval(s, Path(args.eval_path), [RetrievalMode(m) for m in args.modes], args.label))
+        if args.preset and args.preset not in PRESETS:
+            raise SystemExit(f"프리셋 이름: {', '.join(PRESETS)}")
+        overrides = {**PRESETS.get(args.preset or "", {}), **parse_sets(args.sets)}
+        s = apply_overrides(s, overrides)
+        meta = {"preset": args.preset, "overrides": overrides}
+        print("설정:", meta)
+        print("saved:", run_bar_eval(s, Path(args.eval_path), [RetrievalMode(m) for m in args.modes], args.label,
+                                     meta=meta))
 
 
 if __name__ == "__main__":

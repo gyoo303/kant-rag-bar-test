@@ -62,6 +62,7 @@ class StatementJudgment(BaseModel):
     confidence: float = Field(ge=0, le=1, description="근거에 비춘 판단 확신도 (자기 보고값, 확률 아님)")
     reason: str
     cited_chunk_ids: list[str] = Field(default_factory=list)
+    source: Literal["evidence", "knowledge"] = "evidence"  # knowledge = 근거 없이 모델 지식으로 채운 판단 (개선안 C)
 
 
 def derive_statement_labels(q: ExamQuestion) -> dict[str, bool]:

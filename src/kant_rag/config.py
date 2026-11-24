@@ -92,6 +92,15 @@ class MCQ(BaseModel):
     max_context_chars: int = 16000
     max_tokens: int = 16000  # 추론형 모델은 추론 토큰도 포함 → 넉넉히 (빈 응답이면 2배로 1회 재시도)
     rewrite_max_tokens: int = 4000
+    # ---- 개선안 v3 스위치 (기본값 = v2 동작) ----
+    rewrite_queries: int = 1          # A2: 2 이면 진술마다 쟁점·예외 질의 2개 (rewrite 켜져 있을 때)
+    sibling_items: bool = False       # A3: 같은 판결 다른 항목 판시사항 동봉
+    expand_references: bool = False   # A4: 준용 조문 자동 추가
+    max_expansions: int = 8           # A4 준용 조문 추가 상한 (문항 전체)
+    max_siblings: int = 6             # A3 같은 판결 다른 항목 추가 상한 (문항 전체)
+    prompt_version: str = "v1"        # B: v2 = 사실관계·전 항목·예외 우선·유보 기준
+    fusion: str = "none"              # C: fill_unknown = 유보 진술만 closed-book 판단으로 채움
+    fusion_weight: float = 0.5        # C: 채운 판단의 확신도 배율
 
 
 class Models(BaseModel):

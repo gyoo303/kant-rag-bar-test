@@ -47,3 +47,18 @@
 
 ## 검증 계획 (dev + extra 53문항만, 기준 44/53)
 1 v2 → 2 +A1 → 3 +A2 → 4 +A3·A4 → 5 +B → 6 +C. 단계별 정답·확신 오답·토큰·시간 기록, 효과 없는 단계 제외 → 구성 확정 → test 고정 → 최종(반복 2~3회): C, C+리라이트, closed-book, v3
+
+## 구현 상태 (개선안 v3)
+| | 구현 | 스위치 (configs 또는 `--set`) |
+|---|---|---|
+| A1 | 진술당 근거 5개 | `mcq.per_statement_k=5` |
+| A2 | 리라이트 v2: 진술마다 쟁점(issue)·예외(exception) 질의 2개 → 각각 검색 후 RRF 결합 | `optimization.rewrite.enabled=true`, `mcq.rewrite_queries=2` |
+| A3 | 같은 판결 다른 항목 판시사항 동봉 (`kind="sibling"`, 판결당 2·문항당 6) | `mcq.sibling_items=true`, `mcq.max_siblings` |
+| A4 | 준용 조문 확장 (`kind="reference"`): 역방향은 검색 조문이 적용 대상일 때만("제429조의 소에 관하여 … 준용"), 문항당 8 | `mcq.expand_references=true`, `mcq.max_expansions` |
+| B | 판단 프롬프트 v2 (사실관계 동일성, 전 항목, 예외 우선, 유보 기준) | `mcq.prompt_version=v2` |
+| C | 유보 진술만 closed-book 판단으로 채움(확신도×0.5, `source="knowledge"`, "[지식 판단·근거 없음]") | `mcq.fusion=fill_unknown`, `mcq.fusion_weight` |
+
+- 프리셋(`src/kant_rag/mcq/presets.py`): `v2` → `a1` → `a2` → `a34` → `b` → `c`(=v3), 각 단계는 이전 단계 + 1
+- 튜닝 세트: `data/exam/2026_civil_tune.json` (dev 8 + extra 45 = 53문항, test 제외 확인)
+- 실행 기록: summary 에 `run_meta`(프리셋·덮어쓴 설정), `mcq_settings`, `statements`(정답/유보/확신 오답/지식 판단 정·오답)
+- 오프라인 확인(v2 검색 기록 재사용): 문 53 에 제430조·제186조·제190조, 문 9 에 같은 판결 [2] 가 추가됨. 문항당 근거 평균 약 14,000자(최대 약 21,000자)

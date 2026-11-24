@@ -77,7 +77,7 @@ def load_bar_evalset(path: Path) -> BarEvalSet:
         exam = Exam.model_validate(data)
         for q in exam.items:
             q.traps = q.traps or auto_traps(q)
-        split = "extra" if path.stem.endswith("_extra") else "all"
+        split = "extra" if path.stem.endswith("_extra") else ("tune" if path.stem.endswith("_tune") else "all")
         return BarEvalSet(version=f"exam:{path.name}", split=split, items=exam.items)
     return BarEvalSet.model_validate(data)
 

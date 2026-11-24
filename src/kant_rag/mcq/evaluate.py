@@ -54,6 +54,26 @@ def _latency(recs: list[dict], status_of) -> dict:
             "median_ms": round(statistics.median(ok), 1) if ok else None}
 
 
+def _statement_breakdown(recs: list[dict], items: list[ExamQuestion]) -> dict:
+    """진술 단위: 정답 / 유보 / 확신 오답, 그리고 지식으로 채운 진술의 정답·오답 (신뢰성 지표)."""
+    byq = {q.id: q for q in items}
+    out = {"correct": 0, "unknown": 0, "wrong": 0, "knowledge_correct": 0, "knowledge_wrong": 0}
+    for r in recs:
+        q = byq.get(r["question_id"])
+        if q is None or not q.statement_labels:
+            continue
+        for k, lab in q.statement_labels.items():
+            j = (r.get("judgments") or {}).get(k)
+            if not j or j["verdict"] == "unknown":
+                out["unknown"] += 1
+                continue
+            ok = j["verdict"] == ("true" if lab else "false")
+            out["correct" if ok else "wrong"] += 1
+            if j.get("source") == "knowledge":
+                out["knowledge_correct" if ok else "knowledge_wrong"] += 1
+    return out
+
+
 def _tokens(recs: list[dict]) -> dict:
     """호출 비용 비교용: 입력·출력(추론 포함) 토큰 합계와 재시도 수."""
     calls = [c for r in recs for c in r.get("llm_calls", []) + (r.get("rewrite") or {}).get("llm_calls", [])]
@@ -73,7 +93,8 @@ def _git_commit() -> str | None:
         return None
 
 
-def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode], label: str = "") -> Path:
+def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode], label: str = "",
+                 meta: dict | None = None) -> Path:
     es = load_bar_evalset(eval_path)
     if es.split == "test" and not es.frozen:
         raise SystemExit("test 평가셋이 frozen=true 로 고정되지 않았습니다.")
@@ -120,7 +141,8 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             w.writerow([run_id, r["question_id"], r["config"], "no_answer", "no_answer", "", "", "", "",
                         r["answer"]["status"], "", "", "", "", ""])
 
-    summary = {"run_id": run_id, "git_commit": _git_commit(), "eval": {"path": str(eval_path), "version": es.version, "split": es.split},
+    summary = {"run_id": run_id, "git_commit": _git_commit(), "run_meta": meta or {},
+               "mcq_settings": settings.mcq.model_dump(), "eval": {"path": str(eval_path), "version": es.version, "split": es.split},
                "composition_warnings": check_bar_composition(es), "versions": settings.versions.model_dump(),
                "models": settings.models.model_dump(), "settings_fingerprint": settings.fingerprint(),
                "optimization": settings.optimization.model_dump(), "by_config": {}}
@@ -139,6 +161,7 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             "no_answer_insufficient_status(사람 검토 전)": f"{sum(r['answer']['status'] == 'insufficient_evidence' for r in na)}/{len(na)}",
             "latency_mcq": _latency(rs, lambda r: r["status"]),
             "llm_tokens": _tokens(rs),
+            "statements": _statement_breakdown(rs, es.items),
             "latency_no_answer": _latency(na, lambda r: r["answer"]["status"]),
         }
     # 함정 유형별 정답률: 'RAG 가 어떤 함정을 막는가'

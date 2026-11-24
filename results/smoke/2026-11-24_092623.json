@@ -1,0 +1,122 @@
+{
+  "started_at": "2026-11-24T09:26:23+09:00",
+  "config_name": "base",
+  "config_sha": "3272a082f4b459c1902485b175c2a3af8eb182afd253647cb4609fea98c0845d",
+  "checks": [
+    {
+      "name": "generation",
+      "ok": true,
+      "latency_ms": 9067,
+      "detail": {
+        "model_requested": "gpt-6-luna",
+        "model_reported": "gpt-6-luna",
+        "reply_chars": 2
+      },
+      "error": null
+    },
+    {
+      "name": "embedding",
+      "ok": true,
+      "latency_ms": 2403,
+      "detail": {
+        "model_requested": "text-embedding-3-small",
+        "dimensions": 1536,
+        "dimensions_expected": 1536
+      },
+      "error": null
+    },
+    {
+      "name": "gpu",
+      "ok": true,
+      "latency_ms": 9782,
+      "detail": {
+        "torch_version": "2.11.0+cu128",
+        "cuda_build": "12.8",
+        "cuda_available": true,
+        "device_name": "NVIDIA GeForce RTX 5060 Laptop GPU"
+      },
+      "error": null
+    },
+    {
+      "name": "rerank",
+      "ok": true,
+      "latency_ms": 722059,
+      "detail": {
+        "model": "BAAI/bge-reranker-v2-m3",
+        "device": "cuda",
+        "load_ms": 720840,
+        "pairs": 3,
+        "score_ms": 107,
+        "scores": [
+          0.122782,
+          0.978067,
+          2.8e-05
+        ]
+      },
+      "error": null
+    },
+    {
+      "name": "bm25",
+      "ok": true,
+      "latency_ms": 1761,
+      "detail": {
+        "query": "부동산 점유취득시효가 완성되면 등기하여야 소유권을 취득하는가",
+        "results": [
+          {
+            "rank": 1,
+            "location": "민법 제245조 제1항",
+            "score": 3.116671
+          },
+          {
+            "rank": 2,
+            "location": "민법 제186조",
+            "score": 0.16701
+          },
+          {
+            "rank": 3,
+            "location": "민법 제750조",
+            "score": 0.0
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "name": "vector",
+      "ok": true,
+      "latency_ms": 637,
+      "detail": {
+        "query": "부동산 점유취득시효가 완성되면 등기하여야 소유권을 취득하는가",
+        "results": [
+          {
+            "rank": 1,
+            "location": "민법 제245조 제1항",
+            "score": 0.61954
+          },
+          {
+            "rank": 2,
+            "location": "민법 제186조",
+            "score": 0.439467
+          },
+          {
+            "rank": 3,
+            "location": "민법 제750조",
+            "score": 0.243126
+          }
+        ]
+      },
+      "error": null
+    },
+    {
+      "name": "score_scales",
+      "ok": true,
+      "latency_ms": 0,
+      "detail": {
+        "query": "부동산 점유취득시효가 완성되면 등기하여야 소유권을 취득하는가",
+        "note": "BM25 점수는 질의 단어가 문서에 얼마나 일치하는지 세는 값으로 0 이상이고 상한이 없다. 벡터 점수는 임베딩의 코사인 유사도로 -1~1 범위다. 척도가 달라 두 점수를 그대로 더하거나 비교할 수 없으므로 결합은 순위 기반 RRF로 한다(REQ-052, ADR-009)."
+      },
+      "error": null
+    }
+  ],
+  "ok": true
+}

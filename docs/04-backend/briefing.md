@@ -1,8 +1,8 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02]
 status: done
-inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE]
+inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
 ---
 # 백엔드 에이전트 브리핑
@@ -93,3 +93,80 @@ next_readers: [DB, FE, QA]
 | GATE-09 | `corpus`·`retrieval`·`answering`의 정답 경로 | 0줄 |
 - 확인하지 못한 것: GPU에서 PyTorch 동작(`torch.cuda.is_available()`)은 TKT-BE-M1-02 `check smoke`에서 확인한다.
 - 미구현 명령 확인: `uv run python -m lawqa eval freeze --stage criteria` → `미구현: \`eval freeze\` 명령은 TKT-BE-M1-04에서 구현합니다.`, 종료 코드 1.
+
+---
+
+### TKT-BE-M1-02 (`check smoke`·`db init` 연결)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M1-02 | AC-03-1 생성·임베딩 각 1건의 모델명·성공 여부 | 충족 | 실측 `results/smoke/2026-11-24_092623.json`: 생성 `gpt-6-luna`(응답 모델명 `gpt-6-luna`), 임베딩 `text-embedding-3-small` 1536차원, 둘 다 `ok` |
+| TKT-BE-M1-02 | AC-03-2 같은 질의의 BM25·벡터 점수를 따로 기록, 척도 설명 | 충족 | 같은 파일 `bm25`·`vector`·`score_scales`, 시험 `test_ac_03_2_…` |
+| TKT-BE-M1-02 | GPU 장치 이름·재정렬 1건 지연 | 충족 | `NVIDIA GeForce RTX 5060 Laptop GPU`, `torch 2.11.0+cu128`, CUDA 사용 가능, 재정렬 3쌍 107ms(모델 적재 제외) |
+| TKT-BE-M1-02 | GATE-01 전체, GATE-04·05 | 충족 | §검증 결과 |
+
+#### 만든 것
+| API | 명령 | 결과 | 종료 코드 |
+|---|---|---|---|
+| API-01 | `python -m lawqa db init` | `shared.db.init_schema` 호출, 완료 문구 출력 | 0 / 1(접속 문자열 없음) / 2(`psycopg.OperationalError`) |
+| API-04 | `python -m lawqa check smoke` | 점검 6종 + 척도 설명, 요약 출력, 결과 파일 경로 출력 | 0(모두 성공) / 2(하나라도 실패) / 1(설정 오류) |
+- `lawqa.shared.smoke`
+  - `SmokeProbes` Protocol: `generation()`, `embedding()`, `gpu()`, `rerank(query, docs)`, `bm25_scores(query, docs)`, `vector_scores(query, docs)`
+  - `run_smoke(settings, probes, clock) -> SmokeReport` — 점검 하나가 실패해도 나머지 계속, 실패는 `error`(예외 종류+메시지)로 기록
+  - `write_report(report, results_dir, clock) -> Path` — `<results_dir>/smoke/<YYYY-MM-DD_HHMMSS>.json`, 같은 이름이 있으면 `-1`, `-2`를 붙여 덮어쓰지 않음, `sk-…` 패턴은 `sk-***`로 가림
+  - `summary_lines(report) -> list[str]`
+  - `LiveSmokeProbes(settings)` — ChatOpenAI·OpenAIEmbeddings(`dimensions` 지정)·torch·HuggingFaceCrossEncoder·Kiwi(내용 형태소)+`rank_bm25.BM25Okapi`. 무거운 import는 메서드 안에서.
+- CLI: `_HANDLERS` 표로 구현된 명령을 연결하고, `_PENDING_TICKETS`에서 `db init`·`check smoke`를 지움.
+- 시험 `tests/unit/shared/test_smoke.py` 7개(가짜 점검기).
+- 실측 결과 `results/smoke/2026-11-24_092623.json`(커밋, AC-03 증빙).
+
+#### 실측 결과 요약 (2026-11-24, 이 노트북)
+| 점검 | 결과 | 지연 |
+|---|---|---|
+| 생성 | `gpt-6-luna` 응답 정상 | 9.1초 |
+| 임베딩 | `text-embedding-3-small`, 1536차원 | 2.4초 |
+| GPU | RTX 5060 Laptop, CUDA 12.8 빌드 동작 | 9.8초(torch 첫 import 포함) |
+| 재정렬 | 3쌍 점수 [0.12, 0.98, 0.00], 정답 조문(제245조)이 1위 | 107ms(모델 적재 721초 = 첫 다운로드 약 2.3GB 포함) |
+| BM25 | 제245조 3.12 > 제186조 0.17 > 제750조 0.00 | 1.8초(Kiwi 적재 포함) |
+| 벡터 | 제245조 0.62 > 제186조 0.44 > 제750조 0.24 | 0.6초 |
+
+#### 계층·보안 확인 포인트
+- `shared.smoke`는 도메인이 아니므로 외부 라이브러리 사용 가능(GATE-02 대상 아님). 도메인·응용 패키지는 여전히 비어 있음.
+- 비밀값: 키는 `Settings.secrets.require`로만 읽고 결과 파일·로그·출력에 쓰지 않음. 결과 파일의 `sk-` 문자열 0개 확인.
+
+#### 임시 코드
+- `_PENDING_TICKETS` 남은 항목: `eval freeze`(M1-04) 이후 순서대로 제거.
+
+#### 구현 중 자율 결정
+##### TKT-BE-M1-02 BM25·벡터 시험 문서
+- 결정: `tests/fixtures/raw` 대신 커밋된 `law_collector/data/law/민법.txt`의 조문 3개(제186조, 제245조 제1항, 제750조)를 `SAMPLE_DOCS` 상수로 사용 — 티켓 완료 조건(AC-03-2)
+- 선택지: **A. 민법 조문 3개 상수 (권장·채택)** / B. TKT-DB-M2-01 시험 데이터를 기다림
+- 권장 이유: `tests/fixtures/raw`는 DB 티켓(M2)에서 만들어져 이 티켓 시점에 없다. 실제 민법 문장이라 척도 차이가 현실적으로 보인다.
+- trade-off: A — 시험 문서가 코드에 들어감(3문장). B — M1 점검이 M2까지 미뤄짐.
+
+##### TKT-BE-M1-02 점검 결과 파일 이름
+- 결정: `<YYYY-MM-DD_HHMMSS>.json`(같은 이름이면 번호) — 티켓은 `<날짜>.json`
+- 선택지: **A. 날짜+시각 (권장·채택)** / B. 날짜만(같은 날 덮어씀)
+- 권장 이유: `results/`는 덮어쓰지 않는다(금지 패턴 13). 같은 날 여러 번 점검해도 기록이 모두 남는다.
+- trade-off: A — 파일이 늘어남. B — 앞선 점검 기록이 사라짐.
+
+##### TKT-BE-M1-02 재정렬 지연 측정 방식
+- 결정: 모델 적재(`load_ms`)와 워밍업 1회를 빼고 점수 계산만 `score_ms`로 기록 — "재정렬 1건 지연"
+- 선택지: **A. 적재·워밍업 분리 (권장·채택)** / B. 전체 시간
+- 권장 이유: 화면·평가에서는 모델을 프로세스당 한 번 적재하므로(PAGE-01 `st.cache_resource`) 실제 응답 시간에 가까운 값이다.
+- trade-off: A — 첫 실행 비용은 `load_ms`로 따로 봐야 함. B — 다운로드 시간이 지연으로 잡힘.
+
+#### 설계와 다르게 한 것 / 질문
+- 위 "BM25·벡터 시험 문서"(티켓 문구와 다름, 이유 기록).
+- ARCH에 알림(스택 주의 추가 후보): Windows에서 Hugging Face 캐시가 심볼릭 링크를 못 써 경고가 나오고 캐시가 더 큰 공간을 쓴다(동작에는 문제 없음). 개발자 모드를 켜거나 `HF_HUB_DISABLE_SYMLINKS_WARNING=1`로 경고만 끌 수 있다. reranker 첫 적재가 다운로드 포함 약 12분 걸렸다.
+- ARCH에 알림: 생성 1건 9.1초 — 짧은 응답에도 지연이 크다. NFR-02(중앙값 30초)에 보기 5개 처리 시간을 더하면 여유가 작을 수 있다(RISK-14). M3에서 측정한다.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-01 | `docker compose up -d db` → `uv sync` → `uv run python -m lawqa db init`(두 번) → `uv run python -m lawqa --help` | 모두 종료 코드 0 |
+| GATE-04 | `uv run pytest tests/unit -q` | 22 passed |
+| GATE-04b | `uv run pytest tests/integration -q` | 17 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| 실측 | `uv run python -m lawqa check smoke` | 6종 모두 OK, 종료 코드 0 |

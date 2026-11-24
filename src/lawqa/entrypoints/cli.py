@@ -1,14 +1,22 @@
 """명령줄 진입점 `python -m lawqa <group> <command>` (04-interfaces-api §3, CONV-06).
 
-이 티켓(TKT-BE-M1-01)은 명령 뼈대만 만든다. 아직 구현되지 않은 명령은 담당 티켓을 알려 주고
-종료 코드 1로 끝난다. 종료 코드: 0 성공, 1 입력·형식 오류, 2 외부·DB 연결 실패, 3 규칙 위반.
+아직 구현되지 않은 명령은 담당 티켓을 알려 주고 종료 코드 1로 끝난다.
+종료 코드: 0 성공, 1 입력·형식 오류, 2 외부·DB 연결 실패, 3 규칙 위반.
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+
+import psycopg
+
+from lawqa.shared.clock import SystemClock
+from lawqa.shared.db import connect, init_schema
+from lawqa.shared.logging_setup import configure_logging
+from lawqa.shared.settings import SettingsError, load_settings
+from lawqa.shared.smoke import LiveSmokeProbes, run_smoke, summary_lines, write_report
 
 EXIT_OK = 0
 EXIT_INPUT_ERROR = 1
@@ -17,10 +25,8 @@ EXIT_RULE_VIOLATION = 3
 
 RUN_CONFIG_CHOICES = ("A", "B", "C", "C+R")
 
-# (그룹, 명령) → 구현할 티켓
+# (그룹, 명령) → 구현할 티켓 (임시: 명령을 구현하는 티켓에서 항목을 지운다)
 _PENDING_TICKETS: dict[tuple[str, str | None], str] = {
-    ("db", "init"): "TKT-BE-M1-02",
-    ("check", "smoke"): "TKT-BE-M1-02",
     ("eval", "freeze"): "TKT-BE-M1-04",
     ("corpus", "import"): "TKT-BE-M2-02",
     ("corpus", "index"): "TKT-BE-M2-02",
@@ -89,10 +95,56 @@ def _use_utf8_console() -> None:
             reconfigure(encoding="utf-8")
 
 
+def _cmd_db_init(args: argparse.Namespace) -> int:
+    """API-01: 스키마·확장 생성 (`shared.db.init_schema`)."""
+    try:
+        url = load_settings("base").secrets.require("database_url")
+    except SettingsError as exc:
+        print(f"설정 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    try:
+        with connect(url) as conn:
+            init_schema(conn)
+            dbname = conn.info.dbname
+    except psycopg.OperationalError as exc:
+        print(f"DB 연결 실패: {exc}".strip(), file=sys.stderr)
+        return EXIT_EXTERNAL_ERROR
+    print(
+        f"db init 완료: 데이터베이스 {dbname}에 vector 확장과 표를 만들었습니다(이미 있으면 유지)."
+    )
+    return EXIT_OK
+
+
+def _cmd_check_smoke(args: argparse.Namespace) -> int:
+    """API-04: 시작 전 점검. 결과는 results/smoke/에 기록하고 요약을 출력한다."""
+    try:
+        settings = load_settings("base")
+    except SettingsError as exc:
+        print(f"설정 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    clock = SystemClock()
+    report = run_smoke(settings, LiveSmokeProbes(settings), clock)
+    path = write_report(report, settings.paths.results_dir, clock)
+    for line in summary_lines(report):
+        print(line)
+    print(f"기록: {path}")
+    return EXIT_OK if report.ok else EXIT_EXTERNAL_ERROR
+
+
+_HANDLERS: dict[tuple[str, str | None], Callable[[argparse.Namespace], int]] = {
+    ("db", "init"): _cmd_db_init,
+    ("check", "smoke"): _cmd_check_smoke,
+}
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     _use_utf8_console()
+    configure_logging()
     args = build_parser().parse_args(argv)
     key = (args.group, getattr(args, "command", None))
+    handler = _HANDLERS.get(key)
+    if handler is not None:
+        return handler(args)
     ticket = _PENDING_TICKETS.get(key)
     label = " ".join(part for part in key if part)
     if ticket is not None:

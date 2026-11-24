@@ -38,13 +38,27 @@ class Grade:
     abstain_correct: int | None
     rationale: str = ""
     judge_prompt_sha: str | None = None
+    # CR-014: 두 번째 지표. 번호도 맞고 근거도 충족한 경우에만 1.
+    # `answer_correct`(번호만 맞으면 1)와 짝을 이뤄 "풀이 능력"과 "근거 능력"을 나눠 본다.
+    # 기존 위치 인자 순서를 지키려고 맨 뒤에 둔다.
+    confident_correct: int | None = None
 
     def __post_init__(self) -> None:
         if self.grader not in ("LLM", "HUMAN"):
             raise InvalidEvalDataError(f"grader는 LLM 또는 HUMAN이어야 합니다: {self.grader}")
-        for name in ("hit_at_5", "answer_correct", "citation_valid", "abstain_correct"):
+        for name in (
+            "hit_at_5",
+            "answer_correct",
+            "citation_valid",
+            "abstain_correct",
+            "confident_correct",
+        ):
             if getattr(self, name) not in (None, 0, 1):
                 raise InvalidEvalDataError(f"{name}는 0·1·없음 중 하나여야 합니다.")
+        if self.confident_correct == 1 and self.answer_correct == 0:
+            raise InvalidEvalDataError(
+                "confident_correct=1이면 answer_correct도 1이어야 합니다(CR-014)."
+            )
         if self.grader == "LLM" and not self.judge_prompt_sha:
             raise InvalidEvalDataError("LLM 판정에는 judge_prompt_sha가 필요합니다.")
 

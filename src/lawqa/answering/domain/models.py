@@ -15,12 +15,13 @@ from typing import Any
 from lawqa.answering.domain.errors import ModelOutputFormatError
 
 OPTION_NOS = (1, 2, 3, 4, 5)
-INSUFFICIENT_MESSAGE = "정보 부족: 근거를 찾지 못했습니다"
+ANSWERED_MESSAGE = "근거를 바탕으로 답했습니다"
+# CR-014: 기권(번호 미제시)을 없앴다. 근거가 모자라도 번호는 내고 추정임을 알린다.
+UNCERTAIN_MESSAGE = "근거가 부족해 추정한 답입니다"
 
 
 class Outcome(StrEnum):
     ANSWERED = "ANSWERED"
-    INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
     INPUT_ERROR = "INPUT_ERROR"
     RETRIEVAL_ERROR = "RETRIEVAL_ERROR"
     MODEL_ERROR = "MODEL_ERROR"
@@ -128,7 +129,11 @@ class ModelAnswer:
 
 @dataclass(frozen=True, slots=True)
 class Answer:
-    """답변 결과(INV-01·03·13). 생성할 때 결과 종류별 규칙을 검사한다."""
+    """답변 결과(INV-01·03·13, CR-014·016).
+
+    `ANSWERED`이면 번호 1..5를 **항상** 낸다. 근거가 충분했는지는 `evidence_sufficient`로
+    따로 남긴다 — 두 지표("번호만 맞춘 정답"과 "근거까지 갖춘 정답")를 분리해 재기 위해서다.
+    """
 
     outcome: Outcome
     answer_no: int | None
@@ -136,6 +141,7 @@ class Answer:
     error_code: ErrorCode | None
     user_message: str
     dropped_citations: int = 0
+    evidence_sufficient: bool = False
 
     def __post_init__(self) -> None:
         if not self.user_message:
@@ -143,15 +149,17 @@ class Answer:
         if self.outcome is Outcome.ANSWERED:
             if self.answer_no not in OPTION_NOS:
                 raise ValueError("ANSWERED이면 answer_no가 1..5여야 합니다(INV-13).")
-            chosen = [j for j in self.judgments if j.option_no == self.answer_no]
-            if not chosen or not chosen[0].citations:
-                raise ValueError("ANSWERED이면 고른 보기의 인용이 1개 이상이어야 합니다(INV-13).")
             if self.error_code is not None:
                 raise ValueError("ANSWERED에는 error_code가 없습니다.")
-        elif self.outcome is Outcome.INSUFFICIENT_EVIDENCE:
-            if self.answer_no is not None or self.error_code is not None:
-                raise ValueError("근거 부족이면 번호·오류 코드가 없어야 합니다(INV-13).")
+            if self.evidence_sufficient:
+                chosen = [j for j in self.judgments if j.option_no == self.answer_no]
+                if not chosen or not chosen[0].citations:
+                    raise ValueError(
+                        "근거 충족이면 고른 보기의 인용이 1개 이상이어야 합니다(INV-13)."
+                    )
         else:
+            if self.evidence_sufficient:
+                raise ValueError("오류 결과는 근거 충족일 수 없습니다(INV-03).")
             if self.answer_no is not None:
                 raise ValueError("오류 결과에는 번호가 없습니다(INV-03).")
             if self.error_code not in _ERROR_CODES[self.outcome]:
@@ -202,32 +210,43 @@ class Answer:
                 )
             )
 
-        # ③ 근거 부족(INV-13, R-2): 보기별 판단은 참고로 남긴다
-        chosen = judgments[output.answer - 1] if output.answer is not None else None
-        if (
-            not output.sufficient
-            or chosen is None
-            or chosen.verdict is Verdict.INSUFFICIENT
-            or not chosen.citations
-        ):
-            return cls(
-                outcome=Outcome.INSUFFICIENT_EVIDENCE,
-                answer_no=None,
-                judgments=tuple(judgments),
-                error_code=None,
-                user_message=INSUFFICIENT_MESSAGE,
-                dropped_citations=dropped,
-            )
+        # ③ 번호 확정(CR-014): 모델이 null을 내도 보기 판단에서 끌어내 **항상** 번호를 낸다
+        answer_no = output.answer if output.answer is not None else _fallback_answer_no(judgments)
+        chosen = judgments[answer_no - 1]
 
-        # ④ 답변
+        # ④ 근거 충족 판정(INV-13, R-2): 번호는 그대로 두고 충족 여부만 기록한다
+        sufficient = (
+            output.sufficient
+            and output.answer is not None
+            and chosen.verdict is not Verdict.INSUFFICIENT
+            and bool(chosen.citations)
+        )
         return cls(
             outcome=Outcome.ANSWERED,
-            answer_no=chosen.option_no,
+            answer_no=answer_no,
             judgments=tuple(judgments),
             error_code=None,
-            user_message=f"정답: {chosen.option_no}번",
+            user_message=(
+                f"정답: {answer_no}번"
+                if sufficient
+                else f"추정: {answer_no}번 — {UNCERTAIN_MESSAGE}"
+            ),
             dropped_citations=dropped,
+            evidence_sufficient=sufficient,
         )
+
+
+def _fallback_answer_no(judgments: list[OptionJudgment]) -> int:
+    """모델이 `answer=null`을 냈을 때 쓸 번호(CR-014: 기권하지 않는다).
+
+    옳다고 본 보기가 있으면 그중 가장 작은 번호, 없으면 틀렸다고 단정하지 않은 보기,
+    그것도 없으면 1번. 어느 경우든 `evidence_sufficient=false`로 남는다.
+    """
+    for wanted in (Verdict.CORRECT, Verdict.INSUFFICIENT):
+        picked = [j.option_no for j in judgments if j.verdict is wanted]
+        if picked:
+            return min(picked)
+    return OPTION_NOS[0]
 
 
 def _unique(items: Iterable[str]) -> list[str]:

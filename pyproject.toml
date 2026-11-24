@@ -59,7 +59,8 @@ markers = [
 line-length = 100
 target-version = "py312"
 src = ["src", "tests"]
-extend-exclude = ["law_collector"]
+# results/는 실행 기록 보관함이다(append 전용). 그 안의 재현 스크립트는 당시 모습 그대로 둔다.
+extend-exclude = ["law_collector", "results"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]

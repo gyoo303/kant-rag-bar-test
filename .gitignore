@@ -29,6 +29,7 @@ build/
 !eval/*.json
 !results/**/*.json
 !results/**/*.jsonl
+!results/**/*.txt
 !law_collector/data/statutes/*.txt
 
 # lawqa (05-structure-conventions §7)

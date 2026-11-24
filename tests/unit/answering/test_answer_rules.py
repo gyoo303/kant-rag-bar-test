@@ -6,7 +6,7 @@ import pytest
 
 from lawqa.answering.domain.errors import ModelOutputFormatError
 from lawqa.answering.domain.models import (
-    INSUFFICIENT_MESSAGE,
+    UNCERTAIN_MESSAGE,
     Answer,
     ErrorCode,
     ModelAnswer,
@@ -59,17 +59,20 @@ def test_citations_outside_candidates_are_dropped_and_counted():
     assert all(c.chunk_id in CANDIDATES for j in a.judgments for c in j.citations)
 
 
-def test_only_invented_citations_for_answer_becomes_insufficient():
+def test_only_invented_citations_for_answer_is_not_sufficient():
+    """CR-014: 인용이 모두 가짜여도 번호는 내고 근거 충족만 false가 된다."""
     a = _answer(_out(cites={3: ["ghost"]}))
-    assert a.outcome is Outcome.INSUFFICIENT_EVIDENCE and a.answer_no is None
+    assert a.outcome is Outcome.ANSWERED and a.answer_no == 3
+    assert a.evidence_sufficient is False
     assert a.dropped_citations == 1
 
 
-# ── ③ 근거 부족 (INV-13, R-2) ──
-def test_answer_option_without_citation_is_insufficient():
+# ── ③·④ 번호는 항상, 근거 충족은 따로 (INV-13, R-2, CR-014) ──
+def test_answer_option_without_citation_keeps_number_but_not_sufficient():
     a = _answer(_out(cites={1: ["c2"]}))
-    assert a.outcome is Outcome.INSUFFICIENT_EVIDENCE
-    assert a.answer_no is None and a.user_message == INSUFFICIENT_MESSAGE
+    assert a.outcome is Outcome.ANSWERED and a.answer_no == 3
+    assert a.evidence_sufficient is False
+    assert UNCERTAIN_MESSAGE in a.user_message
     assert a.judgments[0].citations[0].chunk_id == "c2"  # 다른 보기 판단은 참고로 유지
 
 
@@ -81,10 +84,24 @@ def test_answer_option_without_citation_is_insufficient():
         _out(verdicts={3: "insufficient"}),
     ],
 )
-def test_insufficient_cases(output):
+def test_uncertain_cases_still_give_a_number(output):
     a = _answer(output)
-    assert a.outcome is Outcome.INSUFFICIENT_EVIDENCE and a.answer_no is None
+    assert a.outcome is Outcome.ANSWERED
+    assert a.answer_no in (1, 2, 3, 4, 5)
+    assert a.evidence_sufficient is False
     assert len(a.judgments) == 5
+
+
+def test_null_answer_falls_back_to_a_correct_option():
+    """모델이 번호를 비우면 correct로 판단한 보기 중 가장 작은 번호를 쓴다(CR-014)."""
+    a = _answer(_out(answer=None, verdicts={2: "correct", 4: "correct"}))
+    assert a.answer_no == 2 and a.evidence_sufficient is False
+
+
+def test_sufficient_answer_records_the_flag():
+    a = _answer(_out())
+    assert a.outcome is Outcome.ANSWERED and a.answer_no == 3
+    assert a.evidence_sufficient is True
 
 
 # ── ① 형식 ──
@@ -150,8 +167,12 @@ def test_error_code_must_match_outcome():
 def test_answered_invariants_enforced_on_construction():
     no_cite = OptionJudgment(1, Verdict.CORRECT, "r")
     with pytest.raises(ValueError):
-        Answer(Outcome.ANSWERED, 1, (no_cite,), None, "정답: 1번")
+        Answer(Outcome.ANSWERED, 1, (no_cite,), None, "정답: 1번", evidence_sufficient=True)
     with pytest.raises(ValueError):
-        Answer(Outcome.INSUFFICIENT_EVIDENCE, 1, (), None, INSUFFICIENT_MESSAGE)
+        Answer(Outcome.ANSWERED, None, (), None, "정답 없음")
+    with pytest.raises(ValueError):
+        Answer(
+            Outcome.MODEL_ERROR, None, (), ErrorCode.UNEXPECTED, "오류", evidence_sufficient=True
+        )
     with pytest.raises(ValueError):
         Answer(Outcome.MODEL_ERROR, 2, (), ErrorCode.UNEXPECTED, "답변 생성 오류")

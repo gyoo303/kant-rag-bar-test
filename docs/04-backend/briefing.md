@@ -951,3 +951,73 @@ ADR-015의 파서 규칙이 13개 법령 전부에서 이슈·버린 줄 0으로
 판례는 판시사항·판결요지의 `[n]` 항목 묶음과 1,500자 분할로 문서당 평균 1.41청크가 나왔고,
 조문은 거의 "1조 = 1청크"(4,265조 → 4,279청크, 긴 조문 14개만 항 경계로 나뉨)다.
 임베딩 API 550회(배치 100개), `langchain_pg_embedding` 54,969행으로 청크 수와 일치한다.
+
+### CR-012·013·014·015·016 반영 (2026-11-24)
+
+사전 실험(`results/pilot/2026-11-24/`)의 실패 분석에서 나온 변경이다. 새 티켓이 아니라 승인된 CR 반영이다.
+
+| CR | 대상 | 바뀐 것 |
+|---|---|---|
+| CR-012 | ARCH §5.1 | 생성 모델 `max_tokens=2000` **제거** |
+| CR-013 | ARCH §5.1 규칙 ③ | 조합형 문항의 판단 대상이 보기 ①~⑤임을 프롬프트에 명시 |
+| CR-014 | 프로파일 C-06·C-08 | **기권 폐지** — 번호는 항상 내고 근거 충족 여부를 따로 표시. 지표 2종 |
+| CR-015 | PM INV-03·13·R-2·REJ-02·AC-09-3·NFR-01 | 위에 맞춘 도메인 규칙·수용 기준 |
+| CR-016 | ARCH ADR-013·004, §1.4·§1.5·§4·§5.1·§7 | `Outcome` 축소, `Answer.evidence_sufficient`, `Grade.confident_correct` |
+
+#### 핵심 설계 변경 — 기권을 없애고 "근거 충족"을 속성으로
+
+이전에는 근거가 모자라면 **결과 종류 자체가** `INSUFFICIENT_EVIDENCE`가 되고 번호가 사라졌다.
+이제 결과 종류는 `ANSWERED` 하나이고, 근거 충족 여부는 `Answer.evidence_sufficient: bool`로 **함께** 남는다.
+
+```
+이전: outcome = ANSWERED | INSUFFICIENT_EVIDENCE | (오류 3종)   answer_no: int | None
+이후: outcome = ANSWERED | (오류 3종)                            answer_no: int (항상)
+                                                                 evidence_sufficient: bool
+```
+
+- `Outcome.INSUFFICIENT_EVIDENCE` 제거. 오류 결과(`INPUT_ERROR`·`RETRIEVAL_ERROR`·`MODEL_ERROR`)는 그대로다.
+- `Answer.__post_init__`: `ANSWERED`이면 번호 1~5 필수. **인용 1개 이상 요건은 `evidence_sufficient=true`일 때만** 건다.
+  오류 결과는 `evidence_sufficient=true`일 수 없다.
+- `from_model_output` ③: 모델이 `answer=null`을 내도 `_fallback_answer_no()`가 보기 판단에서 번호를 끌어낸다
+  (`correct` 판정 중 가장 작은 번호 → 없으면 `insufficient` 중 가장 작은 번호 → 그것도 없으면 1번).
+  이 경로는 언제나 `evidence_sufficient=false`로 남는다.
+- `from_model_output` ④: `sufficient=false` / `answer is None` / 정답 보기 verdict가 insufficient / 정답 보기 인용 0
+  중 하나면 `evidence_sufficient=false`. **번호는 어느 경우에도 지우지 않는다.**
+- 프롬프트 규칙 ④·⑤: `answer`는 1~5 필수(null 금지), `sufficient`는 사실대로 기록.
+
+#### 두 지표를 재기 위한 기록 경로
+
+| 지표 | 어디서 오나 |
+|---|---|
+| **정답 충족(번호)** | `Grade.answer_correct` — 번호만 맞으면 1 |
+| **근거 충족 정답** | `Grade.confident_correct` — 번호도 맞고 기록의 `evidence_sufficient=true`여야 1 |
+| 근거 부족 표시 대응(/3) | `Grade.abstain_correct` — 근거 없음 문항에서 `evidence_sufficient=false`면 1 |
+
+- `AnswerEnvelope.to_dict()`에 `evidence_sufficient` 추가 → `ask` 출력과 실행 기록에 모두 들어간다.
+- `RunRecord.details["evidence_sufficient"]`에 기록 → 나중에 `Metrics.compute`가 두 지표를 계산할 수 있다.
+- `Grade.confident_correct` 추가. 기존 위치 인자 순서를 지키려고 **맨 뒤**에 뒀다.
+  `confident_correct=1`인데 `answer_correct=0`이면 생성 거부(모순 방지).
+- `Metrics.compute`는 아직 `NotImplementedError`다(TKT-BE-M4-02). 이번 변경은 **계산이 가능하도록 데이터를 남기는 데까지**다.
+
+#### 화면 (PAGE-01)
+`OUTCOME_LABELS`에서 "근거 부족" 제거. 답변은 근거 충족이면 `st.success`("정답: ③ · 근거 충족"),
+부족이면 `st.info`("추정: ① · 근거 부족 …")로 갈리고, 부족일 때는 보기별 판단을 참고로 함께 보여 준다(R-2).
+
+#### 설계와 다르게 한 것 / 질문
+- **`_fallback_answer_no`는 설계 문서에 없던 동작이다.** 모델이 `answer=null`을 내면 번호가 없는데 CR-014는 항상 번호를 요구한다.
+  그 틈을 메우려고 규칙을 정해 ADR-013 개정 문구에 함께 적었다. 임의의 기본값(항상 1번)보다 보기 판단을 쓰는 편이 낫다고 보았다.
+- **NFR-01의 "근거 충족 정답" 목표치는 미정으로 뒀다.** 기준선이 없어서 지금 숫자를 정하면 근거 없는 수치가 된다.
+  본 평가 결과를 보고 사람이 정한다(CR-015에 명시).
+- **위험(CR-014에 적었고 여기 다시 적는다)**: C-06·C-08은 `고정` 등급이고 출처가 외부 평가 기준(DOC-01)이다.
+  우리 문서는 고쳤지만 **채점자는 DOC-01 원문을 본다.** "근거 부족 안내" 요구를 "번호를 내되 부족하다고 표시"로
+  해석해 주는지는 보장할 수 없다. `report.md`에 이 해석과 근거를 반드시 적어야 한다.
+- 이전 티켓 기록(이 문서 TKT-BE-M3-03 절)의 `INSUFFICIENT_EVIDENCE` 언급은 **당시 검증 기록**이라 고치지 않았다.
+
+#### 검증 결과
+| GATE | 명령 | 결과 |
+|---|---|---|
+| GATE-04 | `uv run pytest tests/unit -q` | **290 passed** |
+| GATE-04b | `uv run pytest tests/integration -q` | **47 passed** |
+| GATE-05 | `ruff check .` / `ruff format --check .` | 통과 |
+| GATE-02·03·08·09 | 06-quality-gates 명령 | 각 0줄 / 종료 0 |
+| 실제 연동 | **하지 않음** — 이번 변경 뒤 70문항 재실행은 별도 작업 |

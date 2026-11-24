@@ -54,9 +54,10 @@ def _judgments(cite_option: int | None) -> tuple[OptionJudgment, ...]:
     )
 
 
-ANSWERED = Answer(Outcome.ANSWERED, 3, _judgments(3), None, "정답: 3번")
+ANSWERED = Answer(Outcome.ANSWERED, 3, _judgments(3), None, "정답: 3번", evidence_sufficient=True)
+# CR-014: 근거가 부족해도 번호는 나온다. 화면은 배지로 구분한다.
 INSUFFICIENT = Answer(
-    Outcome.INSUFFICIENT_EVIDENCE, None, _judgments(1), None, "정보 부족: 근거를 찾지 못했습니다"
+    Outcome.ANSWERED, 1, _judgments(1), None, "추정: 1번 — 근거가 부족해 추정한 답입니다"
 )
 INPUT_ERROR = Answer.error(
     Outcome.INPUT_ERROR, ErrorCode.INVALID_INPUT, "입력 오류: 지문이 비어 있습니다."
@@ -140,7 +141,7 @@ def test_ac_11_1_answered_shows_number_judgments_citations_and_search_info():
             "C+R",
         )
     ]
-    assert at.success[0].value == "결과 종류: 성공 — 정답: ③"
+    assert at.success[0].value == "결과 종류: 성공 — 정답: ③ · 근거 충족"
     judgments, citations = at.dataframe[0].value, at.dataframe[1].value
     assert list(judgments["판단"]) == ["틀림", "틀림", "옳음", "틀림", "틀림"]
     assert judgments["인용"][2] == LOC
@@ -152,12 +153,12 @@ def test_ac_11_1_answered_shows_number_judgments_citations_and_search_info():
     assert at.button[0].disabled is False  # 처리가 끝나면 다시 제출 가능
 
 
-def test_ac_11_1_insufficient_shows_info_without_number_and_reference_judgments():
+def test_ac_11_1_uncertain_shows_number_with_insufficient_badge():
+    """CR-014: 번호는 나오되 '근거 부족' 배지와 참고 판단이 함께 보인다."""
     at = _submit(_app(StubRuntime(_envelope(INSUFFICIENT))))
-    assert at.info[0].value == "결과 종류: 근거 부족 — 정보 부족: 근거를 찾지 못했습니다"
+    assert at.info[0].value.startswith("결과 종류: 성공 — 추정: ① · 근거 부족")
     assert not at.success and not at.error
     assert "보기별 판단 (참고)" in _texts(at)
-    assert "정답:" not in _texts(at)
 
 
 def test_ac_11_1_input_error_shows_only_warning():

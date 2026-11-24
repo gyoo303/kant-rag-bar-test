@@ -265,6 +265,8 @@ def build_record(run: Run, question_id: str, started_at: str, env: AnswerEnvelop
         error_code=data["error_code"],
         retry_of=run.retry_of,
         details={
+            # CR-014: 두 지표를 나중에 계산하려면 근거 충족 여부가 기록에 있어야 한다
+            "evidence_sufficient": data["evidence_sufficient"],
             "queries": data["queries"],
             "candidates": (
                 {str(o["option_no"]): o["candidates"] for o in retrieval["options"]}

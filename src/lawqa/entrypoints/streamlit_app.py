@@ -26,7 +26,6 @@ CONFIGS = ("C+R", "A", "B", "C")  # C+R 기본(§7)
 OPTION_MARKS = ("①", "②", "③", "④", "⑤")
 OUTCOME_LABELS = {
     Outcome.ANSWERED: "성공",
-    Outcome.INSUFFICIENT_EVIDENCE: "근거 부족",
     Outcome.INPUT_ERROR: "입력 오류",
     Outcome.RETRIEVAL_ERROR: "검색 실패",
     Outcome.MODEL_ERROR: "모델 오류",
@@ -124,13 +123,15 @@ def render_result(envelope: AnswerEnvelope | str) -> None:
     answer = envelope.answer
     label = f"결과 종류: {OUTCOME_LABELS[answer.outcome]}"
     if answer.outcome is Outcome.ANSWERED:
-        st.success(f"{label} — 정답: {OPTION_MARKS[answer.answer_no - 1]}")
-        _judgments(envelope, reference=False)
-        _citations(envelope)
-    elif answer.outcome is Outcome.INSUFFICIENT_EVIDENCE:
-        st.info(f"{label} — {answer.user_message}")
-        if any(j.citations for j in answer.judgments):
+        mark = OPTION_MARKS[answer.answer_no - 1]
+        # CR-014: 번호는 항상 나오고, 근거 충족 여부를 배지로 구분해 보여 준다
+        if answer.evidence_sufficient:
+            st.success(f"{label} — 정답: {mark} · 근거 충족")
+            _judgments(envelope, reference=False)
+        else:
+            st.info(f"{label} — 추정: {mark} · 근거 부족 ({answer.user_message})")
             _judgments(envelope, reference=True)  # R-2: 근거 있는 보기의 판단은 참고로
+        _citations(envelope)
     elif answer.outcome is Outcome.INPUT_ERROR:
         st.warning(f"{label} — {answer.user_message}")
         return  # 결과 영역에 다른 내용 없음(07-screens §4)

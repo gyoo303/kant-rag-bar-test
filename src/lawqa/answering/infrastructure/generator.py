@@ -27,7 +27,11 @@ from lawqa.shared.versioning import sha256_of
 
 PROMPT_PACKAGE = "lawqa.answering.infrastructure"
 PROMPT_FILE = "prompts/answer.txt"
-MAX_TOKENS = 2000  # §5.1
+# §5.1은 max_tokens=2000이었으나 제거했다(CR-012, 사용자 결정 2026-11-24).
+# gpt-6-luna는 추론 토큰을 completion 한도에서 쓴다. 2000이면 어려운 문항에서 추론에만 2000을
+# 소진하고 본문을 한 글자도 내놓지 못해 LengthFinishReasonError가 났다(70문항 중 9문항, 12.9%).
+# None이면 모델 기본값(남은 컨텍스트 전부)을 쓴다. 비용 상한은 timeout이 맡는다.
+MAX_TOKENS: int | None = None
 
 # §5.1 출력 스키마(구조화 출력, strict)
 ANSWER_SCHEMA: dict[str, Any] = {
@@ -124,7 +128,7 @@ class OpenAIAnswerGenerator:
 
 
 def chat_model(model: str, api_key: str, timeout_s: float, max_retries: int = 2) -> BaseChatModel:
-    """§5.1 생성 모델(`max_tokens=2000`, 시간 제한·재시도 2회).
+    """§5.1 생성 모델(`max_tokens` 없음 — CR-012, 시간 제한·재시도 2회).
 
     `temperature`는 넘기지 않는다: gpt-6-luna는 기본값(1) 외의 temperature를 거부한다
     (2026-11-24 실제 호출에서 400 "Only the default (1) value is supported"). §5.1의

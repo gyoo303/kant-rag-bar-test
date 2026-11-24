@@ -137,20 +137,23 @@ def test_to_dict_is_json_serializable():
     assert "c2a" in text
 
 
-# ── 근거 부족 (AC-09-3) ──
-def test_insufficient_evidence_is_not_an_error():
+# ── 근거 부족 표시 (AC-09-3, CR-014) ──
+def test_insufficient_evidence_still_answers_and_is_not_an_error():
     env = _service(generator=FakeGenerator(_model(answer=None, cites=(), sufficient=False))).answer(
         ITEM, "B"
     )
-    assert env.answer.outcome is Outcome.INSUFFICIENT_EVIDENCE
-    assert env.answer.answer_no is None and env.answer.error_code is None
-    assert "정보 부족" in env.answer.user_message
+    assert env.answer.outcome is Outcome.ANSWERED
+    assert env.answer.answer_no in (1, 2, 3, 4, 5) and env.answer.error_code is None
+    assert env.answer.evidence_sufficient is False
+    assert "추정" in env.answer.user_message
+    assert env.to_dict()["evidence_sufficient"] is False
 
 
-def test_citation_outside_context_becomes_insufficient():
+def test_citation_outside_context_is_not_sufficient():
     """c1c는 후보에는 있지만 컨텍스트(k_opt=2) 밖이라 인용으로 인정하지 않는다(INV-01)."""
     env = _service(generator=FakeGenerator(_model(answer=1, cites=("c1c",)))).answer(ITEM, "B")
-    assert env.answer.outcome is Outcome.INSUFFICIENT_EVIDENCE
+    assert env.answer.outcome is Outcome.ANSWERED and env.answer.answer_no == 1
+    assert env.answer.evidence_sufficient is False
     assert env.answer.dropped_citations == 1
 
 

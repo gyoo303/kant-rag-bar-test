@@ -64,6 +64,7 @@ class AnswerEnvelope:
             "config": self.config_name,
             "outcome": a.outcome.value,
             "answer_no": a.answer_no,
+            "evidence_sufficient": a.evidence_sufficient,  # CR-014: 두 번째 지표의 근거
             "error_code": a.error_code.value if a.error_code else None,
             "user_message": a.user_message,
             "judgments": [

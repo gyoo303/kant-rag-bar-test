@@ -1,0 +1,9 @@
+﻿run_id,question_id,config,kind,type,answer,predicted,correct(auto),hit@5(auto),status,citation_grounded,no_answer_handled,grader,reviewer,note
+20261124-094209-dev-v1-closedbook,BAR2026-CIV-009,closed_book,mcq,direct,3,,0,,generation_error,,,,,
+20261124-094209-dev-v1-closedbook,BAR2026-CIV-011,closed_book,mcq,paraphrase,4,,0,,generation_error,,,,,
+20261124-094209-dev-v1-closedbook,BAR2026-CIV-013,closed_book,mcq,direct,2,,0,,generation_error,,,,,
+20261124-094209-dev-v1-closedbook,BAR2026-CIV-027,closed_book,mcq,direct,3,,0,,generation_error,,,,,
+20261124-094209-dev-v1-closedbook,BAR2026-CIV-032,closed_book,mcq,direct,1,,0,,generation_error,,,,,
+20261124-094209-dev-v1-closedbook,BAR2026-CIV-042,closed_book,mcq,direct,5,,0,,generation_error,,,,,
+20261124-094209-dev-v1-closedbook,BAR2026-CIV-052,closed_book,mcq,direct,5,,0,,generation_error,,,,,
+20261124-094209-dev-v1-closedbook,BAR2026-CIV-053,closed_book,mcq,direct,4,,0,,generation_error,,,,,

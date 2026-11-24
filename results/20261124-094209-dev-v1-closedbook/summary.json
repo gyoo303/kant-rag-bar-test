@@ -1,0 +1,72 @@
+{
+  "run_id": "20261124-094209-dev-v1-closedbook",
+  "eval": {
+    "path": "eval\\dev.json",
+    "version": "eval-v0.1",
+    "split": "dev"
+  },
+  "composition_warnings": [],
+  "versions": {
+    "docs": "docs-v0.1",
+    "index": "index-v0.3",
+    "prompt": "prompt-v0.1",
+    "eval": "eval-v0.1"
+  },
+  "models": {
+    "llm_provider": "openai",
+    "llm_model": "gpt-6-luna",
+    "embedding_model": "BAAI/bge-m3",
+    "reranker_model": "BAAI/bge-reranker-v2-m3"
+  },
+  "settings_fingerprint": "9fb8e9d951dc",
+  "optimization": {
+    "cache": {
+      "enabled": false,
+      "ttl_seconds": 86400
+    },
+    "rewrite": {
+      "enabled": false
+    }
+  },
+  "by_config": {
+    "closed_book": {
+      "accuracy": "0/8",
+      "hit@5": "0/0 (근거 미표기 8문항 제외)",
+      "statement_accuracy": null,
+      "insufficient": 0,
+      "invalid_citation": 0,
+      "no_answer_insufficient_status(사람 검토 전)": "0/0",
+      "latency_mcq": {
+        "n_success": 0,
+        "n_total": 8,
+        "n_error": 8,
+        "mean_ms": null,
+        "median_ms": null
+      },
+      "latency_no_answer": {
+        "n_success": 0,
+        "n_total": 0,
+        "n_error": 0,
+        "mean_ms": null,
+        "median_ms": null
+      }
+    }
+  },
+  "accuracy_by_trap": {
+    "부정 극성": {
+      "closed_book": "0/5"
+    },
+    "사례 적용": {
+      "closed_book": "0/1"
+    },
+    "숫자·기간": {
+      "closed_book": "0/3"
+    },
+    "예외·단서": {
+      "closed_book": "0/3"
+    },
+    "전 진술 판단": {
+      "closed_book": "0/5"
+    }
+  }
+}

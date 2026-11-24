@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -513,3 +513,71 @@ next_readers: [DB, FE, QA]
 | GATE-04 | `uv run pytest tests/unit -q` | 182 passed(이번 티켓 36개) |
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | GATE-07·09 | 06-quality-gates 명령 | 0줄(GATE-09가 변수 이름 `expected`에 걸려 `want`로 바꿈) |
+
+### TKT-BE-M2-04 (검색 구성 A·B)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M2-04 | AC-06-1 구성 A: 벡터 후보 목록과 점수 기록 | 충족 | `test_config_a_records_vector_rank_and_score`, 시험 DB 실제 검색 |
+| TKT-BE-M2-04 | AC-07-1 구성 B: BM25·벡터·결합 후보가 각각 기록 | 충족 | `Candidate.bm25_rank/score`·`vector_rank/score`·`fused_rank`, `test_config_b_fuses_with_rrf_and_dedupes_by_chunk_id` |
+| TKT-BE-M2-04 | AC-07-2 같은 청크는 결합 후보에 한 번 | 충족 | 같은 시험, 시험 DB 실행에서 보기 목록 중복 없음 |
+| TKT-BE-M2-04 | 점수 단순 합산 금지(가중 RRF) | 충족 | `EnsembleRetriever.weighted_reciprocal_rank`, `test_rrf_is_not_score_sum` |
+| TKT-BE-M2-04 | GATE-02·04·08 | 충족 | §검증 결과 |
+- AC-06-1·07-1의 "임베딩 모델·검색 개수·결합 방식·가중치·중복 제거 규칙 기록"은 실행 기록(`versions`·`config_sha`)에 남는 값이라 기록 쪽은 TKT-BE-M3-05(`eval run`) 몫이다. 이번 티켓은 그 값을 담은 `RetrievalConfig`와 후보별 순위·점수를 만든다.
+
+#### 만든 것
+- `retrieval/infrastructure/retrievers.py`
+  - `Bm25Search` — `BM25Retriever`(langchain_community)를 청크 표의 `bm25_tokens`로 만든 `BM25Okapi`와 Kiwi 질의 토큰화(`preprocess_func`, S-02)로 조립. `search(query, k)`는 점수 > 0인 상위 k개를 순위·점수와 함께
+  - `VectorSearch` — `PGVector`(컬렉션 `chunks_<index_version>`) `similarity_search_with_score`, 점수 = `1 - 코사인 거리`
+  - `VectorOptionRetriever`(구성 A, 상위 `n_vec`), `HybridOptionRetriever`(구성 B: BM25 `n_bm25` + 벡터 `n_vec` → `EnsembleRetriever(weights, c=rrf_c, id_key="chunk_id")` 가중 RRF → 상위 `n_fuse`)
+  - 외부 오류는 `RetrievalFailedError`로 바꿔 다시 던짐(삼키지 않음)
+- `retrieval/application/retrieval_service.py`: `RetrievalService.retrieve(item, config, queries=None) -> RetrievalResult`
+- `retrieval/infrastructure/__init__.py`: `retrieval_config(settings)`, `RetrieverFactory`(BM25 색인·PGVector는 처음 쓸 때 한 번, 같은 구성의 검색기 재사용, 구성 C는 M3-01 전까지 `RetrievalFailedError`), `build_retrieval_service(chunks, settings, *, index_version, sqlalchemy_url, embeddings, tokenize)`
+- 시험 `tests/unit/retrieval/test_retrieval_service.py` 15개(가짜 검색기·가짜 벡터 검색, BM25는 실제 rank_bm25)
+
+#### 계층 확인 포인트
+- LangChain·rank_bm25는 `retrieval/infrastructure`에서만. 응용 서비스는 도메인 계약(`OptionRetriever`)만 안다(GATE-08 0줄).
+- 05-structure-conventions §4 "다른 모듈의 infrastructure import 금지": 청크는 `corpus.application.ChunkQueryService`로 받고, Kiwi 토큰화(`corpus.infrastructure.KiwiTokenizer`)·임베딩·SQLAlchemy URL은 진입점이 넘긴다(`retrieval/`에서 `lawqa.corpus.infrastructure` 0줄).
+- S-01 확인: `EnsembleRetriever`는 `langchain_classic.retrievers`에서 import된다(`langchain.retrievers`는 langchain 1.5.2에 없음).
+
+#### 구현 중 자율 결정
+##### TKT-BE-M2-04 결합은 같은 목록에 RRF를 한 번 적용
+- 결정: BM25·벡터 목록을 한 번씩 구해(기록용 순위·점수) 그 목록에 `EnsembleRetriever.weighted_reciprocal_rank`를 적용 — ADR-009 "결합 전 각 검색기 결과는 기록용으로 따로 호출"
+- 선택지: **A. 목록을 한 번 구하고 같은 목록으로 결합 (권장·채택)** / B. 기록용 호출과 `ensemble.invoke`를 따로
+- 권장 이유: B는 보기마다 질의 임베딩을 두 번 불러 비용·시간이 두 배이고, 두 호출 결과가 달라지면 기록과 결합이 어긋난다.
+- trade-off: A — `EnsembleRetriever.invoke` 경로 대신 같은 클래스의 결합 메서드를 직접 부름(라이브러리가 바뀌면 확인 필요). B — 호출 2배, 기록 불일치 가능.
+
+##### TKT-BE-M2-04 BM25 점수 0은 후보에서 뺌
+- 결정: 질의 낱말이 하나도 겹치지 않는(점수 0) 청크는 BM25 목록에 넣지 않는다
+- 선택지: **A. 점수 > 0만 (권장·채택)** / B. `BM25Retriever` 기본대로 점수와 상관없이 상위 k개
+- 권장 이유: B는 관련 없는 청크가 임의 순서로 BM25 목록에 들어가 RRF 결합에 섞인다.
+- trade-off: A — BM25 목록이 k개보다 짧을 수 있음(기록에 그대로 보임). B — 무관한 청크가 결합 후보로 올라올 수 있음.
+
+##### TKT-BE-M2-04 BM25 색인은 저장된 토큰으로
+- 결정: 기동할 때 청크를 다시 형태소 분석하지 않고 청크 표의 `bm25_tokens`로 `BM25Okapi`를 만든다 — ADR-009 "BM25 색인은 기동 시 DB 청크로 메모리에"
+- 선택지: **A. 저장된 토큰 (권장·채택)** / B. `BM25Retriever.from_documents(preprocess_func=kiwi)`로 다시 분석
+- 권장 이유: 같은 결과를 내면서 청크 수만 개의 형태소 분석을 기동마다 반복하지 않는다(토큰은 색인 판본에 묶여 있음).
+- trade-off: A — 질의 토큰화와 색인 토큰화가 같은 Kiwi 규칙이어야 함(둘 다 `KiwiTokenizer`). B — 기동 시간 증가.
+
+##### TKT-BE-M2-04 벡터 점수 표기
+- 결정: PGVector가 주는 코사인 거리를 `1 - 거리`(코사인 유사도, 높을수록 관련)로 기록 — `check smoke`의 벡터 점수와 같은 뜻
+- 선택지: **A. 유사도 (권장·채택)** / B. 거리 그대로
+- 권장 이유: BM25 점수처럼 "클수록 관련"으로 맞춰 기록을 읽기 쉽다.
+- trade-off: A — 라이브러리 원값과 다름(변환식은 이 문서와 코드 설명에). B — 점수 방향이 BM25와 반대.
+
+#### 설계와 다르게 한 것 / 질문
+- `RetrievalService.retrieve`에 선택 인자 `queries`(리라이트 결과)를 더했다. 04-interfaces-api SEQ-03은 리라이트를 `retrieve` 앞에서 하지만 §2 시그니처(`retrieve(item, config)`)에 질의를 넘길 자리가 없다. 인자가 없으면 문서 시그니처와 같게 동작한다. → ARCH에 §2 시그니처 갱신 요청.
+- `build_retrieval_service`는 색인 판본을 인자로 받는다. 검색에 쓸 판본(가장 최근 완료 판본, 또는 불완전이어도 마지막 판본)은 진입점 티켓(M3-03 `ask`·M3-05 `eval run`)에서 정한다 — 실제 판례 색인은 빈 판례 삭제 전까지 `complete=false`라 `latest_complete()`만으로는 판본이 없을 수 있다. → M3-03 전에 확인 필요.
+- `langchain_community`를 import하면 "sunset" 경고(DeprecationWarning)가 나온다. 동작에는 영향 없고, `BM25Retriever`는 ADR-009·S-02가 정한 부품이라 그대로 썼다.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b | 06-quality-gates 명령 + `retrieval/`의 `lawqa.corpus.infrastructure` | 각 0줄 |
+| GATE-03 | 모듈 import | 종료 코드 0 |
+| GATE-04 | `uv run pytest tests/unit -q` | 197 passed(이번 티켓 15개) |
+| GATE-04b | `uv run pytest tests/integration -q` | 46 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-06·07·08·09 | 06-quality-gates 명령 | 각 0줄 |
+| 실제 연동 | 시험 DB에 fixtures 가져오기·색인(16청크) 후 구성 A·B로 5개 보기 검색(실제 OpenAI 임베딩·PGVector) | A: 보기마다 벡터 순위·점수, B: BM25·벡터 순위와 결합 순위, 보기 목록 중복 없음, 문항 목록 16개 |

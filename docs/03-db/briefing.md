@@ -1,6 +1,6 @@
 ---
 stage: DB
-tickets: [TKT-DB-M1-01, TKT-DB-M1-02, TKT-DB-M2-01]
+tickets: [TKT-DB-M1-01, TKT-DB-M1-02, TKT-DB-M2-01, TKT-DB-M2-02]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-DB, AR-API, AR-CONV, AR-GATE, CR-LOG]
 next_readers: [BE, QA]
@@ -211,3 +211,53 @@ next_readers: [BE, QA]
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | GATE-08 | `application`·`domain`의 저장 계층 import | 0줄 |
 | 커밋 위치 | `git grep --untracked -nE "\.commit\(" -- "src/lawqa/corpus/infrastructure/"` | 0줄 |
+
+---
+
+### TKT-DB-M2-02 (PGVector 색인 어댑터)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 |
+|---|---|---|
+| TKT-DB-M2-02 | 컬렉션 이름·문서 ID·메타데이터 규칙 | 충족(문서 ID는 아래 "설계와 다르게 한 것") — `test_collection_name_ids_and_metadata_follow_rules` |
+| TKT-DB-M2-02 | `count == 청크 수`(GATE-10 근거) | 충족 — `test_add_chunks_count_equals_chunk_count`, 두 번 넣어도 중복 없음 |
+| TKT-DB-M2-02 | GATE-04b | 충족 — 46 passed |
+
+#### 만든 것 (`src/lawqa/corpus/infrastructure/vector_index.py`)
+| 이름 | 시그니처 | 설명 |
+|---|---|---|
+| `PgVectorIndex` | `__init__(database_url, embeddings: Embeddings, embedding_dim)` | 임베딩 모델 주입(운영 `OpenAIEmbeddings`, 시험 `DeterministicFakeEmbedding(1536)`) |
+| | `add_chunks(index_version, chunks, batch_size=100) -> None` | 100개 묶음 저장, 같은 ID는 덮어씀, 다른 판본 청크가 섞이면 `ValueError` |
+| | `delete(index_version) -> None` | 컬렉션·벡터 삭제(미완료 판본 재생성용, SEQ-02) — 설계 §7 외 추가 |
+| | `count(index_version) -> int` | psycopg로 컬렉션 벡터 수 조회, 표가 없으면 0 |
+| | `as_retriever(index_version, k) -> BaseRetriever` | `PGVector.as_retriever(search_kwargs={"k": k})` |
+| `sqlalchemy_url(database_url)` | `-> str` | `postgresql://` → `postgresql+psycopg://` (S-03 확인) |
+| `vector_id(index_version, chunk_id)` | `-> str` | `<index_version>/<chunk_id>` |
+| `chunk_metadata(chunk)` | `-> dict` | `{chunk_id, doc_id, kind, section, location, index_version}` |
+- PGVector 설정: `use_jsonb=True`, `create_extension=False`(확장은 `init_schema`), `embedding_length=1536`, 거리 기본값(코사인).
+- `schema.sql`에 벡터 표를 추가하지 않음(PGVector가 처음 접속할 때 만듦).
+
+#### 인프라 확인 포인트 (스택 주의 S-03 확인 결과)
+- `langchain-postgres` 0.0.19의 `PGVector`는 SQLAlchemy URL `postgresql+psycopg://…`(psycopg 3)로 동작한다 — 확인됨.
+- PGVector는 자체 엔진으로 **스스로 커밋**한다. 응용 서비스의 psycopg 트랜잭션 안에 들지 않으므로, 색인 완료 표시는 적재 뒤 별도 트랜잭션(SEQ-02 그대로).
+- 시험은 판본 이름을 시험마다 새로 만들고 끝에 컬렉션을 지운다(rollback이 PGVector 쓰기를 되돌리지 못하기 때문).
+
+#### 다음 단계(BE)가 쓸 것 (TKT-BE-M2-02·M2-04)
+- `IndexService`: `PgVectorIndex(settings.secrets.require("database_url"), OpenAIEmbeddings(model=…, dimensions=1536), 1536)` → 재생성이면 `delete(v)` → `add_chunks(v, chunks)` → `count(v) == 청크 수` 확인 → `mark_complete`.
+- 검색기: 결과 `Document.metadata["chunk_id"]`로 청크를 찾는다(`Document.id`는 `<판본>/<chunk_id>`).
+
+#### 구현 중 자율 결정
+- 없음(아래는 설계 변경 사항으로 따로 적음).
+
+#### 설계와 다르게 한 것 / 질문
+- **벡터 문서 ID = `<index_version>/<chunk_id>`** (설계: `chunk_id`). 시험 결과 `langchain_pg_embedding.id`는 컬렉션과 상관없는 전역 기본 키라, 판본이 다른데 같은 `chunk_id`(청킹 규칙이 같으면 판본이 바뀌어도 같음, 03-db-schema §3)를 넣으면 두 번째 판본에 저장되지 않았다(판본 A 9개, 판본 B 0개). 판본을 앞에 붙여 판본끼리 독립시켰고, `chunk_id`는 메타데이터로 찾는다. → ARCH에 03-db-schema §3 ENT-05 규칙("문서 ID = chunk_id") 갱신 요청.
+- `delete(index_version)` 추가(§7 목록 외).
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-04b | `uv run pytest tests/integration -q` | 46 passed(이번 티켓 8개) |
+| GATE-04 | `uv run pytest tests/unit -q` | 132 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-08 | `application`·`domain`의 저장 계층·LangChain import | 0줄 |
+| 벡터 표 미정의 | `schema.sql`의 `langchain_pg` 표 정의 | 없음(주석만) |

@@ -12,7 +12,8 @@ from kant_rag.schemas import Chunk, RetrievedChunk
 def get_embeddings(model_name: str):
     from langchain_huggingface import HuggingFaceEmbeddings
 
-    return HuggingFaceEmbeddings(model_name=model_name, encode_kwargs={"normalize_embeddings": True})
+    return HuggingFaceEmbeddings(model_name=model_name, show_progress=True,
+                                 encode_kwargs={"normalize_embeddings": True, "batch_size": 32})
 
 
 class VectorIndex:

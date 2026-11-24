@@ -18,10 +18,21 @@
       },
       "answer": 5,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제741조",
+          "location": "민법 제741조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제214조",
+          "location": "민법 제214조"
+        }
+      ],
       "split": "test",
       "type": "paraphrase",
-      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용",
+      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: 미등기 무단건물 매수인의 사실상 처분권·철거·부당이득 판례(핵심 쟁점)",
       "traps": [
         "부정 극성",
         "사례 적용"
@@ -47,10 +58,26 @@
       },
       "answer": 1,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2020다220140#1",
+          "location": "대법원 2020다220140 판결요지[1] 임치물 반환청구권 소멸시효 기산점(ㄷ)"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제166조",
+          "location": "민법 제166조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제168조",
+          "location": "민법 제168조"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: ㄱ(변제충당 미지정 일부변제와 승인), ㄴ(후순위담보권자 시효원용), ㄹ(무효 매매대금 부당이득 기산점)",
       "traps": [
         "전 진술 판단",
         "예외·단서"
@@ -75,10 +102,36 @@
       },
       "answer": 2,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제368조",
+          "location": "민법 제368조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제481조",
+          "location": "민법 제481조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제482조",
+          "location": "민법 제482조"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2014다221777, 221784#2",
+          "location": "대법원 2014다221777 판결요지[2] 물상보증인 구상권과 상계·후순위저당권자 물상대위(ㄴ·ㄷ)"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2021다247258#2",
+          "location": "대법원 2021다247258 판결요지[2] 물상보증인 변제자대위"
+        }
+      ],
       "split": "test",
       "type": "paraphrase",
-      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용",
+      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 조문·판례 근거 확인",
       "traps": [
         "숫자·기간",
         "전 진술 판단",
@@ -104,10 +157,16 @@
       },
       "answer": 4,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제406조",
+          "location": "민법 제406조"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: ㄱ(이중양도 손해배상채권과 피보전채권), ㄴ(신용카드대금채권), ㄷ(시효이익 포기와 사해행위)",
       "traps": [
         "전 진술 판단",
         "예외·단서"
@@ -134,10 +193,26 @@
       },
       "answer": 1,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제404조",
+          "location": "민법 제404조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제405조",
+          "location": "민법 제405조"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2016다205915#4",
+          "location": "대법원 2016다205915 판결요지[4] 대위판결 확정 후 피대위채권 압류(ㄹ)"
+        }
+      ],
       "split": "test",
       "type": "paraphrase",
-      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용",
+      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: ㄴ(가등기 부동산과 무자력), ㄷ(피보전채권 직권심리), ㅁ(대위소송 취하와 재소금지)",
       "traps": [
         "전 진술 판단",
         "사례 적용",
@@ -159,10 +234,21 @@
       },
       "answer": 2,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제303조",
+          "location": "민법 제303조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제317조",
+          "location": "민법 제317조"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: 전세금반환채권 분리양도·부기등기와 대항요건 판례(핵심 쟁점)",
       "traps": [
         "부정 극성",
         "예외·단서"
@@ -188,10 +274,26 @@
       },
       "answer": 2,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제387조",
+          "location": "민법 제387조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제390조",
+          "location": "민법 제390조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제546조",
+          "location": "민법 제546조"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: 채권양도통지와 이행지체, 가압류와 지체책임, 일부불능, 처분금지가처분과 이행불능",
       "traps": [
         "전 진술 판단",
         "예외·단서"
@@ -212,10 +314,36 @@
       },
       "answer": 1,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제320조",
+          "location": "민법 제320조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제324조",
+          "location": "민법 제324조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제367조",
+          "location": "민법 제367조"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2018다301350#2",
+          "location": "대법원 2018다301350 판결요지[2] 유치권 소멸청구"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2022다265093#1",
+          "location": "대법원 2022다265093 판결요지[1] 제3취득자 비용상환청구권(③)"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: ①(무단 전세 전세금 법정이자 부당이득 — 정답 보기), ④, ⑤",
       "traps": [
         "예외·단서"
       ]
@@ -235,10 +363,31 @@
       },
       "answer": 4,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제1013조",
+          "location": "민법 제1013조"
+        },
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제1015조",
+          "location": "민법 제1015조"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2017스98, 99, 100, 101#1",
+          "location": "대법원 2017스98 판결요지[1] 구체적 상속분 산정(②)"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2024다208315#2",
+          "location": "대법원 2024다208315 판결요지[2] 상속재산분할협의와 사해행위(③)"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: ④(개별 재산 공유물분할 불가 — 정답 보기)",
       "traps": [
         "부정 극성"
       ]
@@ -264,10 +413,41 @@
       },
       "answer": 3,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVPRO",
+          "chunk_id": "LAW-CIVPRO#제397조",
+          "location": "민사소송법 제397조"
+        },
+        {
+          "doc_id": "LAW-CIVPRO",
+          "chunk_id": "LAW-CIVPRO#제402조",
+          "location": "민사소송법 제402조"
+        },
+        {
+          "doc_id": "LAW-CIVPRO",
+          "chunk_id": "LAW-CIVPRO#제403조",
+          "location": "민사소송법 제403조"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2017마6438#1",
+          "location": "대법원 2017마6438 판결요지[1] 항소장 송달불능과 각하명령(ㄹ)"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2022다252387#1",
+          "location": "대법원 2022다252387 판결요지[1] 부대항소(ㄴ)"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2025다213846#2",
+          "location": "대법원 2025다213846 판결요지[2] 선택적 병합(ㅁ)"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 조문·판례 근거 확인",
       "traps": [
         "전 진술 판단"
       ]
@@ -287,10 +467,26 @@
       },
       "answer": 2,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVPRO",
+          "chunk_id": "LAW-CIVPRO#제218조",
+          "location": "민사소송법 제218조"
+        },
+        {
+          "doc_id": "LAW-CIVEXE",
+          "chunk_id": "LAW-CIVEXE#제44조",
+          "location": "민사집행법 제44조"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2021다210720#2",
+          "location": "대법원 2021다210720 판결요지[2] 변론종결 후 승계인(⑤)"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: ②(청구이의 판결의 기판력 — 정답 보기), ③(면책과 청구이의), ④",
       "traps": [
         "부정 극성",
         "예외·단서"
@@ -311,10 +507,31 @@
       },
       "answer": 1,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-CIVIL",
+          "chunk_id": "LAW-CIVIL#제404조",
+          "location": "민법 제404조"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2017다228618#1",
+          "location": "대법원 2017다228618 판결요지[1] 소송행위 목적 채권취득과 제3채무자의 다툼(①, 정답 보기)"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2020다223781#2",
+          "location": "대법원 2020다223781 판결요지[2] 채권자의 독자적 사정 주장 불가(②)"
+        },
+        {
+          "doc_id": "CASES-SC",
+          "chunk_id": "CASE#2016다205915#4",
+          "location": "대법원 2016다205915 판결요지[4] 대위판결 후 피대위채권 압류(④)"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: ③, ⑤",
       "traps": [
         "부정 극성"
       ]
@@ -339,10 +556,21 @@
       },
       "answer": 4,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제137조",
+          "location": "상법 제137조"
+        },
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제146조",
+          "location": "상법 제146조"
+        }
+      ],
       "split": "test",
       "type": "paraphrase",
-      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용",
+      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 조문으로 판단 가능",
       "traps": [
         "전 진술 판단",
         "사례 적용"
@@ -363,10 +591,21 @@
       },
       "answer": 5,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제335조",
+          "location": "상법 제335조"
+        },
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제335조의2",
+          "location": "상법 제335조의2"
+        }
+      ],
       "split": "test",
       "type": "paraphrase",
-      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용",
+      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 판례 미수집: ①(주주간 양도제한 약정), ④(주식병합 후 신주권 미발행)",
       "traps": [
         "숫자·기간",
         "부정 극성",
@@ -394,10 +633,36 @@
       },
       "answer": 5,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제11조",
+          "location": "상법 제11조"
+        },
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제14조",
+          "location": "상법 제14조"
+        },
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제17조",
+          "location": "상법 제17조"
+        },
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제58조",
+          "location": "상법 제58조"
+        },
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제99조",
+          "location": "상법 제99조"
+        }
+      ],
       "split": "test",
       "type": "paraphrase",
-      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용",
+      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 조문으로 판단 가능",
       "traps": [
         "부정 극성",
         "전 진술 판단",
@@ -425,10 +690,16 @@
       },
       "answer": 5,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-COMM",
+          "chunk_id": "LAW-COMM#제342조의2",
+          "location": "상법 제342조의2"
+        }
+      ],
       "split": "test",
       "type": "paraphrase",
-      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용",
+      "note": "[유형 초안·검토 필요] 발문에 구체적 사례(당사자·사실관계) 제시 → 사례 적용 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 조문으로 판단 가능",
       "traps": [
         "전 진술 판단",
         "사례 적용"
@@ -454,10 +725,31 @@
       },
       "answer": 4,
       "statement_labels": {},
-      "evidence": [],
+      "evidence": [
+        {
+          "doc_id": "LAW-BILL",
+          "chunk_id": "LAW-BILL#제21조",
+          "location": "어음법 제21조"
+        },
+        {
+          "doc_id": "LAW-BILL",
+          "chunk_id": "LAW-BILL#제22조",
+          "location": "어음법 제22조"
+        },
+        {
+          "doc_id": "LAW-BILL",
+          "chunk_id": "LAW-BILL#제26조",
+          "location": "어음법 제26조"
+        },
+        {
+          "doc_id": "LAW-BILL",
+          "chunk_id": "LAW-BILL#제29조",
+          "location": "어음법 제29조"
+        }
+      ],
       "split": "test",
       "type": "direct",
-      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인",
+      "note": "[유형 초안·검토 필요] 일반 법리 설명형 발문 → 조문·판례 직접 확인 | 근거 초안(전수 키워드 검색, 판례 2,266건 기준): 조문으로 판단 가능",
       "traps": [
         "전 진술 판단"
       ]
@@ -468,11 +760,11 @@
       "id": "TEST-NA-01",
       "split": "test",
       "type": "no_answer",
-      "question": "자동차손해배상 보장법 시행령상 사망 사고 시 책임보험금의 지급 한도액은 얼마인가요?",
+      "question": "고용보험법상 구직급여의 소정급여일수는 피보험기간과 연령에 따라 어떻게 정해지나요?",
       "expected_facts": [],
       "reference_answer": "정보 부족 안내",
       "evidence": [],
-      "no_answer_reason": "[초안·색인 후 검색으로 부재 재확인 필요] 자동차손해배상 보장법·시행령은 색인 범위에 없음 (금액은 시행령 사항)"
+      "no_answer_reason": "[초안·색인 확인 완료(index-v0.3): '구직급여/소정급여일수/실업급여' 0건] 고용보험법은 색인 범위에 없음"
     },
     {
       "id": "TEST-NA-02",
@@ -482,7 +774,7 @@
       "expected_facts": [],
       "reference_answer": "정보 부족 안내",
       "evidence": [],
-      "no_answer_reason": "[초안·색인 후 검색으로 부재 재확인 필요] 형사소송법은 색인 범위에 없음"
+      "no_answer_reason": "[초안·색인 확인 완료(index-v0.3): '재정신청' 0건] 형사소송법은 색인 범위에 없음"
     },
     {
       "id": "TEST-NA-03",
@@ -492,7 +784,7 @@
       "expected_facts": [],
       "reference_answer": "정보 부족 안내",
       "evidence": [],
-      "no_answer_reason": "[초안·색인 후 검색으로 부재 재확인 필요] 법령은 2026-01-01 시행본, 판례는 2025년까지 선고분만 색인 → 이후 개정 내용은 근거 없음"
+      "no_answer_reason": "[초안·색인 확인 완료(index-v0.3): '전자주주총회' 0건 — 단 유사 조문 상법 제368조의4(전자적 방법 의결권)가 있어 유사 조건 함정] 법령은 2026-01-01 시행본, 판례는 2025년까지 선고분만 색인 → 이후 개정 내용은 근거 없음"
     }
   ]
 }

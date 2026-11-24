@@ -1,7 +1,7 @@
 # 모든 실험 설정의 단일 출처. 값을 바꾸면 versions.* 도 올려서 기록에 남깁니다.
 versions:
   docs: "docs-v0.1"        # data/documents.csv 및 원문 버전
-  index: "index-v0.2"      # 청킹/임베딩 설정이 바뀌면 올림 (v0.2: 긴 청크 분할, 임베딩 1024토큰)
+  index: "index-v0.3"      # 청킹/임베딩 설정이 바뀌면 올림 (v0.2: 긴 청크 분할 / v0.3: 민사·가사 판례만)
   prompt: "prompt-v0.1"    # src/kant_rag/generation/prompts.py 변경 시 올림
   eval: "eval-v0.1"        # eval/*.json 고정 버전
 
@@ -19,6 +19,9 @@ corpus:
   case_date_to: "20251231"    # 시험일 이후 판례 제외
   topic_level: article        # section(편/장/절 제목만) | article(+조문 제목)
   cases_per_topic: 5
+  case_kinds: ["민사", "가사"]   # 수집 시 사건종류명 필터 (본문검색은 행정·형사 판례도 걸림)
+  # 색인 시 사건번호 부호 필터: 다(민사) 마·그(민사 신청·항고) 스·므·으·브(가사) 카·라·머(민사 기타)
+  case_codes: ["다", "마", "그", "스", "므", "으", "브", "카", "라", "머"]
 
 chunking:
   chunk_size: 500          # 문자 기준

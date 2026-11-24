@@ -13,7 +13,7 @@ def hit_at_k(record: dict, item: EvalItem, k: int = 5) -> int:
     """허용 근거 청크가 최종 상위 k 안에 하나라도 있으면 1. 검색 실패는 0."""
     final = (record.get("retrieval") or {}).get("final") or []
     allowed = {e.chunk_id for e in item.evidence}
-    return int(any(r["chunk_id"] in allowed for r in final[:k]))
+    return int(any(r["chunk_id"] in allowed or r["chunk_id"].split("~")[0] in allowed for r in final[:k]))
 
 
 def latency_summary(records: list[dict]) -> dict:

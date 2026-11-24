@@ -28,7 +28,12 @@ def mcq_hit_at_k(rec: dict, q: ExamQuestion, k: int = 5) -> int | None:
     if not q.evidence:
         return None  # 근거 미표기 문항은 Hit@5 분모에서 제외 (보고서에 명시)
     allowed = {e.chunk_id for e in q.evidence}
-    return int(any(r["chunk_id"] in allowed for rs in (rec.get("retrieval") or {}).values() for r in rs[:k]))
+    return int(any(matches(r["chunk_id"], allowed) for rs in (rec.get("retrieval") or {}).values() for r in rs[:k]))
+
+
+def matches(chunk_id: str, allowed: set[str]) -> bool:
+    """허용 근거가 분할 전 ID(예: CASE#…#2)이면 분할 조각(CASE#…#2~1)도 인정."""
+    return chunk_id in allowed or chunk_id.split("~")[0] in allowed
 
 
 def statement_accuracy(rec: dict, q: ExamQuestion) -> tuple[int, int]:

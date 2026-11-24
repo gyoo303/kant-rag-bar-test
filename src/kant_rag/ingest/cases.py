@@ -42,7 +42,7 @@ def build_topics(statutes: list[tuple[DocumentMeta, str]], level: str = "article
 
 
 def collect_cases(api, topics: list[str], out_path: Path, date_from: str, date_to: str,
-                  per_topic: int = 5, log_every: int = 10) -> dict:
+                  per_topic: int = 5, log_every: int = 10, kinds: list[str] | None = None) -> dict:
     """주제어별 최신 대법원 판례 per_topic 건. 이미 받은 판례는 건너뜀(재시작 가능)."""
     out_path.parent.mkdir(parents=True, exist_ok=True)
     seen: set[str] = set()
@@ -65,7 +65,7 @@ def collect_cases(api, topics: list[str], out_path: Path, date_from: str, date_t
     with out_path.open("a", encoding="utf-8") as f:
         for i, topic in enumerate(topics, 1):
             try:
-                hits = api.search_precs(topic, date_from, date_to, want=per_topic * 2)
+                hits = api.search_precs(topic, date_from, date_to, want=per_topic * 2, kinds=kinds)
             except Exception as e:
                 stats["errors"] += 1
                 print(f"[warn] 검색 실패 '{topic}': {e}")
@@ -116,7 +116,17 @@ def _split_items(text: str) -> list[tuple[str, str]]:
     return [(parts[i], parts[i + 1].strip()) for i in range(1, len(parts) - 1, 2) if parts[i + 1].strip()]
 
 
-def chunk_cases(jsonl_path: Path, meta: DocumentMeta, date_to: str | None = None) -> list[Chunk]:
+CASE_CODE = re.compile(r"\d{2,4}\s*([가-힣]{1,3})\s*\d")
+
+
+def case_code(case_no: str) -> str:
+    """'2019다12345' → '다', '2017스98, 99' → '스'"""
+    m = CASE_CODE.search(case_no or "")
+    return m.group(1) if m else ""
+
+
+def chunk_cases(jsonl_path: Path, meta: DocumentMeta, date_to: str | None = None,
+                codes: list[str] | None = None) -> list[Chunk]:
     chunks: list[Chunk] = []
     seen_ids: set[str] = set()
     for line_no, line in enumerate(jsonl_path.open(encoding="utf-8"), start=1):
@@ -126,6 +136,8 @@ def chunk_cases(jsonl_path: Path, meta: DocumentMeta, date_to: str | None = None
             continue
         decided = re.sub(r"\D", "", c.get("decided", ""))
         if date_to and decided and decided > date_to:  # 시험일 이후 판례 제외
+            continue
+        if codes and case_code(c.get("case_no", "")) not in codes:  # 민사·가사 외(행정 두, 형사 도 등) 제외
             continue
         issues = dict(_split_items(c.get("holding_issue", "")))
         label = f"{c['court']} {c['decided']} {c['case_no']}"

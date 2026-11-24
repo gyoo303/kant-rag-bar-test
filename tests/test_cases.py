@@ -80,3 +80,28 @@ def test_collect_resumes_after_truncated_line(tmp_path):
     stats = collect_cases(API(), ["t"], out, "20110101", "20251231", per_topic=5)
     ids = [json.loads(line)["prec_id"] for line in out.read_text(encoding="utf-8").splitlines()]
     assert ids == ["11", "13"] and stats["new"] == 1
+
+
+def test_case_code_filter(tmp_path):
+    from kant_rag.ingest.cases import case_code
+
+    assert [case_code(x) for x in ("2019다12345", "2017스98, 99", "2025도6752", "2014다221777, 221784")] == ["다", "스", "도", "다"]
+    p = tmp_path / "c.jsonl"
+    rows = [{"prec_id": str(i), "case_no": no, "court": "대법원", "decided": "2020.01.01", "summary": "요지",
+             "holding_issue": "", "ref_articles": ""} for i, no in enumerate(["2019다1", "2019두2", "2019도3"])]
+    p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows), encoding="utf-8")
+    assert [c.metadata["case_no"] for c in chunk_cases(p, META, codes=["다"])] == ["2019다1"]
+
+
+def test_search_precs_kind_filter():
+    f = FakeLawAPI()
+    orig = f.api._get
+
+    def with_kind(endpoint, **params):
+        res = orig(endpoint, **params)
+        for x in res.get("PrecSearch", {}).get("prec", []):
+            x["사건종류명"] = "민사" if x["판례일련번호"].endswith("1") else "형사"
+        return res
+    f.api._get = with_kind
+    hits = f.api.search_precs("q", "20110101", "20251231", want=5, page_size=3, kinds=["민사"])
+    assert all(h["사건종류명"] == "민사" for h in hits)

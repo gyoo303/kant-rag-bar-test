@@ -28,7 +28,8 @@ def build_chunks(settings: Settings) -> list[Chunk]:
         if meta.doc_type == "cases":
             from kant_rag.ingest.cases import chunk_cases
 
-            chunks.extend(chunk_cases(path, meta, date_to=settings.corpus.case_date_to))
+            chunks.extend(chunk_cases(path, meta, date_to=settings.corpus.case_date_to,
+                                      codes=settings.corpus.case_codes))
             continue
         if meta.doc_type == "statute":
             text = "\n".join(clean_text(p.text) for p in load_pages(path))

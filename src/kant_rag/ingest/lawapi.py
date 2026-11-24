@@ -98,7 +98,8 @@ class LawAPI:
 
     # ---------- 판례 ----------
     def search_precs(self, query: str, date_from: str, date_to: str, want: int = 5,
-                     court: str | None = "대법원", max_pages: int = 5, page_size: int = 50) -> list[dict]:
+                     court: str | None = "대법원", max_pages: int = 5, page_size: int = 50,
+                     kinds: list[str] | None = None) -> list[dict]:
         """본문 검색(search=2, 최신순 응답). 선고일자 범위·법원은 응답을 받아 직접 거름 (API 진단 결과 기준)."""
         out: list[dict] = []
         for page in range(1, max_pages + 1):
@@ -108,6 +109,8 @@ class LawAPI:
             for x in items:
                 d = str(x.get("선고일자", "")).replace(".", "")
                 if court and court not in str(x.get("법원명", "")):
+                    continue
+                if kinds and str(x.get("사건종류명", "")) not in kinds:  # 예: 민사·가사만
                     continue
                 if d and date_from <= d <= date_to:
                     out.append(x)

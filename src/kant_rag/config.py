@@ -36,6 +36,8 @@ class Corpus(BaseModel):
     case_date_to: str = "20251231"
     topic_level: str = "article"
     cases_per_topic: int = 5
+    case_kinds: list[str] = ["민사", "가사"]
+    case_codes: list[str] = ["다", "마", "그", "스", "므", "으", "브", "카", "라", "머"]
 
 
 class Chunking(BaseModel):

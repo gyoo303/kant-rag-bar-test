@@ -190,7 +190,7 @@ def main(argv: list[str] | None = None) -> None:
             topics = topics[: args.limit_topics]
         c = settings.corpus
         stats = collect_cases(LawAPI(), topics, settings.resolve(settings.paths.raw_dir) / "cases" / "cases.jsonl",
-                              c.case_date_from, c.case_date_to, c.cases_per_topic)
+                              c.case_date_from, c.case_date_to, c.cases_per_topic, kinds=c.case_kinds)
         print(json.dumps(stats, ensure_ascii=False))
 
     elif args.cmd == "build-index":

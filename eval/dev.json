@@ -226,11 +226,11 @@
       "id": "DEV-NA-01",
       "split": "dev",
       "type": "no_answer",
-      "question": "행정소송법상 취소소송의 제소기간은 처분이 있음을 안 날부터 며칠인가요?",
+      "question": "특허법상 특허권의 존속기간은 특허권 설정등록일부터 언제까지인가요?",
       "expected_facts": [],
       "reference_answer": "정보 부족 안내",
       "evidence": [],
-      "no_answer_reason": "[초안·색인 후 검색으로 부재 재확인 필요] 행정소송법은 색인 범위(민사 법령·민사 판례 주제어)에 없음"
+      "no_answer_reason": "[초안·색인 확인 완료(index-v0.3): '특허권+존속기간/설정등록' 0건] 특허법은 색인 범위에 없음"
     },
     {
       "id": "DEV-NA-02",
@@ -240,7 +240,7 @@
       "expected_facts": [],
       "reference_answer": "정보 부족 안내",
       "evidence": [],
-      "no_answer_reason": "[초안·색인 후 검색으로 부재 재확인 필요] 세법은 색인 범위에 없음"
+      "no_answer_reason": "[초안·색인 확인 완료(index-v0.3): '간이과세' 0건] 세법은 색인 범위에 없음"
     }
   ]
 }

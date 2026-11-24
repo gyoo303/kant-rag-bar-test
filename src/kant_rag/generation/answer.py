@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-import re
 
 from kant_rag.config import Settings
 from kant_rag.generation.llm import get_chat_model
@@ -26,10 +24,9 @@ def build_context(chunks: list[RetrievedChunk], max_chunks: int, max_chars: int)
 
 
 def _parse(text: str) -> LLMAnswer:
-    m = re.search(r"\{.*\}", text, re.S)
-    if not m:
-        raise ValueError("JSON 응답을 찾지 못했습니다")
-    return LLMAnswer.model_validate(json.loads(m.group(0)))
+    from kant_rag.generation.llmcall import extract_json
+
+    return LLMAnswer.model_validate(extract_json(text, "answer"))
 
 
 def _text_of(msg) -> str:

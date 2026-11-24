@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 from conftest import make_rc
 
+import kant_rag.generation.llmcall as llmcall_mod
 import kant_rag.mcq.solver as solver_mod
 from kant_rag.mcq.io import import_exam, split_exam
 from kant_rag.mcq.schemas import StatementJudgment
@@ -68,7 +69,7 @@ def test_solver_end_to_end_without_answer_leak(settings, monkeypatch):
                 + ", ".join(f'"{k}": {{"verdict": "{"false" if k == "3" else "true"}", "confidence": 0.8,'
                             f' "reason": "r", "cited_chunk_ids": ["LAW#제766조"]}}' for k in "12345") + "}}")
 
-    monkeypatch.setattr(solver_mod, "get_chat_model", lambda *a, **k: FakeLLM())
+    monkeypatch.setattr(llmcall_mod, "get_chat_model", lambda *a, **k: FakeLLM())
     rec = MCQSolver(settings, retriever=FakeRetriever()).solve(q1, RetrievalMode.C)
     assert rec["status"] == "ok" and rec["predicted"] == 3
     assert set(rec["retrieval"]) == set("12345")
@@ -124,7 +125,7 @@ def test_rewrite_used_for_retrieval_with_fallback(settings, monkeypatch):
             queries.append(query)
             return super().retrieve(query, mode)
 
-    monkeypatch.setattr(solver_mod, "get_chat_model", lambda *a, **k: FakeLLM())
+    monkeypatch.setattr(llmcall_mod, "get_chat_model", lambda *a, **k: FakeLLM())
     rec = MCQSolver(s, retriever=RecordingRetriever()).solve(q1, RetrievalMode.C)
     assert queries[0] == "불법행위 손해배상 민법 제750조"
     assert rec["rewrite"]["fallback_keys"] == ["3"] and queries[2] == rec["rewrite"]["original"]["3"]
@@ -146,7 +147,7 @@ def test_closed_book_baseline_skips_retrieval(settings, monkeypatch):
         def retrieve(self, *a, **k):
             raise AssertionError("closed_book 은 검색하지 않아야 함")
 
-    monkeypatch.setattr(solver_mod, "get_chat_model", lambda *a, **k: FakeLLM())
+    monkeypatch.setattr(llmcall_mod, "get_chat_model", lambda *a, **k: FakeLLM())
     rec = MCQSolver(settings, retriever=NoRetriever()).solve(q1, RetrievalMode.NONE)
     assert rec["predicted"] == 3 and rec["config"] == "closed_book" and "retrieval" not in rec
     assert "<evidence>" not in prompts[0][1][1]

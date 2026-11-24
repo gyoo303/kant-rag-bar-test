@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -464,3 +464,52 @@ next_readers: [DB, FE, QA]
 | GATE-10 | 시험 DB(`lawqa_test`)에 `DATABASE_URL`을 바꿔 `corpus import --raw-dir tests/fixtures/raw` → `corpus index` 두 번 | 가져옴 14·건너뜀 1(`OUT_OF_SCOPE`)·무시 `상법.txt`, `index_version=idx-d414a9e1-f86ae9e9 chunks=16 embeddings=16 skipped=1 complete=false`, 두 번째는 "이미 있음"(임베딩 호출 없음) |
 | API-02 오류 | `corpus import --raw-dir tests/fixtures/raw/broken` | `민법.txt` 없음, 종료 코드 1 |
 - 개발 DB(`lawqa`)의 실제 가져오기·색인(판례 1만여 건, 임베딩 비용 발생)은 하지 않았다. 사람이 수집 완료·빈 판례 삭제 후 `corpus import` → `corpus index`로 실행한다.
+
+### TKT-BE-M2-03 (retrieval 도메인)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M2-03 | R-3 입력 검증(AC-09-4 도메인 부분: 잘못된 부분 안내) | 충족 | `test_exam_item.py` — `InvalidExamItemError.field`가 `stem`·`options`·`options[n]` |
+| TKT-BE-M2-03 | 라운드로빈 합침·중복 제거(ADR-011) | 충족 | `test_question_list.py` |
+| TKT-BE-M2-03 | `RetrievalConfig.comparable_key`(INV-08) | 충족 | `test_retrieval_config.py` |
+| TKT-BE-M2-03 | GATE-02·04, LangChain import 없음 | 충족 | §검증 결과 |
+
+#### 만든 것
+- `retrieval/domain/errors.py`: `InvalidExamItemError(field, reason)`, `RewriteFailedError`, `RetrievalFailedError`
+- `retrieval/domain/models.py`
+  - `ExamItem(stem, options)` — 지문 비어 있지 않음·≤4,000자, 보기 정확히 5개·각 비어 있지 않음·≤1,000자. 목록을 받으면 튜플로 바꿔 둔다
+  - `RetrievalMode`(A/B/C), `RetrievalConfig` — 이름↔모드↔리라이트 일치(`A→A`, `B→B`, `C→C`, `C+R→C+리라이트`), 정수 ≥1, weights 0 이상·합 > 0. `comparable_key = (n_vec, n_bm25, n_fuse, k_opt, rrf_c, weights)`
+  - `OptionQuery(option_no, original, rewritten=None, fallback=False)` + `effective`
+  - `Candidate`(순위는 1 이상), `OptionResult`(`final_rank` 오름차순·청크 중복 없음, `top(k)`), `RetrievalResult`(보기 1~5 순서, `question_list(max_len=20)`, `context(k_opt)`)
+- `retrieval/domain/decomposer.py`: `QueryDecomposer.decompose(item)` — 질의 = `지문(앞뒤 공백 제거) 앞 300자 + "\n" + 보기 원문`
+- `retrieval/domain/ports.py`: `OptionRetriever.retrieve(query) -> list[Candidate]`, `QueryRewriterPort.rewrite(item, queries)`
+- 시험 4파일 36개(`test_retrieval_config.py`는 티켓 산출 목록 밖이지만 `comparable_key` 완료 조건 확인용으로 추가)
+
+#### 계층 확인 포인트
+- `retrieval/domain`은 표준 라이브러리만 import(LangChain 없음, GATE-02 0줄).
+
+#### 구현 중 자율 결정
+##### TKT-BE-M2-03 `context(k_opt)`의 중복 청크
+- 결정: 보기별 상위 `k_opt` 합집합에서 같은 청크는 처음 나온 보기 자리에 한 번만 — 04-interfaces-api §1.3 "합집합"
+- 선택지: **A. 한 번만 (권장·채택)** / B. 보기마다 그대로(중복 허용)
+- 권장 이유: "합집합" 정의와 같고, 같은 근거를 프롬프트에 두 번 넣지 않는다.
+- trade-off: A — 모델이 "이 청크가 보기 3에도 해당"을 위치로 알 수 없음(보기별 근거 판단은 프롬프트 몫). B — 컨텍스트가 길어지고 인용 ID가 겹침.
+
+##### TKT-BE-M2-03 `RetrievalConfig` 이름·모드 일치 검사
+- 결정: 생성할 때 이름과 모드·리라이트가 맞지 않으면 `ValueError` — INV-08(바뀌는 것은 검색 구성과 리라이트 여부뿐)
+- 선택지: **A. 생성 시 검사 (권장·채택)** / B. 검사 없음
+- 권장 이유: 설정 파일 실수(`C.toml`에 `use_rewrite=true` 등)로 비교가 섞이는 것을 실행 전에 막는다.
+- trade-off: A — 새 구성 이름을 추가하려면 대응표를 고쳐야 함. B — 잘못된 조합이 기록까지 감.
+
+#### 설계와 다르게 한 것 / 질문
+- 없음.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b | 06-quality-gates 명령 | 0줄 |
+| GATE-03 | 모듈 import | 종료 코드 0 |
+| GATE-04 | `uv run pytest tests/unit -q` | 182 passed(이번 티켓 36개) |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-07·09 | 06-quality-gates 명령 | 0줄(GATE-09가 변수 이름 `expected`에 걸려 `want`로 바꿈) |

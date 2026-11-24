@@ -7,6 +7,7 @@ C (hybrid_rerank) : B 의 후보 fused_k 개 → reranker → final_k
 
 from __future__ import annotations
 
+import json
 from enum import Enum
 
 from kant_rag.config import Settings
@@ -34,6 +35,10 @@ class Retriever:
         if missing:
             raise SystemExit(f"색인이 없거나 미완성입니다 (없음: {', '.join(missing)}).\n"
                              "→ `uv run kant-rag build-index` 를 끝까지 실행한 뒤 다시 시도하세요.")
+        info = json.loads((index_dir / "index_info.json").read_text(encoding="utf-8"))
+        if info.get("embedding_model") != settings.models.embedding_model:
+            raise SystemExit(f"색인은 임베딩 '{info.get('embedding_model')}' 로 만들어졌는데 지금 설정은 "
+                             f"'{settings.models.embedding_model}' 입니다.\n→ 같은 EMBEDDING_MODEL 로 build-index 를 다시 실행하세요.")
         chunks = load_chunks(settings)
         self.bm25 = BM25Index.load(index_dir / "bm25.pkl")
         e = settings.embedding

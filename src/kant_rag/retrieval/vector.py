@@ -1,4 +1,9 @@
-"""벡터 검색 (LangChain FAISS + HuggingFace 임베딩, 코사인 유사도)."""
+"""벡터 검색 (LangChain FAISS + 임베딩, 코사인 유사도).
+
+임베딩 백엔드는 모델 이름으로 고릅니다 (EMBEDDING_MODEL):
+- `text-embedding-3-small` 등 `text-embedding-*` 또는 `openai:<모델>` → OpenAI 임베딩 API (GPU 불필요, 교안 표준)
+- 그 외(예: `BAAI/bge-m3`) → 로컬 HuggingFace 모델 (GPU 권장)
+"""
 
 from __future__ import annotations
 
@@ -8,8 +13,19 @@ from pathlib import Path
 from kant_rag.schemas import Chunk, RetrievedChunk
 
 
+def is_openai_embedding(model_name: str) -> bool:
+    return model_name.startswith(("text-embedding-", "openai:"))
+
+
 @lru_cache
 def get_embeddings(model_name: str, max_tokens: int = 1024, batch_size: int = 8, fp16: bool = True):
+    if is_openai_embedding(model_name):
+        from langchain_openai import OpenAIEmbeddings
+
+        name = model_name.removeprefix("openai:")
+        print(f"[embedding] OpenAI {name} (API 호출, GPU 불필요)", flush=True)
+        # text-embedding-3 계열은 길이 1로 정규화된 벡터 → 내적 = 코사인
+        return OpenAIEmbeddings(model=name, chunk_size=256, show_progress_bar=True, max_retries=6)
     import torch
     from langchain_huggingface import HuggingFaceEmbeddings
 

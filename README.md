@@ -74,6 +74,17 @@ uv run pytest
 - `records.jsonl` 에 진술별 검색 후보·점수·재정렬 전후 순위, 진술별 판단·인용, 보기 점수, 시간, 상태가 남습니다.
 - 품질 비교는 캐시를 끈 상태에서만 실행됩니다. 실패·재시도·추가 실험(extra 45문항 등)은 `--label` 로 분리합니다.
 
+## 클라우드 세션(Claude Code on the web, GPU 없음)에서 실행
+1. 클라우드 환경 설정 → 환경변수에 `OPENAI_API_KEY` 추가 (채팅에 붙여넣지 말 것) → **새 세션**을 열어야 적용됨
+2. 새 세션에서:
+```bash
+bash scripts/cloud_run.sh all70-cloud-v1
+```
+- 임베딩은 OpenAI `text-embedding-3-small` (GPU 불필요), 리랭커는 CPU → `configs/cloud.yaml` (후보 10개, 512토큰)
+- 소요: 설치 수 분 + 임베딩 수 분 + 리랭커 약 40분 (70문항). 빠르게 보려면 `--modes hybrid` (리랭커 없음)
+- 컨테이너가 끝나면 `index/` 는 사라짐 → `results/` 는 커밋·푸시해서 보존
+- PC(GPU, bge-m3) 색인과 임베딩이 달라 결과가 다를 수 있음 → 비교 실험으로 기록
+
 ## 버전 관리 규칙
 - 법령 재수집·청킹·임베딩 변경 → `versions.docs` / `versions.index` 올리고 `build-index`, 평가셋 근거 ID 확인
 - 프롬프트 변경 → `versions.prompt`

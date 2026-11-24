@@ -158,3 +158,11 @@ def test_auto_traps():
     q1, q2 = exam().items
     assert "부정 극성" in auto_traps(q1) and "숫자·기간" in auto_traps(q1)
     assert "전 진술 판단" in auto_traps(q2)
+
+
+def test_derive_statement_labels():
+    from kant_rag.mcq.schemas import derive_statement_labels
+
+    q1, q2 = exam().items  # q1: 단일 '옳지 않은 것' 정답 3 / q2: 조합 '옳은 것' 정답 ③ ㄱ,ㄷ
+    assert derive_statement_labels(q1) == {"1": True, "2": True, "3": False, "4": True, "5": True}
+    assert derive_statement_labels(q2) == {"ㄱ": True, "ㄴ": False, "ㄷ": True}

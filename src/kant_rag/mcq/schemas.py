@@ -62,3 +62,25 @@ class StatementJudgment(BaseModel):
     confidence: float = Field(ge=0, le=1, description="근거에 비춘 판단 확신도 (자기 보고값, 확률 아님)")
     reason: str
     cited_chunk_ids: list[str] = Field(default_factory=list)
+
+
+def derive_statement_labels(q: ExamQuestion) -> dict[str, bool]:
+    """확정 정답 번호로부터 진술별 참/거짓을 역산 (개수형은 판단 불가 → 빈 dict).
+
+    - 단일형: '옳은 것' 이면 정답 보기만 참·나머지 거짓, '옳지 않은 것' 이면 정답 보기만 거짓·나머지 참
+    - 조합형: 정답 보기에 든 진술 = 발문이 찾는 쪽(옳은 것이면 참), 빠진 진술 = 반대
+    - ○× 조합형: 정답 보기의 ○/× 그대로
+    """
+    from kant_rag.mcq.parse import parse_combo, parse_ox
+
+    if q.answer is None:
+        return {}
+    target = q.polarity == "correct"
+    if q.form == "single":
+        return {str(n): (target if n == q.answer else not target) for n in q.options}
+    if q.form == "combination":
+        chosen = parse_combo(q.options[q.answer])
+        return {k: (target if k in chosen else not target) for k in q.items}
+    if q.form == "ox":
+        return parse_ox(q.options[q.answer])
+    return {}

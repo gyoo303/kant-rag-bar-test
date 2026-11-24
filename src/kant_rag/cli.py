@@ -366,11 +366,14 @@ def main(argv: list[str] | None = None) -> None:
             if getattr(obj, "frozen", False):
                 print(f"skip (frozen): {path}")
                 continue
+            from kant_rag.mcq.schemas import derive_statement_labels
+
             n = 0
             for q in obj.items:
                 if q.number in key and q.answer != key[q.number]:
                     q.answer = key[q.number]
                     n += 1
+                q.statement_labels = derive_statement_labels(q)  # 정답 → 진술별 참/거짓 역산
             path.write_text(obj.model_dump_json(indent=2), encoding="utf-8")
             missing = [q.number for q in obj.items if q.answer is None]
             print(f"{path.relative_to(ROOT)}: {n}개 반영, 미기입 {missing}")

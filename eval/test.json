@@ -17,7 +17,13 @@
         "5": "甲은 乙에게 Y 건물의 부지인 X 토지의 점유·사용에 따른 부당이득의 반환을 청구할 수 없다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -72,7 +78,12 @@
         "5": "ㄱ, ㄷ, ㄹ"
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": false,
+        "ㄹ": true
+      },
       "evidence": [
         {
           "doc_id": "CASES-SC",
@@ -131,7 +142,11 @@
         "5": "ㄴ, ㄷ"
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": false,
+        "ㄷ": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -186,7 +201,11 @@
         "5": "ㄱ, ㄴ, ㄷ"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": true,
+        "ㄷ": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -237,7 +256,13 @@
         "5": "ㄴ, ㄹ, ㅁ"
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": false,
+        "ㅁ": false
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -293,7 +318,13 @@
         "5": "전세권이 존속기간의 만료로 소멸한 경우, 전세금반환채권 양도계약 당사자 간의 특약으로 채권양수인은 담보물권이 없는 무담보의 전세금반환채권을 유효하게 취득할 수 있다."
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": false,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -353,7 +384,12 @@
         "5": "ㄱ(○), ㄴ(×), ㄷ(○), ㄹ(○)"
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": false,
+        "ㄹ": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -408,7 +444,13 @@
         "5": "유치권자가 채무자의 승낙을 얻어 유치물인 건물을 임대하였다가 임대차계약이 해지되어 종료된 이후에는 직접점유자인 임차인이 목적물을 점유하고 있더라도 임대차 종료 시부터 점유매개관계가 단절되므로, 그때부터 유치권자의 유치권은 점유 상실을 이유로 소멸한다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": false,
+        "3": false,
+        "4": false,
+        "5": false
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -472,7 +514,13 @@
         "5": "상속재산인 부동산에 대하여 상속재산분할의 심판이 있었으나 그에 따른 등기가 이루어지기 전에 상속재산분할심판이 있었음을 알지 못한 제3자가 상속재산분할의 효력과 양립하지 않는 법률상 이해관계를 갖고 등기를 마친 경우, 그 제3자에게는 상속재산분할의 효력을 주장할 수 없다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": false,
+        "5": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -532,7 +580,13 @@
         "5": "ㄴ, ㄷ, ㄹ"
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": false,
+        "ㅁ": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVPRO",
@@ -586,7 +640,13 @@
         "5": "소유권에 기한 토지인도청구소송에서 청구기각판결이 확정된 경우, 위 소송의 사실심 변론종결 후에 원고로부터 그 토지를 매수하고 소유권이전등기를 마친 제3자는 위 확정판결의 변론종결 후 승계인에 해당하지 않는다."
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": false,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVPRO",
@@ -636,7 +696,13 @@
         "5": "비법인사단인 채무자가 제3채무자를 상대로 소를 제기하였으나 사원총회의 결의 없이 총유재산에 관한 소가 제기되었다는 이유로 각하판결이 확정된 경우, 이는 채무자가 스스로 제3채무자에 대한 권리를 행사한 것으로 볼 수 없다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-CIVIL",
@@ -695,7 +761,12 @@
         "5": "ㄱ(×), ㄴ(○), ㄷ(×), ㄹ(○)"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-COMM",
@@ -730,7 +801,13 @@
         "5": "주권발행 전에 이루어진 A 회사의 주식양도는 회사가 이를 승인하여 주주명부에 그 변경을 기재하였다면 회사성립 후 또는 신주의 납입기일 후 6개월의 경과 여부와 상관없이 회사에 대한 관계에 있어서 그 효력이 있다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [
         {
           "doc_id": "LAW-COMM",
@@ -782,7 +859,13 @@
         "5": "ㄷ, ㄹ, ㅁ"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": false,
+        "ㅁ": false
+      },
       "evidence": [
         {
           "doc_id": "LAW-COMM",
@@ -839,7 +922,13 @@
         "5": "ㄴ, ㄷ, ㄹ, ㅁ"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": true,
+        "ㅁ": true
+      },
       "evidence": [
         {
           "doc_id": "LAW-COMM",
@@ -874,7 +963,12 @@
         "5": "ㄱ(×), ㄴ(×), ㄷ(○), ㄹ(○)"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": false
+      },
       "evidence": [
         {
           "doc_id": "LAW-BILL",

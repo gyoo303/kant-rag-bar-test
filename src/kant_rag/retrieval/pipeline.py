@@ -29,6 +29,11 @@ class Retriever:
     def __init__(self, settings: Settings):
         self.s = settings
         index_dir = settings.resolve(settings.paths.index_dir)
+        missing = [p for p in ("chunks.jsonl", "bm25.pkl", "faiss/index.faiss", "index_info.json")
+                   if not (index_dir / p).exists()]
+        if missing:
+            raise SystemExit(f"색인이 없거나 미완성입니다 (없음: {', '.join(missing)}).\n"
+                             "→ `uv run kant-rag build-index` 를 끝까지 실행한 뒤 다시 시도하세요.")
         chunks = load_chunks(settings)
         self.bm25 = BM25Index.load(index_dir / "bm25.pkl")
         self.vector = VectorIndex.load(index_dir / "faiss", settings.models.embedding_model, chunks)

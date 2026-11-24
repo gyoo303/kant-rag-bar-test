@@ -64,8 +64,16 @@ def build_index(settings: Settings) -> dict:
         for c in chunks:
             f.write(c.model_dump_json() + "\n")
 
+    by_type: dict[str, int] = {}
+    for c in chunks:
+        t = c.metadata.get("doc_type", "general")
+        by_type[t] = by_type.get(t, 0) + 1
+    print(f"[1/3] 청크 {len(chunks)}개 생성 {by_type}", flush=True)
     BM25Index.build(chunks, settings.retrieval.bm25_tokenizer).save(index_dir / "bm25.pkl")
+    print("[2/3] BM25 색인 완료", flush=True)
+    print(f"[3/3] 벡터 임베딩 시작 ({settings.models.embedding_model}) — 진행률이 표시됩니다", flush=True)
     VectorIndex.build(chunks, settings.models.embedding_model).save(index_dir / "faiss")
+    print("벡터 색인 완료", flush=True)
 
     info = {
         "versions": settings.versions.model_dump(),

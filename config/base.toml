@@ -21,7 +21,7 @@ weights = [0.5, 0.5]
 question_list_max = 20
 
 [timeouts]
-generation_s = 60
+generation_s = 90   # CR-017: max_tokens 제거(CR-012) 후 어려운 문항이 60초를 넘겼다
 rewrite_s = 30
 judge_s = 60
 

@@ -10,9 +10,19 @@ import argparse
 import sys
 from collections.abc import Callable, Sequence
 from importlib import resources
+from pathlib import Path
 
+import openai
 import psycopg
 
+from lawqa.corpus.application.import_service import MissingStatuteFileError
+from lawqa.corpus.application.index_service import IndexingError
+from lawqa.corpus.infrastructure import (
+    build_chunk_query_service,
+    build_import_service,
+    build_index_service,
+    chunking_policy,
+)
 from lawqa.evaluation.domain.errors import InvalidEvalDataError, RuleViolationError
 from lawqa.evaluation.infrastructure import FREEZE_FILE, build_freeze_service
 from lawqa.evaluation.infrastructure.git_info import GitCommandError
@@ -38,8 +48,6 @@ RUN_CONFIG_CHOICES = ("A", "B", "C", "C+R")
 
 # (그룹, 명령) → 구현할 티켓 (임시: 명령을 구현하는 티켓에서 항목을 지운다)
 _PENDING_TICKETS: dict[tuple[str, str | None], str] = {
-    ("corpus", "import"): "TKT-BE-M2-02",
-    ("corpus", "index"): "TKT-BE-M2-02",
     ("ask", None): "TKT-BE-M3-03",
     ("eval", "run"): "TKT-BE-M3-05",
     ("eval", "grade"): "TKT-BE-M4-01",
@@ -141,6 +149,65 @@ def _cmd_check_smoke(args: argparse.Namespace) -> int:
     return EXIT_OK if report.ok else EXIT_EXTERNAL_ERROR
 
 
+def _cmd_corpus_import(args: argparse.Namespace) -> int:
+    """API-02: law_collector 출력 가져오기. 건너뛴 건이 있어도 0(경고 출력)."""
+    try:
+        settings = load_settings("base")
+        url = settings.secrets.require("database_url")
+    except SettingsError as exc:
+        print(f"설정 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    raw_dir = Path(args.raw_dir) if args.raw_dir else settings.paths.raw_dir
+    try:
+        with connect(url) as conn:
+            report = build_import_service(conn).import_files(raw_dir)
+    except MissingStatuteFileError as exc:
+        print(f"입력 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except psycopg.Error as exc:
+        print(f"DB 오류: {exc}".strip(), file=sys.stderr)
+        return EXIT_EXTERNAL_ERROR
+    print(f"가져온 문서 {report.imported}건, 건너뜀 {report.skipped}건")
+    reasons: dict[str, int] = {}
+    for issue in report.issues:
+        reasons[issue.reason] = reasons.get(issue.reason, 0) + 1
+    for reason, count in sorted(reasons.items()):
+        print(f"  건너뜀 {reason}: {count}건")
+    print("제외(오류 아님): " + ", ".join(f"{k}={v}" for k, v in report.excluded.items()))
+    if report.ignored_files:
+        print(f"무시한 범위 밖 법령 파일: {', '.join(report.ignored_files)}")
+    print(f"corpus_version={report.corpus_version}")
+    if report.skipped:
+        print(
+            f"경고: {report.skipped}건을 건너뛰었습니다. 이 원문의 색인은 불완전으로 표시됩니다.",
+            file=sys.stderr,
+        )
+    return EXIT_OK
+
+
+def _cmd_corpus_index(args: argparse.Namespace) -> int:
+    """API-03: 청킹·임베딩·색인. GATE-10 형식 한 줄을 출력한다."""
+    try:
+        settings = load_settings(args.config)
+        url = settings.secrets.require("database_url")
+        with connect(url) as conn:
+            service = build_index_service(conn, settings, database_url=url)
+            result = service.build_index(chunking_policy(settings))
+    except SettingsError as exc:
+        print(f"설정 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except IndexingError as exc:
+        print(f"색인 실패: {exc}", file=sys.stderr)
+        return EXIT_EXTERNAL_ERROR
+    except (psycopg.Error, openai.OpenAIError) as exc:
+        print(f"외부 호출 실패: {type(exc).__name__}: {exc}".strip(), file=sys.stderr)
+        return EXIT_EXTERNAL_ERROR
+    if result.already_existed:
+        print(f"이미 있음: 판본 {result.version.index_version}을 다시 만들지 않습니다.")
+    print(result.summary_line())
+    return EXIT_OK
+
+
 def _config_shas() -> dict[str, str]:
     return {name: load_settings(name).config_sha for name in RUN_CONFIGS}
 
@@ -159,10 +226,13 @@ def _prompt_sha() -> str:
 
 
 def _complete_index_version() -> str:
-    """완료된 색인 판본 조회 — corpus 색인 서비스(TKT-BE-M2-02)가 생긴 뒤 연결한다(임시)."""
-    raise InvalidEvalDataError(
-        "완료된 색인 판본 조회는 TKT-BE-M2-02 이후 연결됩니다. final 고정은 M3에서 합니다."
-    )
+    """가장 최근 완료 색인 판본(`eval freeze --stage final`). 없으면 입력 오류."""
+    url = load_settings("base").secrets.require("database_url")
+    with connect(url) as conn:
+        version = build_chunk_query_service(conn).latest_complete_version()
+    if version is None:
+        raise InvalidEvalDataError("완료된 색인 판본이 없습니다. 먼저 corpus index를 실행하세요.")
+    return version.index_version
 
 
 def _cmd_eval_freeze(args: argparse.Namespace) -> int:
@@ -191,6 +261,8 @@ def _cmd_eval_freeze(args: argparse.Namespace) -> int:
 
 _HANDLERS: dict[tuple[str, str | None], Callable[[argparse.Namespace], int]] = {
     ("db", "init"): _cmd_db_init,
+    ("corpus", "import"): _cmd_corpus_import,
+    ("corpus", "index"): _cmd_corpus_index,
     ("check", "smoke"): _cmd_check_smoke,
     ("eval", "freeze"): _cmd_eval_freeze,
 }

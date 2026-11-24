@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -398,3 +398,69 @@ next_readers: [DB, FE, QA]
 | GATE-04b | `uv run pytest tests/integration -q` | 29 passed |
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | GATE-07·09 | 빈 except·도메인 시각, 정답 경로 | 0줄 |
+
+### TKT-BE-M2-02 (가져오기·색인 서비스·`corpus import/index`)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M2-02 | AC-05-1 색인 판본에 청크 크기·겹침·임베딩 모델·문서 수·청크 수 기록 | 충족 | `test_skipped_imports_leave_index_incomplete`, 시험 DB 실행 |
+| TKT-BE-M2-02 | AC-05-2 청크 메타데이터(문서 ID·위치·판본, 판례는 참조조문) | 충족 | 청크는 M2-01 `Chunk`, 벡터 메타데이터는 DB-M2-02 `chunk_metadata` 그대로 |
+| TKT-BE-M2-02 | AC-05-4 틀린 건은 건너뛰고 파일·줄·사유 기록, 색인 "불완전" | 충족 | `test_import_service.py`, `skipped=1 complete=false` 출력 |
+| TKT-BE-M2-02 | GATE-10 출력 형식 | 충족 | `test_summary_line_matches_gate_10`, 시험 DB 실행 `chunks=16 embeddings=16` |
+| TKT-BE-M2-02 | 재실행 시 같은 판본 "이미 있음" | 충족 | `test_rerun_*` 2개, 시험 DB 두 번째 실행 |
+| TKT-BE-M2-02 | GATE-04 | 충족 | §검증 결과 |
+
+#### 만든 것
+- `corpus/application/import_service.py`: `ImportService.import_files(raw_dir) -> ImportReport{imported, issues, corpus_version, excluded, ignored_files}`(+`skipped`)
+  - 판례: 깨진 JSON → `JSON_ERROR`, 변환 실패 → `InvalidSourceDocumentError.reason`. 성공 문서 500건 묶음 = 트랜잭션 1(SEQ-01)
+  - 민법: `law/민법.txt` 없으면 `MissingStatuteFileError`(종료 1). 삭제 조문·제목 줄·소속 없는 줄은 `excluded` 건수, 다른 법령 파일은 `ignored_files`
+  - 끝에 `corpus_version`(DB 전체 `content_sha` 정렬 해시)을 계산하고, 그 판본의 가져오기 문제를 지우고 다시 저장(CR-007, 재실행해도 쌓이지 않음)
+- `corpus/application/index_service.py`: `IndexService.build_index(policy) -> IndexResult{version, embeddings, already_existed}`(`summary_line()` = GATE-10 한 줄), `IndexingError`
+- `corpus/application/chunk_query_service.py`: `ChunkQueryService.list_chunks(index_version)`, `get_chunks(index_version, ids)`, `latest_complete_version()`
+- `corpus/domain/models.py`: `corpus_version_of(content_shas)` / `corpus/domain/ports.py`: `TransactionScope`(연결의 `transaction()` 모양), 계약 보강(`VectorIndex.delete`, `IndexVersionRepository.latest_complete`, `ChunkRepository.count`, `ImportIssueRepository.list_for` — DB-M2-01·02가 이미 구현한 메서드)
+- `corpus/infrastructure/__init__.py`: `build_import_service(conn)`, `build_index_service(conn, settings, *, database_url, embeddings=None, clock=None)`, `build_chunk_query_service(conn)`, `openai_embeddings(settings)`(`max_retries=3`), `chunking_policy(settings)`
+- `entrypoints/cli.py`: `corpus import [--raw-dir]`(API-02), `corpus index [--config]`(API-03). `_PENDING_TICKETS`에서 두 항목 삭제. **임시 `_complete_index_version()`을 `ChunkQueryService.latest_complete_version()`으로 교체**(없으면 입력 오류)
+- 시험: `tests/unit/corpus/conftest.py`(가짜 저장소·벡터·트랜잭션·시계), `test_import_service.py` 5개, `test_index_service.py` 9개
+
+#### 계층 확인 포인트
+- 응용 서비스는 `TransactionScope` 계약만 쓰고 psycopg·LangChain을 import하지 않는다(GATE-08 0줄). 운영에서는 psycopg `Connection`을 그대로 넘긴다.
+- 트랜잭션: 가져오기 묶음마다 1, 문제 기록 1 / 색인은 판본 행+청크 교체 1, 벡터 적재(PGVector 자체 커밋), 완료 표시 1(SEQ-02).
+- `langchain_openai`는 `corpus/infrastructure/__init__.py`의 `openai_embeddings`에서만, 쓸 때 import.
+
+#### 보안 확인 포인트
+- 접속 문자열·API 키는 `Settings.secrets.require(...)`로만 읽고 출력하지 않는다. DB 오류 메시지는 psycopg 메시지만 출력(접속 문자열 미포함).
+
+#### 임시 코드
+- `_complete_index_version` 임시 코드 제거(이번 티켓). 남은 임시: `Metrics.compute`(M4-02), `_PENDING_TICKETS` 나머지.
+
+#### 구현 중 자율 결정
+##### TKT-BE-M2-02 불완전으로 끝난 판본의 재실행
+- 결정: 같은 판본이 `complete=true`이거나, **건너뜀이 기록되어 `complete=false`(불완전)로 끝났고 벡터 수 = 청크 수**이면 "이미 있음"으로 끝낸다 — 04-interfaces-api §8 SEQ-02("complete=true면 이미 있음")와 §9.2(건너뜀 > 0이면 false 유지)를 함께 따르면 불완전 판본은 실행할 때마다 다시 임베딩됨
+- 선택지: **A. 끝난 불완전 판본도 "이미 있음" (권장·채택)** / B. 문서 그대로(`complete=true`만)
+- 권장 이유: 실제 판례에는 빈 본문 2,117건이 있어 사람이 지우기 전까지 색인은 늘 불완전이다. B면 `corpus index`마다 청크 1만7천여 개를 다시 임베딩(비용·시간)한다.
+- trade-off: A — 중단된 판본과 끝난 불완전 판본을 `skipped_count > 0`으로 구분하므로, 건너뜀 0인데 중단된 판본은 B와 같이 처음부터 다시 만든다(의도대로). B — 같은 입력에 매번 같은 결과를 다시 만드는 비용.
+
+##### TKT-BE-M2-02 `build_index` 반환형
+- 결정: `IndexVersion` 대신 `IndexResult{version, embeddings, already_existed}` — API-03 출력의 `embeddings=`(벡터 실제 수)와 "이미 있음" 표시가 필요
+- 선택지: **A. 결과 객체 (권장·채택)** / B. `IndexVersion`만 반환하고 CLI가 벡터 수를 따로 조회
+- 권장 이유: GATE-10의 "chunks = embeddings" 확인을 서비스가 한 곳에서 하고 그대로 출력한다.
+- trade-off: A — 문서 시그니처와 다름(ARCH 갱신 필요). B — CLI가 벡터 저장소를 알아야 함.
+
+#### 설계와 다르게 한 것 / 질문
+- 위 두 자율 결정(`build_index` 반환형, 불완전 판본 재실행 규칙) → ARCH에 04-interfaces-api §2·§8 SEQ-02 갱신 요청.
+- §2 표의 "파일 하나 = 트랜잭션 하나"는 SEQ-01("500건 묶음 = 트랜잭션 1")과 다르다. SEQ-01을 따랐다(판례 4만여 파일을 파일마다 커밋하지 않음). → ARCH에 §2 문구 갱신 요청.
+- `build_index_service`는 `database_url`을 따로 받는다: PGVector가 자체 SQLAlchemy 연결을 쓰므로 psycopg 연결에서 비밀번호가 든 URL을 다시 꺼내지 않는다.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b | 06-quality-gates 명령 | 0줄 |
+| GATE-03 | 모듈 import | 종료 코드 0 |
+| GATE-04 | `uv run pytest tests/unit -q` | 146 passed(이번 티켓 14개) |
+| GATE-04b | `uv run pytest tests/integration -q` | 46 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-06·07·08·09 | 06-quality-gates 명령 | 각 0줄(GATE-08은 ports.py 설명문의 "psycopg" 낱말을 고쳐 0줄) |
+| GATE-10 | 시험 DB(`lawqa_test`)에 `DATABASE_URL`을 바꿔 `corpus import --raw-dir tests/fixtures/raw` → `corpus index` 두 번 | 가져옴 14·건너뜀 1(`OUT_OF_SCOPE`)·무시 `상법.txt`, `index_version=idx-d414a9e1-f86ae9e9 chunks=16 embeddings=16 skipped=1 complete=false`, 두 번째는 "이미 있음"(임베딩 호출 없음) |
+| API-02 오류 | `corpus import --raw-dir tests/fixtures/raw/broken` | `민법.txt` 없음, 종료 코드 1 |
+- 개발 DB(`lawqa`)의 실제 가져오기·색인(판례 1만여 건, 임베딩 비용 발생)은 하지 않았다. 사람이 수집 완료·빈 판례 삭제 후 `corpus import` → `corpus index`로 실행한다.

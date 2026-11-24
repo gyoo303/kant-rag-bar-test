@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import StrEnum
@@ -393,3 +393,8 @@ def _next_is_article_head(lines: list[str], index: int) -> bool:
         if line:
             return bool(_ARTICLE_HEAD.match(line))
     return False
+
+
+def corpus_version_of(content_shas: Iterable[str]) -> str:
+    """원문 판본: 원문들의 `content_sha`를 정렬해 합친 해시(03-db-schema §3 index_versions)."""
+    return sha256_of("\n".join(sorted(content_shas)).encode())

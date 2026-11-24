@@ -126,18 +126,18 @@ def case_code(case_no: str) -> str:
 
 
 def chunk_cases(jsonl_path: Path, meta: DocumentMeta, date_to: str | None = None,
-                codes: list[str] | None = None) -> list[Chunk]:
+                codes: list[str] | None = None, courts: list[str] | None = None) -> list[Chunk]:
     """jsonl_path 가 폴더이면 그 안의 *.jsonl 전부 (수집분 cases.jsonl + 가져온 cases_<연도>.jsonl)."""
     files = sorted(jsonl_path.glob("*.jsonl")) if jsonl_path.is_dir() else [jsonl_path]
     chunks: list[Chunk] = []
     seen_ids: set[str] = set()
     for f in files:
-        chunks.extend(_chunk_case_file(f, meta, date_to, codes, seen_ids))
+        chunks.extend(_chunk_case_file(f, meta, date_to, codes, seen_ids, courts))
     return chunks
 
 
 def _chunk_case_file(jsonl_path: Path, meta: DocumentMeta, date_to: str | None, codes: list[str] | None,
-                     seen_ids: set[str]) -> list[Chunk]:
+                     seen_ids: set[str], courts: list[str] | None = None) -> list[Chunk]:
     chunks: list[Chunk] = []
     for line_no, line in enumerate(jsonl_path.open(encoding="utf-8"), start=1):
         try:
@@ -146,6 +146,8 @@ def _chunk_case_file(jsonl_path: Path, meta: DocumentMeta, date_to: str | None, 
             continue
         decided = re.sub(r"\D", "", c.get("decided", ""))
         if date_to and decided and decided > date_to:  # 시험일 이후 판례 제외
+            continue
+        if courts and c.get("court", "") not in courts:  # 하급심 제외
             continue
         if codes and case_code(c.get("case_no", "")) not in codes:  # 민사·가사 외(행정 두, 형사 도 등) 제외
             continue

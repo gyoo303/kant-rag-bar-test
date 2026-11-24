@@ -37,7 +37,8 @@ class Corpus(BaseModel):
     topic_level: str = "article"
     cases_per_topic: int = 5
     case_kinds: list[str] = ["민사", "가사"]
-    case_codes: list[str] = ["다", "마", "그", "스", "므", "으", "브", "카", "라", "머"]
+    case_codes: list[str] = ["다", "다카", "재다", "민상", "민재항", "마", "그", "스", "므", "으", "브", "카", "라", "머"]
+    case_courts: list[str] = ["대법원"]
 
 
 class Chunking(BaseModel):

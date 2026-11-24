@@ -105,3 +105,16 @@ def test_search_precs_kind_filter():
     f.api._get = with_kind
     hits = f.api.search_precs("q", "20110101", "20251231", want=5, page_size=3, kinds=["민사"])
     assert all(h["사건종류명"] == "민사" for h in hits)
+
+
+def test_court_filter_and_old_supreme_codes(tmp_path):
+    from kant_rag.ingest.cases import case_code
+
+    assert case_code("85다카1234") == "다카"
+    p = tmp_path / "c.jsonl"
+    rows = [("1985다카1", "대법원"), ("2019라2", "서울고법"), ("2019다3", "대법원")]
+    p.write_text("\n".join(json.dumps({"prec_id": no, "case_no": no, "court": ct, "decided": "20190101",
+                                       "summary": "요지", "holding_issue": "", "ref_articles": ""}, ensure_ascii=False)
+                           for no, ct in rows), encoding="utf-8")
+    got = [c.metadata["case_no"] for c in chunk_cases(p, META, codes=["다", "다카", "라"], courts=["대법원"])]
+    assert got == ["1985다카1", "2019다3"]

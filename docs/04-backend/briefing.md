@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01, TKT-BE-M3-02]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01, TKT-BE-M3-02, TKT-BE-M3-03]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -677,3 +677,73 @@ next_readers: [DB, FE, QA]
 | GATE-02·02b·07·09 | 06-quality-gates 명령 | 각 0줄 |
 | GATE-04 | `uv run pytest tests/unit -q` | 224 passed(이번 티켓 20개) |
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+
+### TKT-BE-M3-03 (생성·AnswerService·`ask`)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M3-03 | AC-09-1 성공: 번호 1개·보기 5개 판단·정답 보기 인용 | 충족 | `test_answered_with_citations_inside_candidates_and_context_record`, 시험 DB 실제 `ask --config C` → ANSWERED 1번, 인용 `민법 제2조` |
+| TKT-BE-M3-03 | AC-09-2 인용 ⊂ 그 실행의 후보 | 충족 | 같은 시험 + `test_citation_outside_context_becomes_insufficient` |
+| TKT-BE-M3-03 | AC-09-3 색인 밖 법률 → 근거 부족 | 충족 | `test_insufficient_evidence_is_not_an_error`, 실제 `ask --config B`(상법 문항) → INSUFFICIENT_EVIDENCE |
+| TKT-BE-M3-03 | AC-09-5 모델 실패 → 모델 오류(근거 부족 아님) | 충족 | `test_model_failure_is_model_error_not_insufficient`(호출·시간 초과·형식) — 실제로도 아래 temperature 400이 MODEL_CALL_FAILED로 기록됨 |
+| TKT-BE-M3-03 | AC-09-6 검색 실패 → 검색 실패 | 충족 | `test_retrieval_failure_is_retrieval_error_not_insufficient`(검색·색인 없음·재정렬) |
+| TKT-BE-M3-03 | AC-09-8 사용 청크 ID·위치·컨텍스트 수·길이 | 충족 | `AnswerEnvelope.context`·`context_chars`·`to_dict()["context"]` |
+| TKT-BE-M3-03 | 모든 예외가 `Answer`로, GATE-04·07 | 충족 | `test_unexpected_exception_becomes_unexpected_model_error`, §검증 결과 |
+- AC-09-4(입력 오류 시 검색·생성 호출 없음)도 서비스 수준으로 확인(`test_input_error_makes_no_search_or_model_call`). AC-09-7(문서 속 지시)은 프롬프트 규칙과 문서 이스케이프까지 확인했고(`test_prompt_file_loads_and_escapes_documents`), 실제 모델 응답 확인은 QA 수용 시험 몫.
+
+#### 만든 것
+- `answering/infrastructure/prompts/answer.txt` — `### SYSTEM`(역할·규칙 ①~⑤, §5.1)·`### USER`(`$question`, `$documents`). 파일 해시 = `prompt_sha`
+- `answering/infrastructure/generator.py` — `AnswerPrompt`(문서는 `<doc id location>`, 본문 `<>&` 이스케이프), `ANSWER_SCHEMA`(strict JSON 스키마), `OpenAIAnswerGenerator`(`with_structured_output(method="json_schema", include_raw=True, strict=True)`, 오류 → `ModelTimeoutError`·`ModelCallError`·`ModelOutputFormatError(raw_output)`), `chat_model(...)`
+- `answering/infrastructure/__init__.py`: `build_generator(settings)`
+- `answering/application/answer_service.py` — `AnswerService.answer(item_input, config_name) -> AnswerEnvelope`(SEQ-03), `AnswerEnvelope{answer, config_name, retrieval, context, prompt_sha, raw_output, latency_ms, queries}` + `to_dict()`
+- `entrypoints/composition.py` — `build_answer_runtime(conn, database_url, ...)`(corpus·retrieval·answering infrastructure 조립, 검색 판본 = `ChunkQueryService.search_version()`), `AnswerRuntime.index_warning()`
+- `entrypoints/cli.py` — `ask --config --file`(API-05): 결과 JSON 출력, 오류 결과도 종료 0, 입력 파일 오류 1, DB 연결 실패 2, 불완전·없는 색인은 stderr 경고
+- 보강: `retrieval/domain/errors.py` `IndexNotReadyError`·`RerankerFailedError`(`RetrievalFailedError` 하위, §4 코드 구분), 재정렬기는 `RerankerFailedError`, 검색기 공장은 판본이 없으면 `IndexNotReadyError` / `RetrievalService.decompose(item)` / `corpus` `ChunkQueryService.search_version()`·포트 `latest_finished`(CR-008) / `ModelOutputFormatError.raw_output` / `AnswerGenerator.prompt_sha`
+- 시험 `tests/unit/answering/test_answer_service.py` 24개
+
+#### 계층 확인 포인트
+- `AnswerService`는 LangChain·OpenAI를 모른다(GATE-08). 예외 → 결과 변환은 여기 한 곳(`except Exception`은 `log.exception` 후 UNEXPECTED, ADR-004의 유일한 예외).
+- 화면·기록 문구는 §4 문구만, 예외 원문은 로그 한 줄(`event=answer_failed code=… error=…`)에만.
+- 모듈 사이 infrastructure 조립은 `entrypoints/composition.py`에만(05 §4).
+
+#### 보안 확인 포인트
+- API 키·DB URL은 설정에서만 읽고 출력·로그에 넣지 않음. 모델에 보내는 것은 문항과 검색된 청크뿐(INV-04: 평가 정답 없음, GATE-09 0줄).
+
+#### 임시 코드
+- 없음. 리라이트 단계는 SEQ-03대로 서비스에 있고(실패 → 모두 fallback), 리라이터 구현(`rewriter.py`)과 연결은 TKT-BE-M3-04에서. 그 전까지 `C+R`은 리라이트 없이 C와 같은 질의로 검색한다.
+
+#### 구현 중 자율 결정
+##### TKT-BE-M3-03 검색 판본 선택 (사용자 결정, CR-008)
+- 결정: 완료 판본 우선, 없으면 끝난 가장 최근 판본(불완전)을 쓰고 경고 — 사용자 선택 2026-11-24
+- 선택지: **A. 완료 우선, 없으면 마지막 (사용자 채택)** / B. 완료 판본만 / C. 설정에 판본 지정
+- 권장 이유: 빈 판례 삭제 전에도 dev 조정을 할 수 있고, 본 평가 고정은 여전히 완료 판본만 허용한다.
+- trade-off: A — 불완전 색인 결과가 섞일 수 있음(경고로 표시). B — 삭제·재색인 전까지 실행 불가. C — 재색인마다 설정 수정.
+- DB 저장소 메서드는 `feat(db): CR-008` 커밋으로 따로 반영(`docs/03-db/briefing.md`).
+
+##### TKT-BE-M3-03 `AnswerEnvelope` 필드 추가
+- 결정: §2의 5개 필드에 `config_name`, `context`(모델에 넣은 후보), `queries`(보기별 질의·리라이트·fallback)를 더함 — AC-09-8, PAGE-01 "검색 정보", RunRecord(M3-05)가 같은 값을 쓴다
+- 선택지: **A. 봉투에 담음 (권장·채택)** / B. 호출 쪽이 `RetrievalResult`에서 다시 계산
+- 권장 이유: 모델이 실제로 받은 근거와 기록이 반드시 같다.
+- trade-off: A — 문서 시그니처보다 큼(ARCH 갱신). B — 다시 계산한 값이 실제와 어긋날 수 있음.
+
+##### TKT-BE-M3-03 문서 본문 이스케이프
+- 결정: 근거 문서 본문의 `<`·`>`·`&`, 속성값의 따옴표를 HTML 이스케이프 — INV-09·AC-09-7
+- 선택지: **A. 이스케이프 (권장·채택)** / B. 그대로
+- 권장 이유: 문서 안의 `</doc>`가 태그를 닫고 지시처럼 보이는 것을 막는다.
+- trade-off: A — 모델이 `&lt;` 같은 표기를 보게 됨(판례 본문에 꺾쇠는 드묾). B — 문서가 프롬프트 구조를 깰 수 있음.
+
+#### 설계와 다르게 한 것 / 질문
+- **`temperature=0`을 넘기지 않음**: §5.1은 `temperature=0`이지만 `gpt-6-luna`가 실제 호출에서 400("Only the default (1) value is supported")을 돌려줬다. 기본값(1)으로 호출한다. 같은 문항을 다시 물으면 답이 달라질 수 있어 재현성이 약해진다 → ARCH에 §5.1·S-06 갱신 요청(대안: 다른 생성 모델, `reasoning_effort` 조정 등은 사람 결정). §5.2 리라이트(M3-04)·§5.3 채점(M4-01)도 같은 문제가 있다.
+- 위 `AnswerEnvelope` 필드, 조립 위치(`entrypoints/composition.py` — CONV-03은 `build_*`를 각 모듈 infrastructure에 두지만 모듈 사이 조립은 둘 곳이 진입점뿐) → ARCH 갱신 요청.
+- `RetrievalService.retrieve`의 `queries` 인자(M2-04)를 SEQ-03의 리라이트 결과 전달에 그대로 썼다.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b·06·07·08·09 | 06-quality-gates 명령 + answering의 다른 모듈 infrastructure import | 각 0줄(GATE-09가 로그 이벤트 이름 `answer_unexpected`의 "expected"에 걸려 `answer_crash`로 바꿈) |
+| GATE-03 | 모듈 import | 종료 코드 0 |
+| GATE-04 | `uv run pytest tests/unit -q` | 248 passed(이번 티켓 24개) |
+| GATE-04b | `uv run pytest tests/integration -q` | 47 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| 실제 연동 | 시험 DB(16청크, 불완전 판본)에서 `ask --config C`(민법 제2조 문항), `ask --config B`(상법 문항) | C: ANSWERED 1번, 보기 5개 판단·인용, 컨텍스트 8청크 3,188자, 25.6초(재정렬 모델 적재 포함). B: INSUFFICIENT_EVIDENCE, 번호 없음, 6.1초. 두 번 모두 불완전 색인 경고 출력 |

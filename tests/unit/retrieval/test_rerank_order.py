@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from langchain_community.cross_encoders import BaseCrossEncoder
 
-from lawqa.retrieval.domain.errors import RetrievalFailedError
+from lawqa.retrieval.domain.errors import RerankerFailedError
 from lawqa.retrieval.domain.models import Candidate, RetrievalConfig, RetrievalMode
 from lawqa.retrieval.infrastructure.reranker import (
     RecordingCrossEncoder,
@@ -99,7 +99,7 @@ def test_model_failure_becomes_retrieval_failed():
     retriever = RerankOptionRetriever(
         FakeHybrid(list("ab")), TableEncoder(SCORES, fail=True), CONFIG
     )
-    with pytest.raises(RetrievalFailedError):
+    with pytest.raises(RerankerFailedError):
         retriever.retrieve("q")
 
 

@@ -29,6 +29,10 @@ class RetrievalService:
         self._retriever_for = retriever_for
         self._decomposer = decomposer or QueryDecomposer()
 
+    def decompose(self, item: ExamItem) -> list[OptionQuery]:
+        """기본 보기별 질의 5개(리라이트 전, ADR-011)."""
+        return self._decomposer.decompose(item)
+
     def retrieve(
         self,
         item: ExamItem,

@@ -18,7 +18,7 @@ from langchain_classic.retrievers.document_compressors import CrossEncoderRerank
 from langchain_community.cross_encoders import BaseCrossEncoder
 from langchain_core.documents import Document
 
-from lawqa.retrieval.domain.errors import RetrievalFailedError
+from lawqa.retrieval.domain.errors import RerankerFailedError
 from lawqa.retrieval.domain.models import Candidate, RetrievalConfig
 from lawqa.retrieval.domain.ports import OptionRetriever
 
@@ -78,7 +78,7 @@ class RerankOptionRetriever:
         try:
             kept: Sequence[Document] = self.compressor.compress_documents(docs, query)
         except Exception as exc:  # 모델·GPU 오류 → 도메인 예외(ADR-004)
-            raise RetrievalFailedError(f"재정렬 실패: {type(exc).__name__}: {exc}") from exc
+            raise RerankerFailedError(f"재정렬 실패: {type(exc).__name__}: {exc}") from exc
         scores = self._encoder.last_scores
         return [
             replace(

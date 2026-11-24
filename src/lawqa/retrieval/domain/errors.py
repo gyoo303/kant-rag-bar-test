@@ -18,3 +18,11 @@ class RewriteFailedError(RuntimeError):
 
 class RetrievalFailedError(RuntimeError):
     """검색·재정렬 실패(infrastructure가 던짐). answering이 `RETRIEVAL_ERROR` 결과로 바꾼다."""
+
+
+class IndexNotReadyError(RetrievalFailedError):
+    """검색에 쓸 색인 판본이 없음(`INDEX_NOT_READY`)."""
+
+
+class RerankerFailedError(RetrievalFailedError):
+    """재정렬 모델 실패(`RERANKER_FAILED`)."""

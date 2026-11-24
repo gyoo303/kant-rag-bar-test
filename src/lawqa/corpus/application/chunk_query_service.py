@@ -31,3 +31,11 @@ class ChunkQueryService:
         """가장 최근 완료 판본(검색·`eval freeze --stage final`이 쓰는 판본)."""
         with self._tx.transaction():
             return self._versions.latest_complete()
+
+    def search_version(self) -> IndexVersion | None:
+        """검색에 쓸 판본(CR-008): 완료 판본이 있으면 그것, 없으면 끝난 가장 최근 판본(불완전).
+
+        불완전이면(`complete=False`) 진입점이 경고를 출력한다. 본 평가 고정은 완료 판본만.
+        """
+        with self._tx.transaction():
+            return self._versions.latest_complete() or self._versions.latest_finished()

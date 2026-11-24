@@ -13,4 +13,8 @@ class ModelTimeoutError(ModelCallError):
 
 
 class ModelOutputFormatError(ValueError):
-    """모델 출력이 스키마·규칙(보기 1~5 각 1개 등)에 맞지 않음."""
+    """모델 출력이 스키마·규칙(보기 1~5 각 1개 등)에 맞지 않음. 받은 원문은 `raw_output`."""
+
+    def __init__(self, message: str, raw_output: str = "") -> None:
+        super().__init__(message)
+        self.raw_output = raw_output

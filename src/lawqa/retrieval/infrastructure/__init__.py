@@ -13,7 +13,7 @@ from langchain_core.embeddings import Embeddings
 
 from lawqa.corpus.application.chunk_query_service import ChunkQueryService
 from lawqa.retrieval.application.retrieval_service import RetrievalService
-from lawqa.retrieval.domain.errors import RetrievalFailedError
+from lawqa.retrieval.domain.errors import IndexNotReadyError, RetrievalFailedError
 from lawqa.retrieval.domain.models import RetrievalConfig, RetrievalMode
 from lawqa.retrieval.domain.ports import OptionRetriever
 from lawqa.retrieval.infrastructure.reranker import (
@@ -53,7 +53,7 @@ class RetrieverFactory:
         self,
         *,
         chunks: ChunkQueryService,
-        index_version: str,
+        index_version: str | None,
         sqlalchemy_url: str,
         embeddings: Embeddings,
         embedding_dim: int,
@@ -79,6 +79,10 @@ class RetrieverFactory:
         return self._built[key]
 
     def _build(self, config: RetrievalConfig) -> OptionRetriever:
+        if self._index_version is None:
+            raise IndexNotReadyError(
+                "검색할 색인 판본이 없습니다. corpus import·index를 먼저 실행하세요."
+            )
         if config.mode is RetrievalMode.A:
             return VectorOptionRetriever(self._vector_search(), config)
         if config.mode is RetrievalMode.B:
@@ -97,21 +101,26 @@ class RetrieverFactory:
     def _vector_search(self) -> VectorSearch:
         if self._vector is None:
             self._vector = VectorSearch(
-                self._sqlalchemy_url, self._embeddings, self._embedding_dim, self._index_version
+                self._sqlalchemy_url, self._embeddings, self._embedding_dim, self._version()
             )
         return self._vector
 
     def _bm25_search(self) -> Bm25Search:
         if self._bm25 is None:
-            self._bm25 = Bm25Search(self._chunks.list_chunks(self._index_version), self._tokenize)
+            self._bm25 = Bm25Search(self._chunks.list_chunks(self._version()), self._tokenize)
         return self._bm25
+
+    def _version(self) -> str:
+        if self._index_version is None:
+            raise IndexNotReadyError("검색할 색인 판본이 없습니다.")
+        return self._index_version
 
 
 def build_retrieval_service(
     chunks: ChunkQueryService,
     settings: Settings,
     *,
-    index_version: str,
+    index_version: str | None,
     sqlalchemy_url: str,
     embeddings: Embeddings,
     tokenize: Callable[[str], list[str]],

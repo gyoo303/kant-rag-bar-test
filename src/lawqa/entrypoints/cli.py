@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from collections.abc import Callable, Sequence
 from importlib import resources
@@ -48,7 +49,6 @@ RUN_CONFIG_CHOICES = ("A", "B", "C", "C+R")
 
 # (그룹, 명령) → 구현할 티켓 (임시: 명령을 구현하는 티켓에서 항목을 지운다)
 _PENDING_TICKETS: dict[tuple[str, str | None], str] = {
-    ("ask", None): "TKT-BE-M3-03",
     ("eval", "run"): "TKT-BE-M3-05",
     ("eval", "grade"): "TKT-BE-M4-01",
     ("eval", "review"): "TKT-BE-M4-01",
@@ -208,6 +208,33 @@ def _cmd_corpus_index(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _cmd_ask(args: argparse.Namespace) -> int:
+    """API-05: 문항 하나 답하기. 오류 결과도 종료 코드 0(결과 종류로 표시, ADR-004)."""
+    from lawqa.entrypoints.composition import build_answer_runtime
+
+    try:
+        item = json.loads(Path(args.file).read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"입력 파일 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    try:
+        url = load_settings("base").secrets.require("database_url")
+        with connect(url) as conn:
+            runtime = build_answer_runtime(conn, url)
+            warning = runtime.index_warning()
+            if warning:
+                print(f"경고: {warning}", file=sys.stderr)
+            envelope = runtime.service.answer(item, args.config)
+    except SettingsError as exc:
+        print(f"설정 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    except psycopg.OperationalError as exc:
+        print(f"DB 연결 실패: {exc}".strip(), file=sys.stderr)
+        return EXIT_EXTERNAL_ERROR
+    print(json.dumps(envelope.to_dict(), ensure_ascii=False, indent=2))
+    return EXIT_OK
+
+
 def _config_shas() -> dict[str, str]:
     return {name: load_settings(name).config_sha for name in RUN_CONFIGS}
 
@@ -264,6 +291,7 @@ _HANDLERS: dict[tuple[str, str | None], Callable[[argparse.Namespace], int]] = {
     ("corpus", "import"): _cmd_corpus_import,
     ("corpus", "index"): _cmd_corpus_index,
     ("check", "smoke"): _cmd_check_smoke,
+    ("ask", None): _cmd_ask,
     ("eval", "freeze"): _cmd_eval_freeze,
 }
 

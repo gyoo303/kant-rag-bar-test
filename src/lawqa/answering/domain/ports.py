@@ -15,4 +15,9 @@ class AnswerGenerator(Protocol):
     실패하면 `ModelCallError`·`ModelTimeoutError`·`ModelOutputFormatError`.
     """
 
+    @property
+    def prompt_sha(self) -> str:
+        """프롬프트 파일 내용의 해시(실행 기록 버전, INV-11)."""
+        ...
+
     def generate(self, item: ExamItem, context: Sequence[Candidate]) -> ModelAnswer: ...

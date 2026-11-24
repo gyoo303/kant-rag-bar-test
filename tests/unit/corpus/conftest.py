@@ -79,6 +79,10 @@ class FakeVersions:
         done = [v for v in self.rows.values() if v.complete]
         return max(done, key=lambda v: v.created_at) if done else None
 
+    def latest_finished(self) -> IndexVersion | None:
+        done = [v for v in self.rows.values() if v.complete or v.skipped_count > 0]
+        return max(done, key=lambda v: v.created_at) if done else None
+
 
 class FakeChunks:
     def __init__(self) -> None:

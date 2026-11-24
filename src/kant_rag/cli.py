@@ -209,6 +209,10 @@ def main(argv: list[str] | None = None) -> None:
 
         from kant_rag.ingest.case_import import import_cases
 
+        missing = [p for p in args.inputs if not Path(p).exists()]
+        if missing:
+            raise SystemExit("경로를 찾을 수 없습니다: " + ", ".join(missing)
+                             + "\n→ 판례 파일이 있는 폴더 경로를 확인하세요 (cmd: dir /s /b /ad <상위폴더>\\*prec*)")
         c = settings.corpus
         cases_dir = settings.resolve(settings.paths.raw_dir) / "cases"
         target = cases_dir

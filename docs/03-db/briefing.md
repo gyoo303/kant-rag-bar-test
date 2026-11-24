@@ -1,6 +1,6 @@
 ---
 stage: DB
-tickets: [TKT-DB-M1-01]
+tickets: [TKT-DB-M1-01, TKT-DB-M1-02]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-DB, AR-API, AR-CONV, AR-GATE, CR-LOG]
 next_readers: [BE, QA]
@@ -86,3 +86,67 @@ next_readers: [BE, QA]
 | GATE-06 | `git ls-files .env`, 키·비밀번호 패턴 `git grep` | 0줄, 0줄 |
 | GATE-07 | 빈 except `git grep` | 0줄 |
 | GATE-08 | `application`·`domain`의 `psycopg`·LangChain import | 0줄 |
+
+---
+
+### TKT-DB-M1-02 (평가 파일 저장소)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 |
+|---|---|---|
+| TKT-DB-M1-02 | 기록 중단 후 다시 열어도 기존 줄 유지 | 충족 — `test_run_store_reopen_after_interruption_keeps_existing_lines`(새 저장소 객체로 이어 쓰기), 잘린 마지막 줄은 고치지 않고 파일·줄 번호로 보고(`test_run_store_truncated_last_line_reported_not_repaired`) |
+| TKT-DB-M1-02 | `RunStore.append`가 줄 단위 JSON | 충족 — `test_run_store_append_writes_one_json_line_per_record`(LF 줄 끝, 한 줄 = 문항 1건) |
+| TKT-DB-M1-02 | GATE-04b·08 | 충족 — §검증 결과 |
+
+#### 만든 것 (`src/lawqa/evaluation/infrastructure/files.py`)
+| 클래스 | 메서드 시그니처 | 반환 |
+|---|---|---|
+| `JsonEvalSetRepository(eval_dir)` | `load(split: Split)` | `EvalSet` (`<eval_dir>/<split>.json`, 검증은 `EvalSet.from_dict`) |
+| `SuccessCriteriaFile(path)` | `load()` | `SuccessCriteria` |
+| `FreezeFile(path)` | `load()` / `save(record: FreezeRecord)` | `FreezeRecord \| None` / `None`(임시 파일 후 교체로 원자적 쓰기) |
+| `RunStore(results_dir)` | `create(run: Run)` | `None` — `run.json`을 배타 생성(`open("x")`), 이미 있으면 `FileExistsError`(`--resume` 안내) |
+| | `append(record: RunRecord)` | `None` — `records.jsonl`에 한 줄 + `flush`·`fsync`, `run.json` 없으면 `FileNotFoundError` |
+| | `append_grade(grade: Grade)` | `None` — `grades.jsonl`에 한 줄 |
+| | `load(run_id: str)` | `tuple[Run, list[RunRecord]]` |
+| | `load_grades(run_id: str)` | `list[Grade]` (설계 §7에 없음, 아래 질문) |
+| | `run_dir(run_id)`, `exists(run_id)` | `Path`, `bool` (`--resume`·중복 확인용) |
+- 파일이 없거나 JSON이 깨지면 `InvalidEvalDataError`(입력 오류, 종료 코드 1) — 파일 경로와 줄 번호 포함.
+- `RunRecord` 직렬화: 03-db-schema §5 고정 필드 14개는 그대로, 검색·답변 상세(`queries`, `candidates`, `raw_output` 등)는 `details`를 같은 줄에 펼쳐 씀. 읽을 때 고정 필드 밖의 키는 `details`로 돌려줌. `details`가 고정 필드 이름과 겹치면 거부.
+- DB(PostgreSQL)는 쓰지 않음(ADR-006: 평가셋·결과는 커밋 파일).
+
+#### 인프라 확인 포인트
+- 경로는 설정 `[paths] eval_dir`, `results_dir`(`config/base.toml`)에서 받는다.
+- 기록 파일은 UTF-8, 줄 끝 LF로 쓴다(Windows에서도). `.gitattributes`의 CRLF 변환 경고가 커밋 때 나올 수 있으나 내용은 같다.
+- 실행이 쓰는 중에 멈춰 마지막 줄이 잘리면 `load`가 "마지막 줄이 잘림"으로 멈춘다. 사람이 그 줄을 확인하고 지운 뒤 `--resume`한다(자동 수정하지 않음 — 금지 패턴 13).
+
+#### 다음 단계(BE)가 쓸 것
+- `FreezeService`(TKT-BE-M1-04): `FreezeFile(settings.paths.eval_dir / "FREEZE.json")`, `SuccessCriteriaFile(eval_dir / "success_criteria.json")`, `JsonEvalSetRepository(eval_dir)`.
+- `EvalRunService`(TKT-BE-M3-05): `RunStore(settings.paths.results_dir)` — `exists`로 중복 확인 후 `create`, 문항마다 `append`. `--resume`이면 `load`로 이미 기록된 `question_id`를 빼고 `append`만.
+- 트랜잭션 개념 없음: `append` 한 번이 한 줄의 확정이다.
+
+#### 구현 중 자율 결정
+##### TKT-DB-M1-02 잘린 마지막 줄 처리
+- 결정: 읽을 때 오류로 멈추고 파일은 고치지 않음 — INV-07, 금지 패턴 13
+- 선택지: **A. 오류로 보고 (권장·채택)** / B. 잘린 줄을 조용히 건너뜀 / C. 자동으로 지움
+- 권장 이유: 기록 누락이 지표 분모를 바꾸므로 사람이 알아야 한다. 자동 수정은 "기존 줄 수정 금지"에 어긋난다.
+- trade-off: A — 드물게 사람이 한 줄을 정리해야 함. B — 누락이 숨겨짐. C — 기록을 코드가 바꿈.
+
+##### TKT-DB-M1-02 `run.json` 배타 생성
+- 결정: `open("x")`로 만들어 이미 있으면 실패 — 04-interfaces-api §10("같은 run_id 두 번은 --resume 없이 거부")
+- 선택지: **A. 배타 생성 (권장·채택)** / B. 존재 확인 후 쓰기
+- 권장 이유: 확인과 쓰기 사이의 경쟁 없이 한 번에 막는다.
+- trade-off: A — 실패 시 폴더는 남을 수 있음(내용은 그대로). B — 확인 뒤 덮어쓸 틈이 생김.
+
+#### 설계와 다르게 한 것 / 질문
+- **`RunStore.load_grades(run_id)` 추가**: 03-db-schema §7 메서드 목록에는 없다. `grades.jsonl`을 쓰기만 하고 읽는 방법이 없으면 `eval metrics`(TKT-BE-M4-02)가 파일을 직접 읽어야 해서 추가했다. → ARCH에 §7 목록 추가 요청.
+- `run_dir`·`exists` 보조 메서드 추가(같은 이유: `--resume`·중복 확인).
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-04b | `uv run pytest tests/integration -q` | 29 passed(이번 티켓 12개 추가) |
+| GATE-04 | `uv run pytest tests/unit -q` | 81 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-07 | 빈 except | 0줄 |
+| GATE-08 | `application`·`domain`의 저장 계층 import | 0줄 |
+| GATE-09 | `corpus`·`retrieval`·`answering`의 정답 경로 | 0줄 |

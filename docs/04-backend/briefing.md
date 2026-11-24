@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -170,3 +170,72 @@ next_readers: [DB, FE, QA]
 | GATE-04b | `uv run pytest tests/integration -q` | 17 passed |
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | 실측 | `uv run python -m lawqa check smoke` | 6종 모두 OK, 종료 코드 0 |
+
+---
+
+### TKT-BE-M1-03 (evaluation 도메인)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M1-03 | INV-12 평가셋 구성(AC-04-1·3 도메인 부분) | 충족 | `tests/unit/evaluation/test_evalset.py` |
+| TKT-BE-M1-03 | INV-05 test 문항 개발 사용 금지(AC-12-2 도메인 부분) | 충족 | `test_run_rules.py::test_ac_12_2_wrong_split_kind_rejected` |
+| TKT-BE-M1-03 | INV-06 고정 후 변경 금지(AC-12-3 도메인 부분) | 충족 | `test_freeze.py::test_ac_12_3_…`, `test_run_rules.py::test_ac_12_3_…` |
+| TKT-BE-M1-03 | GATE-02·04·07 | 충족 | §검증 결과 |
+
+#### 만든 것 (`src/lawqa/evaluation/domain/`, 표준 라이브러리 + `shared.versioning`만)
+- `errors.py`: `InvalidEvalDataError`(입력 오류, 종료 코드 1), `RuleViolationError(code, detail)`(종료 코드 3), 코드 상수 `TEST_SPLIT_IN_DEV`·`FROZEN_MISMATCH`·`LEAK_DETECTED`·`INVALID_RUN_KIND`
+- `models.py`
+  - `Split`(`dev`/`test`, `id_prefix`), `QuestionType`(`direct`/`paraphrase`/`no_evidence`)
+  - `QuestionItem`(지문 + 보기 정확히 5개), `ExpectedAnswer`, `EvidenceRef`
+  - `EvalQuestion` — 근거 없음: `answer=None`·`insufficient=True`·근거 비움·`absence_reason` 필수 / 답변 가능: `answer` 1~5·`key_facts≥1`·근거≥1 / `source`(`exam:2026:<문번>`·`authored`)·`answer_source`(`exam_key:DOC-05`·`human:<근거>`) 형식. `from_dict`·`to_dict`
+  - `EvalSet` — ID `DEV-NN`/`TEST-NN`, 중복 금지, 구성 DEV(답변 가능 8·근거 없음 2)·TEST(직접 10·변형 7·근거 없음 3), `sha()`(정렬 JSON 해시), `get(qid)`, `answerable_count`
+  - `SuccessCriteria` — 우선순위 `quality`·`latency`·`cost` 각 1번, 목표 6개 키와 범위(D-007), `sha()`
+  - `FreezeStage`(`criteria`/`final`), `FreezeRecord` — `final`은 해시 4종·`index_version` 필수, `verify(current)`는 `git_commit`·`frozen_at`을 비교하지 않음, `criteria` 단계는 성공 기준 해시만 비교
+- `run.py`
+  - `RunKind`, `RunStatus`, `ALLOWED_KINDS`(dev: warmup·extra / test: main·retry·extra)
+  - `Run` — `run_id` 형식 `<YYYYMMDD-HHMMSS>-<구성>-<종류>`, `make_id(started_at, config_name, kind)`, `check_allowed(kind, split, freeze, current, retry_of=None)`
+  - `RunRecord` — `versions` 7키 필수(INV-11), `latency_ms` 5키, 오류면 `error_code` 필수, 재시도면 `retry_of` 필수, `counts_in_main_metrics`(main만)
+- `metrics.py`: `FailureCategory`, `Grade`(값 0·1·없음, LLM 판정은 `judge_prompt_sha` 필수), `hit_at_5(record, question)`, `hit_at_5_total(records, questions) -> (합계, 분모)`, `MetricsRow`, `Metrics.compute`(임시: TKT-BE-M4-02)
+- `ports.py`: `EvalSetRepository`, `SuccessCriteriaStore`, `FreezeStore`, `RunStore`(03-db-schema §7)
+- 시험 3파일 43개, 가짜 평가셋 `tests/fixtures/eval/{dev,test}.json`(형식만 맞는 가짜 내용)
+
+#### DB 에이전트에게 전달 (TKT-DB-M1-02)
+- `JsonEvalSetRepository.load(split)`는 JSON을 읽어 `EvalSet.from_dict(data)`만 부르면 된다(검증은 도메인이 함). 성공 기준·고정 기록도 `SuccessCriteria.from_dict`·`FreezeRecord.from_dict`·`to_dict`.
+- `RunStore.append`는 `RunRecord`를 한 줄 JSON으로 쓴다. `RunRecord`에는 아직 `to_dict`가 없다 — 03-db-schema §5 필드 순서대로 직렬화하되, 검색·답변 상세 필드(`queries`, `candidates`, `context_chunk_ids`, `context_chars`, `raw_output`, `answer`, `citations`)는 `details` 안에 그대로 들어 있다.
+
+#### 임시 코드
+- `Metrics.compute`가 `NotImplementedError` — TKT-BE-M4-02에서 구현하고 이 줄을 지운다.
+
+#### 구현 중 자율 결정
+##### TKT-BE-M1-03 dict ↔ 도메인 변환 위치
+- 결정: `from_dict`·`to_dict`를 도메인 클래스에 둠 — 03-db-schema §7("dict ↔ 도메인")
+- 선택지: **A. 도메인 클래스 (권장·채택)** / B. DB의 `files.py`
+- 권장 이유: 검증 규칙과 필드 이름이 한곳에 있어 저장소는 파일 읽기·쓰기만 한다. 순수 함수라 도메인 규칙(표준 라이브러리만)을 지킨다.
+- trade-off: A — 도메인이 파일 필드 이름(03-db-schema §5)을 안다. B — 필드 이름과 검증이 두 파일로 나뉜다.
+
+##### TKT-BE-M1-03 `RunRecord`의 검색·답변 상세
+- 결정: 03-db-schema §5의 검색·답변 상세 필드는 `details: Mapping[str, Any]`로 받음
+- 선택지: **A. details 묶음 (권장·채택)** / B. 필드마다 타입 정의
+- 권장 이유: `Candidate`·`Answer` 도메인은 retrieval·answering 티켓(M2·M3)에서 만들어진다. 지금 타입을 정하면 그 티켓과 겹친다.
+- trade-off: A — 상세 필드의 형식 검사는 기록하는 쪽(TKT-BE-M3-05)이 한다. B — 아직 없는 타입을 미리 만들어야 한다.
+
+##### TKT-BE-M1-03 성공 기준 목표 키 이름
+- 결정: `hit_at_5`, `answer_correct`, `citation_valid`, `abstain_correct`(문항 수), `latency_median_s`(초), `call_success_rate`(0~1) — D-007, 03-db-schema §5(`targets: {...D-007}`)
+- 선택지: **A. 지표 이름과 같은 키 (권장·채택)** / B. 비율로 통일
+- 권장 이유: D-007이 "14/17"처럼 문항 수로 정했고, `Grade`·지표 이름과 같아 대조가 쉽다.
+- trade-off: A — 키마다 단위가 다름(범위 검사로 보완). B — D-007 숫자를 바꿔 적어야 함.
+
+#### 설계와 다르게 한 것 / 질문
+- **`Run.check_allowed`에 `retry_of` 인자 추가**: 설계 시그니처에는 없지만 "RETRY면 retry_of 필수" 규칙을 검사하려면 필요하다(기본값 `None`, 기존 호출 형태 유지).
+- **규칙 위반 코드 `INVALID_RUN_KIND` 추가**: 설계 코드 목록(`TEST_SPLIT_IN_DEV`·`FROZEN_MISMATCH`·`LEAK_DETECTED`)에 "dev 문항으로 본 평가·재시도"와 "재시도인데 원 실행 ID 없음"에 맞는 코드가 없다. test 문항 오용은 `TEST_SPLIT_IN_DEV`, 고정 없음·불일치는 `FROZEN_MISMATCH`를 그대로 쓴다. → ARCH에 04-interfaces-api §4 코드 목록 추가 요청.
+- **고정 없음도 `FROZEN_MISMATCH`**: 본 평가인데 `FREEZE.json`이 없거나 `criteria` 단계뿐이면 `FROZEN_MISMATCH`로 거부한다(메시지에 `eval freeze --stage final` 안내).
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02 | 06-quality-gates GATE-02 명령 + evaluation 도메인 import 전수 확인 | 0줄(표준 라이브러리·`shared.versioning`·evaluation 도메인만) |
+| GATE-04 | `uv run pytest tests/unit -q` | 81 passed(이번 티켓 43개 추가) |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-07 | 빈 except, 도메인의 시각·난수 | 0줄 |
+| GATE-08 | `application`·`domain`의 저장 계층·LangChain import | 0줄 |

@@ -9,14 +9,25 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Callable, Sequence
+from importlib import resources
 
 import psycopg
 
+from lawqa.evaluation.domain.errors import InvalidEvalDataError, RuleViolationError
+from lawqa.evaluation.infrastructure import FREEZE_FILE, build_freeze_service
+from lawqa.evaluation.infrastructure.git_info import GitCommandError
 from lawqa.shared.clock import SystemClock
 from lawqa.shared.db import connect, init_schema
 from lawqa.shared.logging_setup import configure_logging
-from lawqa.shared.settings import SettingsError, load_settings
+from lawqa.shared.settings import RUN_CONFIGS, SettingsError, load_settings
 from lawqa.shared.smoke import LiveSmokeProbes, run_smoke, summary_lines, write_report
+from lawqa.shared.versioning import sha256_of
+
+# prompt_sha 대상 프롬프트 (04-interfaces-api §5, CONV-09): (패키지, 파일 이름)
+PROMPT_FILES = (
+    ("lawqa.answering.infrastructure", "prompts/answer.txt"),
+    ("lawqa.retrieval.infrastructure", "prompts/rewrite.txt"),
+)
 
 EXIT_OK = 0
 EXIT_INPUT_ERROR = 1
@@ -27,7 +38,6 @@ RUN_CONFIG_CHOICES = ("A", "B", "C", "C+R")
 
 # (그룹, 명령) → 구현할 티켓 (임시: 명령을 구현하는 티켓에서 항목을 지운다)
 _PENDING_TICKETS: dict[tuple[str, str | None], str] = {
-    ("eval", "freeze"): "TKT-BE-M1-04",
     ("corpus", "import"): "TKT-BE-M2-02",
     ("corpus", "index"): "TKT-BE-M2-02",
     ("ask", None): "TKT-BE-M3-03",
@@ -131,9 +141,58 @@ def _cmd_check_smoke(args: argparse.Namespace) -> int:
     return EXIT_OK if report.ok else EXIT_EXTERNAL_ERROR
 
 
+def _config_shas() -> dict[str, str]:
+    return {name: load_settings(name).config_sha for name in RUN_CONFIGS}
+
+
+def _prompt_sha() -> str:
+    """답변·리라이트 프롬프트 파일 내용의 해시(SEQ-06). 파일이 없으면 입력 오류."""
+    parts: list[str] = []
+    for package, name in PROMPT_FILES:
+        path = resources.files(package).joinpath(name)
+        if not path.is_file():
+            raise InvalidEvalDataError(
+                f"프롬프트 파일이 아직 없습니다: {package}/{name} (TKT-BE-M3-03·M3-04에서 생성)"
+            )
+        parts.append(f"{name}:{sha256_of(path.read_bytes())}")
+    return sha256_of("\n".join(parts).encode())
+
+
+def _complete_index_version() -> str:
+    """완료된 색인 판본 조회 — corpus 색인 서비스(TKT-BE-M2-02)가 생긴 뒤 연결한다(임시)."""
+    raise InvalidEvalDataError(
+        "완료된 색인 판본 조회는 TKT-BE-M2-02 이후 연결됩니다. final 고정은 M3에서 합니다."
+    )
+
+
+def _cmd_eval_freeze(args: argparse.Namespace) -> int:
+    """API-06: 고정 기록(`eval/FREEZE.json`). git 태그는 사람이 단다."""
+    try:
+        settings = load_settings("base")
+        service = build_freeze_service(
+            settings,
+            config_shas=_config_shas,
+            prompt_sha=_prompt_sha,
+            index_version=_complete_index_version,
+        )
+        record = service.freeze(args.stage)
+    except RuleViolationError as exc:
+        print(f"규칙 위반: {exc}", file=sys.stderr)
+        return EXIT_RULE_VIOLATION
+    except (SettingsError, InvalidEvalDataError, GitCommandError) as exc:
+        print(f"입력 오류: {exc}", file=sys.stderr)
+        return EXIT_INPUT_ERROR
+    freeze_path = settings.paths.eval_dir / FREEZE_FILE
+    tag = f"freeze-{record.stage.value}"
+    print(f"고정 완료({record.stage.value}): {freeze_path} (frozen_at {record.frozen_at})")
+    print(f"다음: git add {freeze_path.as_posix()} && git commit, 그 뒤 git tag {tag}")
+    return EXIT_OK
+
+
 _HANDLERS: dict[tuple[str, str | None], Callable[[argparse.Namespace], int]] = {
     ("db", "init"): _cmd_db_init,
     ("check", "smoke"): _cmd_check_smoke,
+    ("eval", "freeze"): _cmd_eval_freeze,
 }
 
 

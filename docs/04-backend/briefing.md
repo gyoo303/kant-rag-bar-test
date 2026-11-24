@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -239,3 +239,79 @@ next_readers: [DB, FE, QA]
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | GATE-07 | 빈 except, 도메인의 시각·난수 | 0줄 |
 | GATE-08 | `application`·`domain`의 저장 계층·LangChain import | 0줄 |
+
+---
+
+### TKT-BE-M1-04 (고정 서비스·`eval freeze`)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M1-04 | AC-02-1(성공 기준 파일의 우선순위·목표 6개) | 충족 | `SuccessCriteria` 검증(M1-03) + `test_ac_02_1_criteria_freeze_records_only_criteria_hash` |
+| TKT-BE-M1-04 | AC-02-2(고정 커밋 순서 검사 기능) | 충족 | `FreezeService.check_frozen_before(first_main_run_started_at)`, 시험 2개 |
+| TKT-BE-M1-04 | `final` 재고정 거부 | 충족 | `test_final_refreeze_rejected_and_not_overwritten`(final 뒤 criteria·final 모두 거부, 파일 그대로) |
+| TKT-BE-M1-04 | 커밋 안 된 변경 있으면 거부 | 충족 | `test_final_freeze_rejected_with_uncommitted_changes` |
+| TKT-BE-M1-04 | GATE-04 | 충족 | 단위 91·통합 29 = 120 passed |
+
+#### 만든 것
+| API | 명령 | 결과 | 종료 코드 |
+|---|---|---|---|
+| API-06 | `python -m lawqa eval freeze --stage criteria\|final` | `eval/FREEZE.json` 기록, 다음 할 일(커밋·태그) 안내 | 0 / 1(입력 오류: 파일 없음, 프롬프트·색인 없음, git 오류) / 3(규칙 위반) |
+- `evaluation.application.FreezeService`
+  - `freeze(kind: Literal["criteria","final"]) -> FreezeRecord`
+    - criteria: 성공 기준 해시 + git HEAD + 시각. 같은 기준으로 다시 하면 **처음 기록을 그대로 돌려줌**(시각 유지), 바뀐 기준이면 `FROZEN_MISMATCH`.
+    - final: 성공 기준·평가셋(dev·test 해시를 합친 해시)·구성별 `config_sha`·`prompt_sha`·색인 판본·HEAD. 커밋 안 된 변경(추적 파일만)이 있으면 거부. 기존 criteria와 성공 기준이 다르면 거부.
+    - 이미 final이면 어떤 단계든 거부(덮어쓰지 않음).
+  - `current() -> FreezeRecord` — 저장 없이 지금 값으로 final 기록(본 평가 전 `verify`용, TKT-BE-M3-05가 씀)
+  - `check_frozen_before(first_main_run_started_at: datetime) -> None` — AC-02-2
+  - `GitInfo` Protocol(`head()`, `has_uncommitted_changes()`)
+- `evaluation.infrastructure.git_info.SubprocessGitInfo` — `git rev-parse HEAD`, `git status --porcelain --untracked-files=no`
+- `evaluation.infrastructure.build_freeze_service(settings, *, config_shas, prompt_sha, index_version, repo_dir=".")` (CONV-03 조립 함수)
+- CLI: `_config_shas()`(A·B·C·C+R 각 `config_sha`), `_prompt_sha()`(`answering/infrastructure/prompts/answer.txt` + `retrieval/infrastructure/prompts/rewrite.txt` 해시, 없으면 입력 오류), `_complete_index_version()`(임시), `_PENDING_TICKETS`에서 `eval freeze` 제거
+- 시험 `tests/unit/evaluation/test_freeze_service.py` 10개(가짜 저장소·git·시각)
+
+#### 실측 (저장소 밖 임시 작업 폴더, 가짜 평가셋)
+| 단계 | 결과 | 종료 코드 |
+|---|---|---|
+| `--stage criteria` | `FREEZE.json`에 성공 기준 해시·HEAD·시각 기록, 커밋·태그 안내 | 0 |
+| 같은 기준으로 다시 | 처음 `frozen_at` 그대로 | 0 |
+| `--stage final` | "프롬프트 파일이 아직 없습니다 … (TKT-BE-M3-03·M3-04에서 생성)" | 1 |
+| 목표값 바꾼 뒤 criteria | `FROZEN_MISMATCH: 고정 이후 바뀐 항목: success_criteria_sha` | 3 |
+- 이 저장소에는 `eval/`을 만들지 않았다(실제 고정은 사람이 M1에서 한다).
+
+#### 임시 코드
+- `cli._complete_index_version()`이 항상 입력 오류 — TKT-BE-M2-02(색인 서비스)에서 완료된 색인 판본 조회로 바꾼다. 그 전까지 `--stage final`은 실행되지 않는다(M3에서 쓰므로 일정 영향 없음).
+- `Metrics.compute`(M4-02), `_PENDING_TICKETS` 남은 항목은 그대로.
+
+#### 구현 중 자율 결정
+##### TKT-BE-M1-04 criteria 재고정
+- 결정: 같은 성공 기준이면 처음 기록을 그대로 두고, 바뀐 기준이면 거부 — INV-06, AC-02-2
+- 선택지: **A. 같으면 유지·다르면 거부 (권장·채택)** / B. 언제나 새로 기록 / C. 두 번째부터 모두 거부
+- 권장 이유: 실수로 다시 실행해도 고정 시각이 늦춰지지 않고(AC-02-2), 기준을 몰래 바꾸는 것은 막는다.
+- trade-off: A — 결과를 보기 전 기준을 정말 고쳐야 하면 `FREEZE.json`을 사람이 지우고 다시 해야 함(커밋 기록에 남음). B — 고정 시각이 뒤로 밀림. C — 실수 재실행이 오류가 됨.
+
+##### TKT-BE-M1-04 커밋 안 된 변경의 범위
+- 결정: 추적 중인 파일의 변경만 보고, 추적하지 않는 새 파일은 무시 — SEQ-06
+- 선택지: **A. 추적 파일만 (권장·채택)** / B. 새 파일까지
+- 권장 이유: 고정 대상(평가셋·설정·프롬프트)은 모두 추적 파일이다. 작업 폴더의 무관한 새 파일(예: `docs/presentation/`)이 고정을 막지 않게 한다.
+- trade-off: A — 아직 `git add` 안 한 새 프롬프트 파일은 놓칠 수 있음(그 경우 `_prompt_sha`가 파일을 읽어 해시에는 반영됨, 커밋 여부만 확인 못 함). B — 무관한 파일 때문에 고정이 막힘.
+
+##### TKT-BE-M1-04 평가셋 해시 합치기
+- 결정: `evalset_sha = sha256("dev:<dev 해시>\ntest:<test 해시>")` — ADR-014 `evalset_sha`(dev/test 파일 해시)
+- 선택지: **A. 두 해시를 이름과 함께 합침 (권장·채택)** / B. 두 해시를 따로 저장
+- 권장 이유: `FreezeRecord` 필드가 하나라 그대로 쓰고, 어느 쪽이 바뀌어도 값이 바뀐다.
+- trade-off: A — 어느 파일이 바뀌었는지는 따로 비교해야 앎. B — 도메인 필드 추가 필요.
+
+#### 설계와 다르게 한 것 / 질문
+- `evaluation/infrastructure/git_info.py`·`evaluation/infrastructure/__init__.py`(조립 함수)를 추가로 만들었다(티켓 산출 목록에는 없지만 AGENTS.md BE 쓰기 범위 안, git 읽기를 응용 계층 밖에 두기 위함).
+- 없음(설계 충돌).
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b | 도메인 외부 import, 도메인·응용의 infrastructure import, corpus 역방향 | 각 0줄 |
+| GATE-03 | 패키지 import 확인 | 종료 코드 0 |
+| GATE-04 | `uv run pytest tests/unit -q` | 91 passed |
+| GATE-04b | `uv run pytest tests/integration -q` | 29 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-07·08·09 | 빈 except, 저장 계층 누출, 정답 경로 | 각 0줄 |

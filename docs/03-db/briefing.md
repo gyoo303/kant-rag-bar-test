@@ -1,6 +1,6 @@
 ---
 stage: DB
-tickets: [TKT-DB-M1-01, TKT-DB-M1-02]
+tickets: [TKT-DB-M1-01, TKT-DB-M1-02, TKT-DB-M2-01]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-DB, AR-API, AR-CONV, AR-GATE, CR-LOG]
 next_readers: [BE, QA]
@@ -150,3 +150,64 @@ next_readers: [BE, QA]
 | GATE-07 | 빈 except | 0줄 |
 | GATE-08 | `application`·`domain`의 저장 계층 import | 0줄 |
 | GATE-09 | `corpus`·`retrieval`·`answering`의 정답 경로 | 0줄 |
+
+---
+
+### TKT-DB-M2-01 (원문·청크·판본·이슈 저장소)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 |
+|---|---|---|
+| TKT-DB-M2-01 | upsert 멱등 | 충족 — `test_upsert_many_is_idempotent_and_updates_content` |
+| TKT-DB-M2-01 | `replace_for_version` 교체 | 충족 — `test_replace_for_version_replaces_only_that_version`(다른 판본은 그대로, 다른 판본 청크 섞이면 거부) |
+| TKT-DB-M2-01 | 행 → 도메인 변환 | 충족 — `test_iter_all_returns_equal_domain_objects`, `test_list_and_get_many_round_trip` |
+| TKT-DB-M2-01 | AC-05-3 같은 입력 두 번 → 같은 청크 ID 집합 | 충족 — `test_ac_05_3_…` |
+| TKT-DB-M2-01 | GATE-04b·08 | 충족 — §검증 결과 |
+
+#### 만든 것
+| 클래스 | 메서드 시그니처 | 반환 |
+|---|---|---|
+| `PgSourceDocumentRepository(conn)` | `upsert_many(docs: list[SourceDocument])` | `int` — `ON CONFLICT (doc_id) DO UPDATE`(+`imported_at = now()`) |
+| | `iter_all(batch_size=2000)` | `Iterator[SourceDocument]` — 서버 쪽 이름 있는 커서로 흘려 보냄(4만 건 메모리 적재 없음), doc_id 순 |
+| | `count()` | `int` |
+| `PgChunkRepository(conn)` | `replace_for_version(index_version, chunks)` | `int` — 같은 판본 DELETE 후 INSERT, 다른 판본 청크가 섞이면 `ValueError` |
+| | `list_for_version(index_version)` | `list[Chunk]` (doc_id, seq 순) |
+| | `get_many(index_version, chunk_ids)` | `list[Chunk]` — 요청 순서 유지, 없는 ID 생략 |
+| | `count(index_version)` | `int` (설계 외 추가) |
+| `PgIndexVersionRepository(conn)` | `save(version)` | `None` — 같은 id면 갱신(미완료 판본 재생성) |
+| | `get(index_version)` | `IndexVersion \| None` |
+| | `mark_complete(index_version, chunk_count, skipped)` | `None` — `complete = (skipped == 0)` |
+| | `latest_complete()` | `IndexVersion \| None` (설계 외 추가: `eval freeze --stage final`의 색인 판본) |
+| `PgImportIssueRepository(conn)` | `add_many(issues, corpus_version)` / `count(corpus_version)` / `delete_for(corpus_version)` | CR-007 |
+| | `list_for(corpus_version)` | `list[ImportIssue]` (설계 외 추가: 가져오기 보고·시험용) |
+- 모든 저장소는 커밋하지 않는다(`commit` 호출 0, 확인 명령 §검증). 행·커서는 모듈 밖으로 나가지 않고 도메인 객체로 바꿔 돌려준다.
+- 시험 데이터(03-db-schema §8): `tests/fixtures/raw/prec/`(실제 수집 판례 4건 발췌 + 지시문 판례 `900001`(AC-09-7) + 형사 판례 `900002`(OUT_OF_SCOPE), `판례내용`은 생략), `tests/fixtures/raw/law/민법.txt`(실제 `민법.txt`에서 규칙별 줄 발췌: 조문 9·삭제 1·제목 5), `law/상법.txt`(무시 대상), `tests/fixtures/raw/broken/prec/`(사건번호 없음·날짜 오류·JSON 깨짐).
+
+#### 인프라 확인 포인트
+- 스키마 변경 없음(TKT-DB-M1-01 `schema.sql` 그대로, CR-007 반영 상태).
+- 시험은 Docker DB의 `lawqa_test`(`DATABASE_URL_TEST`)에서 시험마다 rollback.
+
+#### 다음 단계(BE)가 쓸 것 (TKT-BE-M2-02)
+- `ImportService`: `with conn.transaction():` 안에서 `PgSourceDocumentRepository.upsert_many`(묶음 단위), `PgImportIssueRepository.delete_for(corpus_version)` 후 `add_many`.
+- `IndexService`: `PgIndexVersionRepository.save` → `PgChunkRepository.replace_for_version` → (PGVector 적재) → `mark_complete(skipped = PgImportIssueRepository.count(corpus_version))`.
+- `eval freeze --stage final`: `PgIndexVersionRepository.latest_complete()`로 임시 코드(`cli._complete_index_version`)를 바꾼다.
+
+#### 구현 중 자율 결정
+##### TKT-DB-M2-01 원문 전체 읽기 방식
+- 결정: `iter_all`은 이름 있는 서버 쪽 커서(`itersize=2000`)로 흘려 보냄 — 판례 4만 건(NFR-06)
+- 선택지: **A. 서버 쪽 커서 (권장·채택)** / B. `fetchall`
+- 권장 이유: 색인할 때 원문 전체(수백 MB 가능)를 한꺼번에 메모리에 올리지 않는다.
+- trade-off: A — 커서가 트랜잭션 안에서만 살아 있음(호출하는 쪽이 다 읽고 끝내야 함). B — 메모리 사용 큼.
+
+#### 설계와 다르게 한 것 / 질문
+- 설계(§7) 밖 메서드 추가: `PgChunkRepository.count`, `PgIndexVersionRepository.latest_complete`, `PgImportIssueRepository.list_for` — 이유는 표 참고. → ARCH에 §7 목록 추가 요청.
+- CR-007(승인)대로 `PgImportIssueRepository`는 `corpus_version`을 받는다(§7 원문은 `index_version`).
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-04b | `uv run pytest tests/integration -q` | 38 passed(이번 티켓 9개) |
+| GATE-04 | `uv run pytest tests/unit -q` | 132 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-08 | `application`·`domain`의 저장 계층 import | 0줄 |
+| 커밋 위치 | `git grep --untracked -nE "\.commit\(" -- "src/lawqa/corpus/infrastructure/"` | 0줄 |

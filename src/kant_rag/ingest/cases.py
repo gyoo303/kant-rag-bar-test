@@ -127,8 +127,18 @@ def case_code(case_no: str) -> str:
 
 def chunk_cases(jsonl_path: Path, meta: DocumentMeta, date_to: str | None = None,
                 codes: list[str] | None = None) -> list[Chunk]:
+    """jsonl_path 가 폴더이면 그 안의 *.jsonl 전부 (수집분 cases.jsonl + 가져온 cases_<연도>.jsonl)."""
+    files = sorted(jsonl_path.glob("*.jsonl")) if jsonl_path.is_dir() else [jsonl_path]
     chunks: list[Chunk] = []
     seen_ids: set[str] = set()
+    for f in files:
+        chunks.extend(_chunk_case_file(f, meta, date_to, codes, seen_ids))
+    return chunks
+
+
+def _chunk_case_file(jsonl_path: Path, meta: DocumentMeta, date_to: str | None, codes: list[str] | None,
+                     seen_ids: set[str]) -> list[Chunk]:
+    chunks: list[Chunk] = []
     for line_no, line in enumerate(jsonl_path.open(encoding="utf-8"), start=1):
         try:
             c = json.loads(line)
@@ -153,7 +163,7 @@ def chunk_cases(jsonl_path: Path, meta: DocumentMeta, date_to: str | None = None
             chunks.append(Chunk(
                 chunk_id=cid, doc_id=meta.doc_id, title=f"{c['court']} {c['case_no']}", text=text,
                 section=f"{label} 판결요지 [{n}]", line_start=line_no, line_end=line_no,
-                metadata={"doc_type": "case", "case_no": c["case_no"], "decided": c["decided"],
+                metadata={"doc_type": "case", "case_no": c["case_no"], "decided": c["decided"], "file": jsonl_path.name,
                           "prec_id": c["prec_id"], "topic": c.get("topic"), "source": meta.source},
             ))
     return chunks

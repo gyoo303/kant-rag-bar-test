@@ -3,7 +3,7 @@
 | 폴더 | 내용 | 수집 방법 |
 | --- | --- | --- |
 | `statutes/` | 법령 본문 (조문 단위 텍스트) | `uv run kant-rag fetch-laws` (국가법령정보센터 Open API, `LAW_OC` + 등록 IP 필요) |
-| `cases/` | 대법원 판례 판결요지 (`cases.jsonl`) | `uv run kant-rag build-topics` → `fetch-cases` (2011~2025 선고) |
+| `cases/` | 대법원 판례 판결요지 (`cases.jsonl` + `cases_<연도>.jsonl`) | `fetch-cases`(주제어 기반 2011~2025) + `import-cases`(팀 수집분, 민사·가사·2025년 이전, 판결요지만) |
 
 ## 규칙
 - **법령 버전은 시험일(2026년 1월) 기준 시행본**으로 맞추고 `data/documents.csv` 의 `version`, `collected_at` 을 기입합니다.

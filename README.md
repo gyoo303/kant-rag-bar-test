@@ -43,6 +43,8 @@ uv run kant-rag fetch-laws       # 문서 목록의 법령 → data/raw/statutes
 uv run kant-rag build-topics     # 법령 편/장/절·조문 제목 → data/cases/topics.txt (시험 문장 미사용)
 uv run kant-rag fetch-cases --limit-topics 20   # 시험 수집
 uv run kant-rag fetch-cases      # 전체 수집 (2011~2025 대법원, 주제어당 5건, 중단 후 재실행하면 이어받음)
+uv run kant-rag import-cases <폴더|파일> --dry-run   # 팀이 따로 받은 판례: 먼저 통계만 확인
+uv run kant-rag import-cases <폴더|파일>             # → data/raw/cases/cases_<연도>.jsonl (민사·가사, 2025년 이전, 판결요지만)
 uv run kant-rag build-index      # 청킹 + BM25 + 벡터 색인 → index/
 ```
 - 판례는 판결요지 항목 단위 청크(`CASE#2019다12345#2`), 법령은 조문 단위(`LAW-CIVIL#제126조`)입니다.

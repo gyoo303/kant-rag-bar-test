@@ -35,6 +35,11 @@ def main(argv: list[str] | None = None) -> None:
     fc = sub.add_parser("fetch-cases", help="주제어별 대법원 판례 판결요지 수집 → data/raw/cases/cases.jsonl (재시작 가능)")
     fc.add_argument("--limit-topics", type=int, default=None, help="앞에서 N개 주제어만 (시험 실행용)")
 
+    ic = sub.add_parser("import-cases", help="외부 판례 파일(폴더/.json/.jsonl) → data/raw/cases/cases_<연도>.jsonl (민사·가사, 시험일 이전, 판결요지만)")
+    ic.add_argument("inputs", nargs="+")
+    ic.add_argument("--source", default="팀 수집분")
+    ic.add_argument("--dry-run", action="store_true", help="저장하지 않고 통계만")
+
     fd = sub.add_parser("find", help="근거 기입용 원문 검색: 모든 키워드를 포함한 청크 전부 (순위·검색기와 무관)")
     fd.add_argument("keywords", nargs="+", help="모두 포함(AND). 예: 성명 모용 표현대리")
     fd.add_argument("--limit", type=int, default=30)
@@ -197,6 +202,30 @@ def main(argv: list[str] | None = None) -> None:
         from kant_rag.ingest.build_index import build_index
 
         print(json.dumps(build_index(settings), ensure_ascii=False, indent=2))
+
+    elif args.cmd == "import-cases":
+        import shutil
+        import tempfile
+
+        from kant_rag.ingest.case_import import import_cases
+
+        c = settings.corpus
+        cases_dir = settings.resolve(settings.paths.raw_dir) / "cases"
+        target = cases_dir
+        if args.dry_run:  # 기존 중복 판정은 유지하고 결과는 임시 폴더에
+            target = Path(tempfile.mkdtemp())
+            for f in cases_dir.glob("*.jsonl"):
+                shutil.copy(f, target / f.name)
+        stats = import_cases([Path(p) for p in args.inputs], target, c.case_date_to, c.case_kinds, c.case_codes,
+                             args.source)
+        print(json.dumps(stats, ensure_ascii=False, indent=2))
+        if stats.get("file_mb_over_90"):
+            print("⚠ 90MB 넘는 파일이 있습니다 — GitHub 업로드 전 알려 주세요 (파일 분할 필요)")
+        if args.dry_run:
+            shutil.rmtree(target, ignore_errors=True)
+            print("(dry-run: 저장하지 않음)")
+        else:
+            print("다음: uv run kant-rag build-index")
 
     elif args.cmd == "find":
         from kant_rag.ingest.build_index import build_chunks

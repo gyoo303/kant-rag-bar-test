@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -315,3 +315,86 @@ next_readers: [DB, FE, QA]
 | GATE-04b | `uv run pytest tests/integration -q` | 29 passed |
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | GATE-07·08·09 | 빈 except, 저장 계층 누출, 정답 경로 | 각 0줄 |
+
+---
+
+### TKT-BE-M2-01 (corpus 도메인·청킹)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M2-01 | `PrecService` 변환(민사만, 법원명 필터 없음, 필드 매핑), 날짜, HTML 정제 | 충족 | `test_source_document.py`, `test_text_clean.py` |
+| TKT-BE-M2-01 | 민법 텍스트 파서(ADR-015 규칙 전부) | 충족 | `test_statute_parser_*` 4개 |
+| TKT-BE-M2-01 | 범위 밖·빈 본문·날짜 오류·중복 → 사유(AC-05-4 도메인 부분) | 충족 | `InvalidSourceDocumentError.reason`, `StatuteParseReport.issues` |
+| TKT-BE-M2-01 | 판시사항·판결요지 `[n]` 묶음, `location` 형식 | 충족 | `test_chunking.py` |
+| TKT-BE-M2-01 | **수용 확인: `민법.txt` 전체 → 조문 1,116·삭제 77·중복 0** | 충족 | `test_ac_full_civil_act_file_parses_1116_articles` |
+| TKT-BE-M2-01 | GATE-02·04 | 충족 | §검증 결과 |
+
+#### 만든 것
+- `corpus/domain/errors.py`: `InvalidSourceDocumentError(reason, detail)`, `OutOfScopeError`, 사유 상수(`MISSING_FIELD`·`BAD_DATE`·`JSON_ERROR`·`EMPTY_CONTENT`·`OUT_OF_SCOPE`·`DUPLICATE_ARTICLE`, 필드가 붙으면 `MISSING_FIELD:사건번호` 형식)
+- `corpus/domain/text_clean.py`: `clean_text(s)` — `<br>`·`<p>`→줄바꿈, 다른 태그 제거, `html.unescape`, 줄 끝 공백 제거, 빈 줄 여러 개→1개
+- `corpus/domain/models.py`
+  - `DocumentKind`, `SourceLocation`(`article_label`, `for_article(no, branch, paragraph_range)`, `for_precedent(decided_on, case_number, item_no, court="대법원")`)
+  - `SourceDocument` — 생성 검증(INV-02), `location`, `from_prec_service(obj, source_file)`, `statute_articles_from_text(text, source_file) -> (docs, StatuteParseReport)`
+  - `StatuteParseReport{articles, deleted, headings, dropped_lines, issues}`, `ImportIssue`, `Chunk`(chunk_id 형식 검사), `IndexVersion`(`compute_id`, `collection_name()`), `collection_name_for(index_version)`
+- `corpus/domain/chunking.py`: `ChunkingPolicy(max_chars, overlap_chars).split(doc, index_version, tokenize) -> list[Chunk]`
+- `corpus/domain/ports.py`: `PrecFile`, `CollectorReader`, `Tokenizer`, 저장소 4종(`ImportIssueRepository`는 CR-007대로 `corpus_version`), `VectorIndex`
+- `corpus/infrastructure/collector_reader.py`: `FileCollectorReader` — `iter_prec_files`(판례일련번호 숫자 순, 깨진 JSON은 `PrecFile(data=None, error=…)`), `read_law_text`(BOM 허용), `list_law_files`
+- `corpus/infrastructure/kiwi_tokenizer.py`: `KiwiTokenizer` — 내용 형태소(명사·동사·형용사 어간·어근·외국어·숫자·한자), Kiwi는 첫 호출 때 한 번 적재
+- 시험 4파일 41개
+
+#### 실데이터 확인 (저장소 밖 수집 폴더, 읽기만, 2026-11-24)
+| 대상 | 결과 |
+|---|---|
+| 판례 파일 13,846건 | 변환 11,729건, `EMPTY_CONTENT` 2,117건(15%, 사람이 수집 후 삭제 예정 — HANDOFF §3), 다른 사유 0 |
+| 판례 청크 | 16,442개(판례당 1~6개 이상), 최장 1,500자, 한도 초과 0 |
+| 민법 1,116조 | 청크 1,116개(나눈 조문 없음), 최장 1,305자, 제목 줄 144(편·장·절·관 142 + 특수 2), 소속 없는 줄 0 |
+- 항목 표시는 줄 머리의 `[n]`만 인정한다: 실제 판시사항에 "`[2] [1]항의 …`"처럼 본문 안 참조가 있어 모든 `[n]`에서 나누면 항목이 깨진다.
+- 판시사항과 판결요지의 항목 수가 다른 판례가 드물게 있다(13,444건 중 15건): 번호 합집합으로 묶고 한쪽만 있는 항목도 남긴다.
+
+#### 계층 확인 포인트
+- `corpus/domain`은 표준 라이브러리(`json`·`re`·`html`·`dataclasses`·`datetime`·`enum`·`typing`·`collections.abc`)와 `shared.versioning`만 import(GATE-02 확인).
+- 외부 라이브러리(`kiwipiepy`)는 `corpus/infrastructure/kiwi_tokenizer.py`에서만, 쓸 때 import.
+
+#### 임시 코드
+- 없음(이번 티켓). 이전 티켓의 임시 코드(`_complete_index_version`, `Metrics.compute`, `_PENDING_TICKETS`)는 그대로.
+
+#### 구현 중 자율 결정
+##### TKT-BE-M2-01 판례 위치의 법원명
+- 결정: `location`에 `대법원` 고정 대신 판례의 `법원명`을 씀(`서울고법 1995. 12. 5. 선고 … 판결`) — ADR-015 개정(하급심 포함)
+- 선택지: **A. 법원명 사용 (권장·채택)** / B. 언제나 "대법원"
+- 권장 이유: 하급심 판결을 대법원 판결로 인용하면 틀린 출처가 된다(INV-01 취지).
+- trade-off: A — 위치 문자열에 법원 이름 표기가 제각각(`서울고법`/`서울고등법원`). B — 하급심 출처가 틀림.
+
+##### TKT-BE-M2-01 seq와 항목 번호
+- 결정: `seq`는 문서 안 청크 순번(1부터), 항목 번호 `[n]`은 위치 문자열에만 — 03-db-schema §4(`seq=n`)
+- 선택지: **A. 순번 (권장·채택)** / B. `seq = n`
+- 권장 이유: 한 항목이 길어 여러 청크로 나뉘면 `seq=n`이 겹쳐 chunk_id가 중복된다. 나뉘지 않는 보통의 경우 순번과 n이 같다.
+- trade-off: A — 항목 번호가 빠진 판례(예: [1],[3])는 seq와 n이 다름(위치 문자열로 확인). B — chunk_id 충돌.
+
+##### TKT-BE-M2-01 청크 머리줄의 참조조문 길이
+- 결정: 머리줄의 참조조문은 300자까지(넘으면 `…`), 전체는 `referenced_articles` 필드에 — 실데이터에서 참조조문 최대 1,914자로 청크 173개가 1,500자를 넘음
+- 선택지: **A. 머리줄만 자름 (권장·채택)** / B. 자르지 않음(한도 초과 허용) / C. 머리줄에서 참조조문 제거
+- 권장 이유: 한도(1,500자)를 지키면서 대부분(99%는 464자 이하)의 참조조문은 그대로 보인다.
+- trade-off: A — 아주 긴 참조조문은 검색 본문에서 일부만 보임. B — 임베딩·프롬프트 길이 계산이 어긋남. C — 조문 번호로 찾는 검색이 약해짐.
+
+##### TKT-BE-M2-01 색인 판본 id에 규칙 판본
+- 결정: `compute_id` 해시에 `CHUNKING_RULES_VERSION`("1")을 넣음 — INV-11
+- 선택지: **A. 규칙 판본 포함 (권장·채택)** / B. 설정 값만
+- 권장 이유: 청킹 코드가 바뀌면 같은 설정이라도 다른 판본이 되어야 재현성이 지켜진다.
+- trade-off: A — 규칙을 고칠 때 상수를 올리는 것을 잊지 말아야 함. B — 코드가 바뀌어도 같은 판본 id.
+
+#### 설계와 다르게 한 것 / 질문
+- **`CollectorReader.iter_prec_files` 반환형**: 설계는 `Iterator[tuple[str, dict]]`. 깨진 JSON을 `JSON_ERROR` 문제로 기록하려면 오류를 함께 넘겨야 해서 `Iterator[PrecFile(path, data | None, error)]`로 했다. → ARCH에 시그니처 갱신 요청.
+- 위 "seq와 항목 번호"(03-db-schema §4의 `seq=n`과 다름, 나뉘지 않으면 같음) → ARCH에 문구 갱신 요청.
+- `SourceLocation.for_precedent`에 `court` 인자(기본 "대법원") 추가 — 하급심 포함 결정(CR-005·006)의 반영.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02 | 06-quality-gates GATE-02 명령 + corpus 도메인 import 전수 확인 | 0줄 |
+| GATE-02b | 모듈 역방향, 도메인·응용의 infrastructure import | 0줄 |
+| GATE-04 | `uv run pytest tests/unit -q` | 132 passed(이번 티켓 41개) |
+| GATE-04b | `uv run pytest tests/integration -q` | 29 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| GATE-07·09 | 빈 except·도메인 시각, 정답 경로 | 0줄 |

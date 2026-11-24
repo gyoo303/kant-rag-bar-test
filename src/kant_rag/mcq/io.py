@@ -69,7 +69,17 @@ def split_exam(exam: Exam, seed: int = 2026, n_dev: int = 8, n_test: int = 17) -
 
 
 def load_bar_evalset(path: Path) -> BarEvalSet:
-    return BarEvalSet.model_validate(json.loads(path.read_text(encoding="utf-8")))
+    """평가셋(eval/dev.json 등) 또는 시험 문항 파일(data/exam/2026_civil.json, *_extra.json) 모두 허용."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if "exam" in data:  # 시험 문항 파일 → 근거 없음 문항 없이 선택형만
+        from kant_rag.mcq.traps import auto_traps
+
+        exam = Exam.model_validate(data)
+        for q in exam.items:
+            q.traps = q.traps or auto_traps(q)
+        split = "extra" if path.stem.endswith("_extra") else "all"
+        return BarEvalSet(version=f"exam:{path.name}", split=split, items=exam.items)
+    return BarEvalSet.model_validate(data)
 
 
 def check_bar_composition(es: BarEvalSet) -> list[str]:

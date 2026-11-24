@@ -58,6 +58,9 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
     es = load_bar_evalset(eval_path)
     if es.split == "test" and not es.frozen:
         raise SystemExit("test 평가셋이 frozen=true 로 고정되지 않았습니다.")
+    if es.split == "all":
+        print("⚠ 시험 70문항 전체 실행: test 17문항이 포함됩니다. 이 결과는 '탐색 실행'으로만 기록하고,\n"
+              "  test 문항 결과를 보고 설정·프롬프트를 바꾸지 마세요 (최종 평가는 고정된 eval/test.json 으로 별도 실행).")
     run_id = time.strftime("%Y%m%d-%H%M%S") + "-" + (label or uuid.uuid4().hex[:4])
     out = settings.resolve(settings.paths.results_dir) / run_id
     out.mkdir(parents=True, exist_ok=True)

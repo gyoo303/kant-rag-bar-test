@@ -1,0 +1,4 @@
+# 구성 A (ADR-011): base.toml 의 [run] 만 덮어쓴다 (INV-08)
+[run]
+mode = "A"
+use_rewrite = false

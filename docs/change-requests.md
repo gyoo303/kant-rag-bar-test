@@ -8,6 +8,8 @@
 | CR-004 | ARCH | PM | 05-user-stories US-05·REJ-06, 06-acceptance-criteria NFR-06, 04-scope M2·위험 | 가져오기 입력을 law_collector 출력(ADR-015)으로, 판례 건수를 대법원 민사 전부로 | 반영됨 | user 2026-11-23 | PM CR 반영 실행 2026-11-23 (사용자 지시) |
 | CR-005 | ARCH | PM | 05-user-stories US-05, 06-acceptance-criteria NFR-06, 04-scope M2·위험 | 민법 입력을 민법.txt로, 판례 범위를 데이터출처 대법원 전부(하급심 포함)로, 빈 본문 판례 사전 삭제 명시 | 반영됨 | user 2026-11-23 | PM CR 반영 실행 2026-11-23 (사용자 지시) |
 | CR-006 | ARCH | 사람 | project-profile §3 C-04 | 검색 문서 출처를 민법.txt와 데이터출처 대법원 민사 판례 전부(하급심 포함)로 명확히 | 반영됨 | user 2026-11-23 | 사용자 지시 2026-11-23 |
+| CR-008 | DB | ARCH | 03-db-schema §7 `PgIndexVersionRepository`, 04-interfaces-api §2(검색 판본 선택) | 검색에 쓸 판본: 완료 판본 우선, 없으면 끝난 가장 최근 판본(불완전 포함)과 경고. 저장소에 `latest_finished()` 추가 | 승인 | user 2026-11-24 | — |
+| CR-007 | DB | ARCH | 03-db-schema §2·§3 import_issues·§7, 04-interfaces-api SEQ-01·02 | import_issues를 index_version FK 대신 corpus_version으로 묶음(가져오기가 색인보다 먼저 실행됨) | 승인 | user 2026-11-24 | — |
 
 ### CR-001
 - **바꿀 내용** (문구 초안):
@@ -63,3 +65,23 @@
 - **바꿀 내용** (반영한 문구): C-04 검색 문서 = "법제처 민법 전 조문 텍스트(`law_collector/data/law/민법.txt`)와 open.law.go.kr에서 `law_collector`로 수집한 데이터출처 "대법원"의 민사 판례 전부(하급심 판결 포함, 약 4.25만 건)의 판시사항·판결요지·참조조문"
 - **이유**: CR-005와 같음.
 - **쉬운 설명**: 프로젝트 기본 문서의 검색 범위 문구를 실제 데이터 출처에 맞게 고칩니다.
+
+### CR-007
+- **바꿀 내용** (문구 초안):
+  - 03-db-schema §3 `import_issues`: `index_version` 행을 `| corpus_version | text | N | — | | 가져오기한 원문 묶음의 corpus_version (FK 없음) |`로 바꾸고, 색인 `(corpus_version)`을 추가. ERD의 `index_versions ||--o{ import_issues` 관계를 지운다.
+  - 03-db-schema §3 `index_versions.skipped_count` 설명: "같은 `corpus_version`의 `import_issues` 수".
+  - 03-db-schema §7 `PgImportIssueRepository`: `add_many(issues: list[ImportIssue], corpus_version: str) -> None`, `count(corpus_version: str) -> int`, `delete_for(corpus_version: str) -> None`(같은 원문을 다시 가져올 때 이전 기록 교체).
+  - 04-interfaces-api SEQ-01 끝: "문제 기록은 `corpus_version`으로 저장(같은 corpus_version 기록은 교체)". SEQ-02: "`mark_complete(skipped = import_issues.count(corpus_version))`".
+- **이유**: 가져오기(SEQ-01)가 색인(SEQ-02)보다 먼저 실행되어, 가져오기 시점에는 `index_versions` 행이 없다. 원래 설계(FK → index_versions)로는 문제 기록을 저장할 수 없다. 사용자 선택 A(2026-11-24).
+- **영향**: TKT-DB-M1-01(schema.sql), TKT-DB-M2-01(PgImportIssueRepository), TKT-BE-M2-02(ImportService·IndexService)
+- **쉬운 설명**: 가져오기 문제 기록을 "어느 색인"이 아니라 "어느 가져오기"에 묶습니다. 가져오기가 색인보다 먼저라서 이렇게 해야 저장할 수 있습니다.
+- **반영 전 임시 적용 범위**: 승인됐으므로 DB·BE 단계는 이 초안대로 구현한다. ARCH 반영 실행 때 문서에 넣는다.
+
+### CR-008
+- **바꿀 내용** (문구 초안):
+  - 03-db-schema §7 `PgIndexVersionRepository`에 `latest_finished() -> IndexVersion | None` 추가: `WHERE complete OR skipped_count > 0 ORDER BY created_at DESC LIMIT 1`(중단된 판본 제외). `latest_complete()`도 표에 적는다.
+  - 04-interfaces-api §2: `corpus.application.ChunkQueryService.search_version() -> IndexVersion | None` — 완료 판본이 있으면 그것, 없으면 `latest_finished()`. 불완전 판본이면 진입점이 "불완전 색인" 경고를 출력한다. `ask`·`eval run`·Streamlit이 이 판본으로 검색한다. 본 평가 고정(`eval freeze --stage final`)은 지금처럼 완료 판본만.
+- **이유**: 실제 판례에 빈 판시사항·판결요지 판례 2,117건이 있어 사람이 지우기 전까지 색인은 늘 `complete=false`(REJ-06)이므로, 완료 판본만으로는 dev 조정을 시작할 수 없다. 사용자 선택 "완료 우선, 없으면 마지막"(2026-11-24).
+- **영향**: TKT-DB(저장소 메서드 1개·통합 시험), TKT-BE-M3-03(`ask`), TKT-BE-M3-05(`eval run`), TKT-FE-M3-01(화면)
+- **쉬운 설명**: 완벽한 색인이 있으면 그걸 쓰고, 없으면 끝까지 만들어진 가장 최근 색인을 쓰되 "불완전" 경고를 보여 줍니다. 본 평가 고정은 여전히 완벽한 색인만 허용합니다.
+- **반영 전 임시 적용 범위**: 승인됐으므로 DB·BE 단계는 이 초안대로 구현한다. ARCH 반영 실행 때 문서에 넣는다.

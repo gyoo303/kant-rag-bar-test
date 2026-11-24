@@ -25,3 +25,8 @@ build/
 # data
 *.json
 *.txt
+
+# lawqa (05-structure-conventions §7)
+data/*
+!data/MANIFEST.md
+.streamlit/secrets.toml

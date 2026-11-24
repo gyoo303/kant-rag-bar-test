@@ -1,0 +1,585 @@
+{
+  "version": "fixture-1",
+  "split": "test",
+  "questions": [
+    {
+      "question_id": "TEST-01",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-01: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 2,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-01"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:101-0#ARTICLE#1",
+          "doc_id": "law:민법:101-0",
+          "location": "민법 제101조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-02",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-02: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 3,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-02"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:102-0#ARTICLE#1",
+          "doc_id": "law:민법:102-0",
+          "location": "민법 제102조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-03",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-03: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 4,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-03"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:103-0#ARTICLE#1",
+          "doc_id": "law:민법:103-0",
+          "location": "민법 제103조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-04",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-04: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 5,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-04"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:104-0#ARTICLE#1",
+          "doc_id": "law:민법:104-0",
+          "location": "민법 제104조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-05",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-05: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 1,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-05"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:105-0#ARTICLE#1",
+          "doc_id": "law:민법:105-0",
+          "location": "민법 제105조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-06",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-06: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 2,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-06"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:106-0#ARTICLE#1",
+          "doc_id": "law:민법:106-0",
+          "location": "민법 제106조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-07",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-07: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 3,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-07"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:107-0#ARTICLE#1",
+          "doc_id": "law:민법:107-0",
+          "location": "민법 제107조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-08",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-08: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 4,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-08"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:108-0#ARTICLE#1",
+          "doc_id": "law:민법:108-0",
+          "location": "민법 제108조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-09",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-09: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 5,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-09"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:109-0#ARTICLE#1",
+          "doc_id": "law:민법:109-0",
+          "location": "민법 제109조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-10",
+      "type": "direct",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-10: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 1,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-10"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:110-0#ARTICLE#1",
+          "doc_id": "law:민법:110-0",
+          "location": "민법 제110조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-11",
+      "type": "paraphrase",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-11: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 2,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-11"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:111-0#ARTICLE#1",
+          "doc_id": "law:민법:111-0",
+          "location": "민법 제111조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-12",
+      "type": "paraphrase",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-12: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 3,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-12"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:112-0#ARTICLE#1",
+          "doc_id": "law:민법:112-0",
+          "location": "민법 제112조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-13",
+      "type": "paraphrase",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-13: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 4,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-13"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:113-0#ARTICLE#1",
+          "doc_id": "law:민법:113-0",
+          "location": "민법 제113조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-14",
+      "type": "paraphrase",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-14: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 5,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-14"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:114-0#ARTICLE#1",
+          "doc_id": "law:민법:114-0",
+          "location": "민법 제114조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-15",
+      "type": "paraphrase",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-15: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 1,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-15"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:115-0#ARTICLE#1",
+          "doc_id": "law:민법:115-0",
+          "location": "민법 제115조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-16",
+      "type": "paraphrase",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-16: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 2,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-16"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:116-0#ARTICLE#1",
+          "doc_id": "law:민법:116-0",
+          "location": "민법 제116조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-17",
+      "type": "paraphrase",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-17: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": 3,
+        "key_facts": [
+          "가짜 핵심 사실 TEST-17"
+        ],
+        "insufficient": false
+      },
+      "allowed_evidence": [
+        {
+          "chunk_id": "law:민법:117-0#ARTICLE#1",
+          "doc_id": "law:민법:117-0",
+          "location": "민법 제117조"
+        }
+      ],
+      "answer_source": "human:형식 시험용"
+    },
+    {
+      "question_id": "TEST-18",
+      "type": "no_evidence",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-18: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": null,
+        "key_facts": [],
+        "insufficient": true
+      },
+      "allowed_evidence": [],
+      "answer_source": "human:형식 시험용",
+      "absence_reason": "색인 밖 법률(상법) 문항이라는 가정의 가짜 문항"
+    },
+    {
+      "question_id": "TEST-19",
+      "type": "no_evidence",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-19: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": null,
+        "key_facts": [],
+        "insufficient": true
+      },
+      "allowed_evidence": [],
+      "answer_source": "human:형식 시험용",
+      "absence_reason": "색인 밖 법률(상법) 문항이라는 가정의 가짜 문항"
+    },
+    {
+      "question_id": "TEST-20",
+      "type": "no_evidence",
+      "source": "authored",
+      "item": {
+        "stem": "가짜 지문 TEST-20: 형식 시험용 문항입니다.",
+        "options": [
+          "가짜 보기 1",
+          "가짜 보기 2",
+          "가짜 보기 3",
+          "가짜 보기 4",
+          "가짜 보기 5"
+        ]
+      },
+      "expected": {
+        "answer": null,
+        "key_facts": [],
+        "insufficient": true
+      },
+      "allowed_evidence": [],
+      "answer_source": "human:형식 시험용",
+      "absence_reason": "색인 밖 법률(상법) 문항이라는 가정의 가짜 문항"
+    }
+  ]
+}

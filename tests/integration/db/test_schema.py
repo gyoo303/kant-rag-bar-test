@@ -33,7 +33,7 @@ def _insert_statute(
         INSERT INTO source_documents
             (doc_id, kind, title, law_name, article_no, body, source_file, source_line, content_sha)
         VALUES (%s, 'STATUTE_ARTICLE', '민법 제245조(점유로 인한 부동산소유권의 취득기간)', '민법',
-                %s, %s, 'law/민법.txt', 10, 'sha')
+                %s, %s, 'statutes/민법.txt', 10, 'sha')
         """,
         (doc_id, article_no, body),
     )

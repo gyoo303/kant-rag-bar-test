@@ -36,17 +36,33 @@ def test_iter_prec_files_missing_directory_yields_nothing(tmp_path: Path) -> Non
     assert list(FileCollectorReader().iter_prec_files(tmp_path)) == []
 
 
-def test_read_law_text_handles_bom_and_missing_file(tmp_path: Path) -> None:
+def test_iter_statute_texts_handles_bom_and_missing_directory(tmp_path: Path) -> None:
     reader = FileCollectorReader()
-    assert reader.read_law_text(tmp_path) is None
+    assert list(reader.iter_statute_texts(tmp_path)) == []
 
-    _write(tmp_path / "law" / "민법.txt", "제1조(법원) 본문\n", encoding="utf-8-sig")
+    _write(tmp_path / "statutes" / "민법.txt", "제1조(법원) 본문\n", encoding="utf-8-sig")
 
-    assert reader.read_law_text(tmp_path) == ("law/민법.txt", "제1조(법원) 본문\n")
+    (statute,) = list(reader.iter_statute_texts(tmp_path))
+    assert (statute.law_name, statute.path, statute.text) == (
+        "민법",
+        "statutes/민법.txt",
+        "제1조(법원) 본문\n",
+    )
 
 
-def test_list_law_files_reports_all_files(tmp_path: Path) -> None:
-    _write(tmp_path / "law" / "민법.txt", "x")
-    _write(tmp_path / "law" / "상법.txt", "x")
+def test_iter_statute_texts_reads_every_statute_in_name_order(tmp_path: Path) -> None:
+    """CR-009·010: `statutes/` 안의 `*.txt`를 전부 읽는다. 법령 이름 = 파일 이름."""
+    _write(tmp_path / "statutes" / "상법.txt", "x")
+    _write(tmp_path / "statutes" / "민법.txt", "x")
+    _write(tmp_path / "statutes" / "민사소송법.txt", "x")
 
-    assert FileCollectorReader().list_law_files(tmp_path) == ["민법.txt", "상법.txt"]
+    names = [s.law_name for s in FileCollectorReader().iter_statute_texts(tmp_path)]
+
+    assert names == ["민법", "민사소송법", "상법"]
+
+
+def test_list_ignored_statute_files_reports_non_txt_only(tmp_path: Path) -> None:
+    _write(tmp_path / "statutes" / "민법.txt", "x")
+    _write(tmp_path / "statutes" / "메모.md", "x")
+
+    assert FileCollectorReader().list_ignored_statute_files(tmp_path) == ["메모.md"]

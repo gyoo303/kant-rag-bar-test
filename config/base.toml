@@ -26,7 +26,7 @@ rewrite_s = 30
 judge_s = 60
 
 [paths]
-raw_dir = "law_collector/data"   # 판례 prec/*.json(수집기), 민법 law/민법.txt(내려받은 텍스트) (ADR-015)
+raw_dir = "law_collector/data"   # 판례 prec/*.json(수집기), 법령 statutes/*.txt(내려받은 텍스트) (ADR-015, CR-010)
 eval_dir = "eval"
 results_dir = "results"
 

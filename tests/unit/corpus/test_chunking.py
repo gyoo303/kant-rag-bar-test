@@ -36,7 +36,7 @@ def _prec(**changes: Any) -> SourceDocument:
 
 def _article(body: str, no: int = 103, title: str = "반사회질서의 법률행위") -> SourceDocument:
     text = f"제{no}조({title})\n{body}\n"
-    docs, _ = SourceDocument.statute_articles_from_text(text, "law/민법.txt")
+    docs, _ = SourceDocument.statute_articles_from_text(text, "statutes/민법.txt", "민법")
     return docs[0]
 
 

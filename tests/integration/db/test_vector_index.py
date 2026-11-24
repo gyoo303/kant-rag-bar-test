@@ -22,9 +22,12 @@ DIM = 1536
 
 
 def _chunks(index_version: str) -> list[Chunk]:
-    law = FileCollectorReader().read_law_text(RAW)
-    assert law is not None
-    statutes, _ = SourceDocument.statute_articles_from_text(law[1], law[0])
+    statutes: list[SourceDocument] = []
+    for statute in FileCollectorReader().iter_statute_texts(RAW):
+        articles, _ = SourceDocument.statute_articles_from_text(
+            statute.text, statute.path, statute.law_name
+        )
+        statutes.extend(articles)
     policy = ChunkingPolicy(max_chars=1500, overlap_chars=150)
     return [c for d in statutes for c in policy.split(d, index_version, str.split)]
 
@@ -57,7 +60,7 @@ def test_add_chunks_count_equals_chunk_count(index: PgVectorIndex, version: str)
 
     index.add_chunks(version, chunks, batch_size=4)
 
-    assert index.count(version) == len(chunks) == 9
+    assert index.count(version) == len(chunks) == 10  # 민법 9 + 상법 1 (CR-010)
 
 
 def test_add_same_chunks_twice_does_not_duplicate(index: PgVectorIndex, version: str) -> None:
@@ -100,9 +103,9 @@ def test_versions_are_separate_collections(index: PgVectorIndex, version: str) -
         index.add_chunks(version, _chunks(version))
         index.add_chunks(other, _chunks(other)[:2])
 
-        assert (index.count(version), index.count(other)) == (9, 2)
+        assert (index.count(version), index.count(other)) == (10, 2)
         index.delete(other)
-        assert index.count(other) == 0 and index.count(version) == 9
+        assert index.count(other) == 0 and index.count(version) == 10
     finally:
         index.delete(other)
 

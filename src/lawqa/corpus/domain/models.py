@@ -25,7 +25,6 @@ from lawqa.corpus.domain.errors import (
 from lawqa.corpus.domain.text_clean import clean_text
 from lawqa.shared.versioning import sha256_of
 
-LAW_NAME = "민법"
 CIVIL_CASE_TYPE = "민사"
 # 청킹·원문 변환 규칙이 바뀌면 올린다(색인 판본 id에 들어감, INV-11)
 CHUNKING_RULES_VERSION = "1"
@@ -47,13 +46,15 @@ class SourceLocation:
             raise ValueError("원문 위치가 비어 있습니다.")
 
     @staticmethod
-    def article_label(no: int, branch: int) -> str:
-        return f"{LAW_NAME} 제{no}조" + (f"의{branch}" if branch else "")
+    def article_label(law_name: str, no: int, branch: int) -> str:
+        return f"{law_name} 제{no}조" + (f"의{branch}" if branch else "")
 
     @staticmethod
-    def for_article(no: int, branch: int, paragraph_range: str | None) -> SourceLocation:
-        """`민법 제245조`, `민법 제14조의2`, 나눈 경우 `민법 제103조 제3항~제5항`."""
-        label = SourceLocation.article_label(no, branch)
+    def for_article(
+        law_name: str, no: int, branch: int, paragraph_range: str | None
+    ) -> SourceLocation:
+        """`민법 제245조`, `상법 제14조의2`, 나눈 경우 `민사소송법 제103조 제3항~제5항`."""
+        label = SourceLocation.article_label(law_name, no, branch)
         return SourceLocation(f"{label} {paragraph_range}" if paragraph_range else label)
 
     @staticmethod
@@ -105,12 +106,17 @@ class SourceDocument:
                 )
         elif not ((self.body or "").strip() and self.article_no is not None):
             raise InvalidSourceDocumentError(EMPTY_CONTENT, f"{self.doc_id}: 조문 본문 없음")
+        elif not (self.law_name or "").strip():
+            # 법령이 여럿이므로 조문은 법령 이름 없이 원문 위치를 만들 수 없다(CR-009·010).
+            raise InvalidSourceDocumentError(MISSING_FIELD, f"{self.doc_id}: law_name")
 
     @property
     def location(self) -> SourceLocation:
         """문서 전체의 원문 위치(항목 번호 없음)."""
         if self.kind is DocumentKind.STATUTE_ARTICLE:
-            return SourceLocation.for_article(self.article_no or 0, self.article_branch_no, None)
+            return SourceLocation.for_article(
+                self.law_name or "", self.article_no or 0, self.article_branch_no, None
+            )
         return SourceLocation.for_precedent(
             self.decided_on or date.min, self.case_number or "", None, self.court or "대법원"
         )
@@ -160,10 +166,13 @@ class SourceDocument:
 
     @staticmethod
     def statute_articles_from_text(
-        text: str, source_file: str
+        text: str, source_file: str, law_name: str
     ) -> tuple[list[SourceDocument], StatuteParseReport]:
-        """민법 일반 텍스트를 조문 단위로 나눈다(ADR-015 표의 규칙)."""
-        return _parse_statute_text(text, source_file)
+        """법령 일반 텍스트를 조문 단위로 나눈다(ADR-015 표의 규칙, CR-010).
+
+        `law_name`은 파일 이름(확장자 제외)이고 `doc_id = "law:<law_name>:<조>-<가지>"`가 된다.
+        """
+        return _parse_statute_text(text, source_file, law_name)
 
 
 @dataclass(frozen=True, slots=True)
@@ -307,7 +316,7 @@ class _Article:
 
 
 def _parse_statute_text(
-    text: str, source_file: str
+    text: str, source_file: str, law_name: str
 ) -> tuple[list[SourceDocument], StatuteParseReport]:
     raw_lines = text.lstrip("﻿").splitlines()
     lines = [_AMENDMENT_TAG.sub("", raw.strip()).strip() for raw in raw_lines]
@@ -351,7 +360,7 @@ def _parse_statute_text(
     issues: list[ImportIssue] = []
     seen: set[str] = set()
     for article in articles:
-        doc_id = f"law:{LAW_NAME}:{article.no}-{article.branch}"
+        doc_id = f"law:{law_name}:{article.no}-{article.branch}"
         if doc_id in seen:
             issues.append(ImportIssue(source_file, article.line_no, DUPLICATE_ARTICLE))
             continue
@@ -360,7 +369,7 @@ def _parse_statute_text(
         if not body:
             issues.append(ImportIssue(source_file, article.line_no, EMPTY_CONTENT))
             continue
-        label = SourceLocation.article_label(article.no, article.branch)
+        label = SourceLocation.article_label(law_name, article.no, article.branch)
         title = f"{label}({article.title})" if article.title else label
         content = {"no": article.no, "branch": article.branch, "title": article.title, "body": body}
         documents.append(
@@ -371,7 +380,7 @@ def _parse_statute_text(
                 source_file=source_file,
                 source_line=article.line_no,
                 content_sha=_content_sha(content),
-                law_name=LAW_NAME,
+                law_name=law_name,
                 article_no=article.no,
                 article_branch_no=article.branch,
                 article_title=article.title or None,

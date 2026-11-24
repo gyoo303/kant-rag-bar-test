@@ -17,7 +17,7 @@ from lawqa.corpus.domain.errors import (
 )
 from lawqa.corpus.domain.models import DocumentKind, IndexVersion, SourceDocument, SourceLocation
 
-CIVIL_ACT = Path(__file__).resolve().parents[3] / "law_collector" / "data" / "law" / "민법.txt"
+CIVIL_ACT = Path(__file__).resolve().parents[3] / "law_collector" / "data" / "statutes" / "민법.txt"
 
 
 def _prec(**changes: Any) -> dict[str, Any]:
@@ -118,8 +118,8 @@ STATUTE_SAMPLE = """제1편 총칙
 """
 
 
-def _statutes(text: str = STATUTE_SAMPLE):
-    return SourceDocument.statute_articles_from_text(text, "law/민법.txt")
+def _statutes(text: str = STATUTE_SAMPLE, law_name: str = "민법"):
+    return SourceDocument.statute_articles_from_text(text, f"statutes/{law_name}.txt", law_name)
 
 
 def test_statute_parser_applies_adr015_rules() -> None:
@@ -174,7 +174,7 @@ def test_statute_parser_drops_lines_before_first_article() -> None:
 def test_ac_full_civil_act_file_parses_1116_articles() -> None:
     """수용 확인(HANDOFF TKT-BE-M2-01): 커밋된 민법.txt 전체 → 조문 1,116·삭제 77·중복 0."""
     docs, report = SourceDocument.statute_articles_from_text(
-        CIVIL_ACT.read_text(encoding="utf-8-sig"), "law/민법.txt"
+        CIVIL_ACT.read_text(encoding="utf-8-sig"), "statutes/민법.txt", "민법"
     )
 
     assert len(docs) == 1116 and report.articles == 1116
@@ -188,9 +188,16 @@ def test_ac_full_civil_act_file_parses_1116_articles() -> None:
 
 
 def test_source_location_formats() -> None:
-    assert SourceLocation.for_article(245, 0, None).text == "민법 제245조"
-    assert SourceLocation.for_article(14, 2, None).text == "민법 제14조의2"
-    assert SourceLocation.for_article(103, 0, "제3항~제5항").text == "민법 제103조 제3항~제5항"
+    assert SourceLocation.for_article("민법", 245, 0, None).text == "민법 제245조"
+    assert SourceLocation.for_article("민법", 14, 2, None).text == "민법 제14조의2"
+    assert (
+        SourceLocation.for_article("민법", 103, 0, "제3항~제5항").text == "민법 제103조 제3항~제5항"
+    )
+    # CR-009: 법령이 여럿이므로 위치 문자열의 법령 이름이 파일마다 달라진다
+    assert SourceLocation.for_article("상법", 1, 0, None).text == "상법 제1조"
+    assert (
+        SourceLocation.for_article("민사소송법", 451, 0, "제1항").text == "민사소송법 제451조 제1항"
+    )
     assert (
         SourceLocation.for_precedent(date(2019, 1, 31), "2016다215127", 1).text
         == "대법원 2019. 1. 31. 선고 2016다215127 판결 [1]"

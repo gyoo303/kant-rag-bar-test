@@ -20,10 +20,19 @@ class PrecFile:
     error: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class StatuteFile:
+    """법령 텍스트 파일 1개(CR-010). `law_name`은 파일 이름에서 확장자를 뺀 것."""
+
+    law_name: str
+    path: str  # raw_dir 기준 상대 경로(예: statutes/민법.txt)
+    text: str
+
+
 class CollectorReader(Protocol):
     def iter_prec_files(self, raw_dir: Path) -> Iterator[PrecFile]: ...
-    def read_law_text(self, raw_dir: Path, name: str = "민법") -> tuple[str, str] | None: ...
-    def list_law_files(self, raw_dir: Path) -> list[str]: ...
+    def iter_statute_texts(self, raw_dir: Path) -> Iterator[StatuteFile]: ...
+    def list_ignored_statute_files(self, raw_dir: Path) -> list[str]: ...
 
 
 class Tokenizer(Protocol):

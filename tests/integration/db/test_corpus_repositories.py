@@ -30,10 +30,12 @@ def _fixture_documents() -> list[SourceDocument]:
             docs.append(SourceDocument.from_prec_service(prec.data or {}, prec.path))
         except InvalidSourceDocumentError:
             continue  # 형사 사건(범위 밖)은 건너뜀
-    law = reader.read_law_text(RAW)
-    assert law is not None
-    statutes, _ = SourceDocument.statute_articles_from_text(law[1], law[0])
-    return docs + statutes
+    for statute in reader.iter_statute_texts(RAW):
+        articles, _ = SourceDocument.statute_articles_from_text(
+            statute.text, statute.path, statute.law_name
+        )
+        docs.extend(articles)
+    return docs
 
 
 def _version(index_version: str = "idx-aaaaaaaa-bbbbbbbb") -> IndexVersion:
@@ -59,7 +61,7 @@ def test_fixtures_cover_precedents_and_statutes() -> None:
     assert (
         sum(d.kind.value == "PRECEDENT" for d in docs) == 5
     )  # 7개 중 형사 1 제외, 지시문 판례 포함
-    assert sum(d.kind.value == "STATUTE_ARTICLE" for d in docs) == 9
+    assert sum(d.kind.value == "STATUTE_ARTICLE" for d in docs) == 10  # 민법 9 + 상법 1 (CR-010)
 
 
 def test_upsert_many_is_idempotent_and_updates_content(db_conn: psycopg.Connection) -> None:

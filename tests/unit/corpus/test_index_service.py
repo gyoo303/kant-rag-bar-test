@@ -48,7 +48,7 @@ def test_skipped_imports_leave_index_incomplete(ctx, fake_chunks, fake_versions,
 
     v = result.version
     assert v.chunk_count == fake_chunks.count(v.index_version) == result.embeddings > 0
-    assert v.doc_count == 14
+    assert v.doc_count == 15  # 판례 5 + 민법 9 + 상법 1 (CR-009·010)
     assert v.skipped_count == 1
     assert not v.complete  # AC-05-4: 건너뛴 가져오기 건 → "불완전"
     assert fake_versions.latest_complete() is None

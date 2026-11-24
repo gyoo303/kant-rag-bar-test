@@ -25,6 +25,11 @@ build/
 # data
 *.json
 *.txt
+# 평가셋·실행 기록·법령 원문은 커밋한다(ADR-014, HANDOFF, ADR-015·CR-010)
+!eval/*.json
+!results/**/*.json
+!results/**/*.jsonl
+!law_collector/data/statutes/*.txt
 
 # lawqa (05-structure-conventions §7)
 data/*

@@ -1,4 +1,4 @@
-"""`law_collector` 출력 읽기 (ADR-015). 판례 `prec/*.json`, 민법 `law/민법.txt`."""
+"""`law_collector` 출력 읽기 (ADR-015, CR-010). 판례 `prec/*.json`, 법령 `statutes/*.txt`."""
 
 from __future__ import annotations
 
@@ -6,10 +6,11 @@ import json
 from collections.abc import Iterator
 from pathlib import Path
 
-from lawqa.corpus.domain.ports import PrecFile
+from lawqa.corpus.domain.ports import PrecFile, StatuteFile
 
 PREC_DIR = "prec"
-LAW_DIR = "law"
+STATUTE_DIR = "statutes"
+STATUTE_SUFFIX = ".txt"
 
 
 class FileCollectorReader:
@@ -31,18 +32,29 @@ class FileCollectorReader:
                 continue
             yield PrecFile(relative, data)
 
-    def read_law_text(self, raw_dir: Path, name: str = "민법") -> tuple[str, str] | None:
-        """`law/<name>.txt` 내용(UTF-8, BOM 허용). 없으면 None."""
-        path = raw_dir / LAW_DIR / f"{name}.txt"
-        if not path.is_file():
-            return None
-        return f"{LAW_DIR}/{path.name}", path.read_text(encoding="utf-8-sig")
+    def iter_statute_texts(self, raw_dir: Path) -> Iterator[StatuteFile]:
+        """`statutes/*.txt` 전부를 법령 이름 순으로 읽는다(UTF-8, BOM 허용).
 
-    def list_law_files(self, raw_dir: Path) -> list[str]:
-        law_dir = raw_dir / LAW_DIR
-        if not law_dir.is_dir():
+        법령 이름은 파일 이름에서 확장자를 뺀 것이다(CR-010).
+        """
+        statute_dir = raw_dir / STATUTE_DIR
+        if not statute_dir.is_dir():
+            return
+        for path in sorted(statute_dir.glob(f"*{STATUTE_SUFFIX}")):
+            yield StatuteFile(
+                law_name=path.stem,
+                path=f"{STATUTE_DIR}/{path.name}",
+                text=path.read_text(encoding="utf-8-sig"),
+            )
+
+    def list_ignored_statute_files(self, raw_dir: Path) -> list[str]:
+        """`statutes/` 안에서 읽지 않은 파일 이름(`.txt`가 아닌 것). 보고용."""
+        statute_dir = raw_dir / STATUTE_DIR
+        if not statute_dir.is_dir():
             return []
-        return sorted(p.name for p in law_dir.iterdir() if p.is_file())
+        return sorted(
+            p.name for p in statute_dir.iterdir() if p.is_file() and p.suffix != STATUTE_SUFFIX
+        )
 
 
 def _numeric_key(path: Path) -> tuple[int, str]:

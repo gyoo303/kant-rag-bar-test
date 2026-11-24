@@ -26,7 +26,8 @@ from lawqa.shared.settings import Settings
 
 log = logging.getLogger(__name__)
 
-# BM25·벡터 시험 질의와 문서: 커밋된 law_collector/data/law/민법.txt 의 조문 3개 (법령 본문, 공개)
+# BM25·벡터 시험 질의와 문서: 커밋된 law_collector/data/statutes/민법.txt 의 조문 3개
+# (법령 본문, 공개)
 SAMPLE_QUERY = "부동산 점유취득시효가 완성되면 등기하여야 소유권을 취득하는가"
 SAMPLE_DOCS: tuple[tuple[str, str], ...] = (
     (

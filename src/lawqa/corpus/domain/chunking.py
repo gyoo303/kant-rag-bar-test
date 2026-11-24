@@ -64,8 +64,9 @@ class ChunkingPolicy:
 
     # ── 조문 ──
     def _article_pieces(self, doc: SourceDocument) -> list[tuple[SourceLocation, str]]:
+        law_name = doc.law_name or ""
         no, branch = doc.article_no or 0, doc.article_branch_no
-        whole = SourceLocation.for_article(no, branch, None)
+        whole = SourceLocation.for_article(law_name, no, branch, None)
         heading = whole.text + (f"({doc.article_title})" if doc.article_title else "")
         body = doc.body or ""
         if len(heading) + 1 + len(body) <= self.max_chars:
@@ -77,15 +78,16 @@ class ChunkingPolicy:
         batch: list[tuple[int | None, str]] = []
         for group in groups:
             if batch and _joined_len(batch) + 1 + len(group[1]) > limit:
-                pieces.extend(self._article_batch(no, branch, heading, batch, limit))
+                pieces.extend(self._article_batch(law_name, no, branch, heading, batch, limit))
                 batch = []
             batch.append(group)
         if batch:
-            pieces.extend(self._article_batch(no, branch, heading, batch, limit))
+            pieces.extend(self._article_batch(law_name, no, branch, heading, batch, limit))
         return pieces
 
     def _article_batch(
         self,
+        law_name: str,
         no: int,
         branch: int,
         heading: str,
@@ -98,8 +100,8 @@ class ChunkingPolicy:
             label = f"제{first}항" if first == last else f"제{first}항~제{last}항"
         else:
             label = None
-        location = SourceLocation.for_article(no, branch, label)
-        head = location.text + heading[len(SourceLocation.article_label(no, branch)) :]
+        location = SourceLocation.for_article(law_name, no, branch, label)
+        head = location.text + heading[len(SourceLocation.article_label(law_name, no, branch)) :]
         text = "\n".join(part for _, part in batch)
         return [(location, f"{head}\n{part}") for part in self._sized(text, limit)]
 

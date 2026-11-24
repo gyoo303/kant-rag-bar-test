@@ -855,3 +855,87 @@ next_readers: [DB, FE, QA]
 | GATE-11 | `eval run --split test --config C --kind main --only TEST-01 --dry-run` | 확인 못 함: `eval/success_criteria.json` 없음(종료 1). 사람이 평가셋·성공 기준·final 고정을 만든 뒤 실행 |
 | CLI 종료 코드 | `eval run --split test --config C --kind warmup` / `--split dev --config C --kind main` | 둘 다 규칙 위반 종료 3 |
 | 실제 연동 | 시험 DB(16청크)·시험용 평가셋(`tests/fixtures/eval`)으로 C+R 워밍업 2문항(실제 리라이트·임베딩·재정렬·생성), 결과는 임시 폴더 | 2건 즉시 기록, `status=OK`, 보기별 후보·리라이트(fallback 0)·컨텍스트·단계 시간(첫 문항 26.0초: 재정렬 모델 적재 포함, 둘째 9.4초) |
+
+### CR-009·010 반영 (TKT-BE-M2-01·02 범위 변경, 2026-11-24)
+
+새 티켓이 아니라, 승인된 CR-009·CR-010에 따라 이미 끝난 TKT-BE-M2-01·02의 입력 범위를 바꾼 작업이다
+(`docs/PIPELINE.md` §2-9: 승인된 CR은 대상 단계가 반영하기 전에도 우선한다).
+
+**무엇이 달라졌나**: 가져오기가 읽는 법령이 `law/민법.txt` 하나에서 `statutes/*.txt` 전부로 바뀌었다.
+
+| 완료 조건 (CR-010) | 충족 여부 | 확인 방법 |
+|---|---|---|
+| `statutes/` 안의 `*.txt`를 전부 읽는다 | 충족 | `test_iter_statute_texts_reads_every_statute_in_name_order`, `test_every_statute_file_is_imported_under_its_own_law_name` |
+| 법령 이름 = 파일 이름(확장자 제외), `doc_id = "law:<법령명>:<조>-<가지>"` | 충족 | 같은 시험 + 실제 13개 법령 파싱(아래) |
+| `.txt`가 아닌 파일은 읽지 않고 보고에 적는다 | 충족 | `test_list_ignored_statute_files_reports_non_txt_only` |
+| ADR-015 민법 확인 수치(1,116·77·0) 유지 | 충족 | `test_ac_full_civil_act_file_parses_1116_articles`(입력을 `statutes/민법.txt`로 바꿔 통과) |
+
+#### 바꾼 것
+- `corpus.domain.models`
+  - 모듈 상수 `LAW_NAME = "민법"` **삭제**. 법령 이름은 이제 인자로 흐른다.
+  - `SourceLocation.article_label(law_name, no, branch)`, `SourceLocation.for_article(law_name, no, branch, paragraph_range)` — 첫 인자로 법령 이름 추가.
+  - `SourceDocument.statute_articles_from_text(text, source_file, law_name)` — 세 번째 인자 추가.
+  - `SourceDocument.__post_init__`: 조문(`STATUTE_ARTICLE`)은 `law_name`이 비면 `InvalidSourceDocumentError(MISSING_FIELD)`. 법령이 여럿이라 이름 없이는 원문 위치를 만들 수 없다.
+  - `SourceDocument.location`은 `self.law_name`을 쓴다.
+- `corpus.domain.chunking`: `_article_pieces`·`_article_batch`가 문서의 `law_name`을 받아 위치 문자열에 넣는다.
+- `corpus.domain.ports`: `StatuteFile(law_name, path, text)` 추가. `CollectorReader`의 `read_law_text`·`list_law_files` → `iter_statute_texts`·`list_ignored_statute_files`.
+- `corpus.infrastructure.collector_reader`: `LAW_DIR="law"` → `STATUTE_DIR="statutes"`. `iter_statute_texts`가 `*.txt`를 이름 순으로 전부 읽는다(UTF-8, BOM 허용).
+- `corpus.application.import_service`: 단일 파일 읽기 → 법령별 반복. `deleted`·`headings`·`orphan_lines`는 법령 전체 합계. `statutes/`에 `*.txt`가 하나도 없으면 `MissingStatuteFileError`.
+- `config/base.toml` 주석, `shared/smoke.py` 주석의 경로 표기.
+- `.gitignore`: `*.json`·`*.txt`가 `eval/*.json`, `results/**/*.json(l)`, `law_collector/data/statutes/*.txt`까지 무시하고 있었다. 세 경로에 negation을 넣었다(HANDOFF는 이 셋을 커밋 전제로 쓴다).
+
+#### 실제 13개 법령 파싱 결과 (가져오기 전 확인, DB 적재 없음)
+| 법령 | 조문 | 삭제 | 이슈 | 버린 줄 |
+|---|---|---|---|---|
+| 민법 | 1,116 | 77 | 0 | 0 |
+| 상법 | 1,141 | 41 | 0 | 0 |
+| 채무자 회생 및 파산에 관한 법률 | 697 | 2 | 0 | 0 |
+| 민사소송법 | 523 | 0 | 0 | 0 |
+| 민사집행법 | 311 | 1 | 0 | 0 |
+| 부동산등기법 | 120 | 1 | 0 | 0 |
+| 가사소송법 | 88 | 2 | 0 | 0 |
+| 집합건물의 소유 및 관리에 관한 법률 | 84 | 4 | 0 | 0 |
+| 어음법 | 78 | 0 | 0 | 0 |
+| 주택임대차보호법 | 41 | 1 | 0 | 0 |
+| 상가건물 임대차보호법 | 32 | 0 | 0 | 0 |
+| 가등기담보 등에 관한 법률 | 18 | 0 | 0 | 0 |
+| 부동산 실권리자명의 등기에 관한 법률 | 16 | 1 | 0 | 0 |
+| **합계** | **4,265** | 130 | **0** | **0** |
+
+ADR-015의 파서 규칙이 13개 법령 전부에서 이슈·버린 줄 0으로 적용된다. 민법 수치는 이전과 같다.
+
+#### 구현 중 자율 결정
+#### CR-010 `law_name`을 인자로 흘릴지, 파일 경로에서 뽑을지
+- 결정: `StatuteFile(law_name, path, text)`를 읽기 어댑터가 만들어 도메인 파서에 인자로 넘긴다 — CR-010, ADR-001(도메인은 파일 체계를 모른다)
+- 선택지: **A. 어댑터가 파일 이름에서 법령 이름을 뽑아 값 객체로 넘긴다 (권장·채택)** / B. 파서가 `source_file` 문자열을 파싱해 법령 이름을 얻는다
+- 권장 이유: 도메인 파서가 `statutes/<이름>.txt`라는 경로 규칙을 알 필요가 없다. 어댑터만 파일 체계를 안다.
+- trade-off: A — 포트 시그니처가 하나 늘어난다. B — 도메인이 경로 형식에 묶여 입력 폴더 구조가 바뀌면 도메인을 고쳐야 한다.
+
+#### CR-009 조문의 `law_name`을 필수로 만들지
+- 결정: `STATUTE_ARTICLE` 문서는 `law_name`이 비면 생성 거부 — CR-009, INV-02
+- 선택지: **A. `__post_init__`에서 거부 (권장·채택)** / B. `location`에서 빈 이름을 허용하고 `" 제1조"`처럼 만든다
+- 권장 이유: 법령이 하나일 때는 이름이 없어도 위치가 맞았지만, 이제는 조용히 틀린 인용이 만들어진다. 인용은 C-06의 핵심이라 빨리 실패하는 편이 낫다.
+- trade-off: A — `SourceDocument`를 직접 만드는 코드가 `law_name`을 반드시 넘겨야 한다. B — 잘못된 인용이 평가 기록까지 흘러간다.
+
+#### 설계와 다르게 한 것 / 질문 / DB 에이전트에게 요청
+- **단계 경계를 넘어 고친 파일 3개(사후 승인 요청)**: `tests/fixtures/raw/law/` → `statutes/` 이름 바꾸기, `tests/integration/db/test_corpus_repositories.py`, `test_vector_index.py`, `test_schema.py`. 모두 `AGENTS.md` 단계 표에서 **DB 담당**이다. 포트 시그니처가 바뀌어 이 파일들이 그대로면 통합 시험이 깨진 채로 남기 때문에 함께 고쳤다. 내용 변경은 (a) 폴더 이름, (b) `read_law_text` 호출 → `iter_statute_texts` 반복, (c) 고정 건수 9 → 10(상법 픽스처가 이제 읽히므로)뿐이다. DB 단계가 다음 티켓에서 확인해 주기 바란다.
+- **`ImportReport`에 법령별 조문 수를 넣지 않았다.** GATE-10 출력 형식이 04-interfaces-api에 정해져 있어 필드를 늘리면 출력 계약이 바뀐다. 필요하면 ARCH에 CR로 올린다.
+- **미정(평가셋 작성을 막는다)**: CR-011의 `US-04` ④ "근거 없음" 문항(dev 2·test 3) 출처. 13개 법령이 민사법을 거의 덮어 "색인 밖 법률 문항"이라는 기존 정의가 성립하지 않는다. 사용자 결정 전에는 평가셋을 쓰지 않는다.
+- **사람 영역 작업(사용자 지시 2026-11-24, PIPELINE §2-5 예외)**: 빈 본문 판례 6,706건을 `law_collector/data/prec_empty/`로 옮기고 `data/MANIFEST.md`를 썼다. 둘 다 `AGENTS.md`에서 사람 담당이다.
+
+#### 검증 결과
+| GATE | 명령 | 결과 |
+|---|---|---|
+| GATE-02·08·09 | 06-quality-gates 명령 | 각 0줄 |
+| GATE-03 | `python -c "import lawqa.…"` | 종료 0 |
+| GATE-04 | `uv run pytest tests/unit -q` | **288 passed** (이번 변경으로 추가 3개) |
+| GATE-04b | `uv run pytest tests/integration -q` | **47 passed** |
+| GATE-05 | `uv run ruff check .` / `ruff format --check .` | 통과 |
+| 실제 입력 확인 | 13개 법령 파싱(위 표) | 조문 4,265, 이슈 0, 버린 줄 0. 민법 1,116·삭제 77 유지 |
+| 실제 적재 | `python -m lawqa corpus import` (사용자 승인 2026-11-24) | 종료 0. **문서 40,096건(판례 35,831 + 조문 4,265), 건너뜀 0건, import_issues 0건.** 제외(오류 아님) deleted_articles=130, heading_lines=454, orphan_lines=0 |
+| 멱등 | 같은 명령 2회 실행 | `corpus_version`·행 수 동일(40,096), 중복 없음 — AC-05-3 |
+| GATE-10 | `corpus index` | **아직 실행 안 함**(임베딩 비용 발생, 사용자 승인 후 실행) |
+
+`corpus import`의 **건너뜀 0건**은 ADR-015가 의도한 확인 장치가 통과했다는 뜻이다 — 빈 본문 판례 정리가 끝났으므로
+색인이 `complete=true`가 될 수 있고 `eval freeze --stage final`이 막히지 않는다.
+적재된 `corpus_version`: `e7e52477…54d10b5`

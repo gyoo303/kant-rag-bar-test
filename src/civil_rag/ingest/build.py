@@ -180,7 +180,10 @@ def _documents(chunks: Iterable[Chunk], every: int = 2000):
     for i, c in enumerate(chunks, 1):
         if i % every == 0:
             print(f"  임베딩·색인 {i:,}개 진행")
-        yield Document(id=c.chunk_id, page_content=c.text, metadata=c.metadata)
+        # index() 는 내용+메타데이터 해시로 행 ID 를 만든다. 색인(컬렉션)마다 ID 가 달라지도록 색인 이름을 넣는다.
+        # (없으면 시점이 다른 색인끼리 같은 판례 조각이 ID 충돌 → 다른 컬렉션 행을 덮어써서 새 컬렉션에 안 들어감)
+        meta = {**c.metadata, "index": config.COLLECTION_NAME}
+        yield Document(id=c.chunk_id, page_content=c.text, metadata=meta)
 
 
 def build_vector_index(backend: str | None = None) -> dict:

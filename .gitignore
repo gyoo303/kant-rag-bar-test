@@ -13,6 +13,7 @@ __pycache__/
 law_collector/state/
 law_collector/data/prec/
 law_collector/data/law/
+law_collector/data/law_*/
 law_collector/*.log
 *.log
 *.zip
@@ -22,6 +23,7 @@ exams/raw/
 
 # 로컬 캐시·색인 (civil-rag ingest/index 로 재생성)
 data/index/
+data/index_*/
 cache/
 .cache/
 pgdata/

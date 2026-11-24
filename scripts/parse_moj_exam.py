@@ -19,7 +19,7 @@ from pathlib import Path
 CIRCLED = "①②③④⑤"
 Q_HEAD = re.compile(r"^문\s*(\d{1,3})\s*\.\s*(.*)$")
 CHOICE = re.compile(r"^([①②③④⑤])\s*(.*)$")
-PAGE_MARK = re.compile(r"^\d+\s*쪽$")
+PAGE_MARK = re.compile(r"^(\d+\s*쪽|-\s*\d+\s*-|\d+\s*/\s*\d+)$")
 SUBJECT_HEAD = re.compile(r"^(민\s*사\s*법|민\s*법|상\s*법|민\s*사\s*소\s*송\s*법)$")
 
 
@@ -123,7 +123,7 @@ def parse(lines: list[str]) -> list[dict]:
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("pages_dir")
+    ap.add_argument("pages_dir", help="뷰어 쪽 HTML 폴더 또는 PDF 에서 뽑은 .txt 파일")
     ap.add_argument("out_json")
     ap.add_argument("--exam-id", required=True)
     ap.add_argument("--title", default="")
@@ -131,10 +131,14 @@ def main(argv=None):
     ap.add_argument("--answers", default="", help='"1:3,2:5,..."')
     a = ap.parse_args(argv)
 
-    pages = sorted(Path(a.pages_dir).glob("*.html"), key=lambda p: int(p.stem) if p.stem.isdigit() else 0)
+    src = Path(a.pages_dir)
     lines: list[str] = []
-    for p in pages:
-        lines.extend(clean_lines(page_text(p)))
+    if src.is_file():  # PDF 에서 뽑은 텍스트 파일 (예: exams/raw/2025-civil/exam.txt)
+        lines = clean_lines(src.read_text(encoding="utf-8"))
+    else:              # 법무부 뷰어 쪽 HTML 폴더
+        pages = sorted(src.glob("*.html"), key=lambda p: int(p.stem) if p.stem.isdigit() else 0)
+        for p in pages:
+            lines.extend(clean_lines(page_text(p)))
     items = parse(lines)
     answers = {int(k): int(v) for k, v in (x.split(":") for x in a.answers.split(",") if ":" in x)}
     for it in items:

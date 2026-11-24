@@ -29,7 +29,8 @@ PREC_DATE_TO = _env("PREC_DATE_TO", "20251231")  # 판례 선고일 상한 (시�
 PREC_DIR = ROOT / "law_collector" / "data" / "prec"   # 수집한 판례 원문 (git 제외)
 # 법령: collect.py laws --as-of <LAW_AS_OF> 로 받은 시점 버전 폴더. LAW_AS_OF 가 비면 현행(data/law)
 LAW_DIR = ROOT / "law_collector" / "data" / (f"law_{LAW_AS_OF}" if LAW_AS_OF else "law")
-INDEX_DIR = ROOT / "data" / "index"                   # chunks.jsonl, 메모리 벡터 저장소 (git 제외)
+# chunks.jsonl·manifest (git 제외). 시험 시점이 다른 색인은 폴더를 나눈다 (예: INDEX_DIR=data/index_2025)
+INDEX_DIR = ROOT / _env("INDEX_DIR", "data/index")
 CACHE_DIR = ROOT / "cache"                            # 임베딩 캐시 (git 제외)
 EVAL_DIR = ROOT / "eval"
 RESULTS_DIR = ROOT / "results"

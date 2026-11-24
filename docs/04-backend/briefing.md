@@ -934,8 +934,20 @@ ADR-015의 파서 규칙이 13개 법령 전부에서 이슈·버린 줄 0으로
 | 실제 입력 확인 | 13개 법령 파싱(위 표) | 조문 4,265, 이슈 0, 버린 줄 0. 민법 1,116·삭제 77 유지 |
 | 실제 적재 | `python -m lawqa corpus import` (사용자 승인 2026-11-24) | 종료 0. **문서 40,096건(판례 35,831 + 조문 4,265), 건너뜀 0건, import_issues 0건.** 제외(오류 아님) deleted_articles=130, heading_lines=454, orphan_lines=0 |
 | 멱등 | 같은 명령 2회 실행 | `corpus_version`·행 수 동일(40,096), 중복 없음 — AC-05-3 |
-| GATE-10 | `corpus index` | **아직 실행 안 함**(임베딩 비용 발생, 사용자 승인 후 실행) |
+| GATE-10 | `python -m lawqa corpus index` (사용자 승인 2026-11-24) | **통과**. `index_version=idx-e7e52477-f86ae9e9 chunks=54969 embeddings=54969 skipped=0 complete=true` — `chunks`와 `embeddings`가 같고 `complete=true` |
 
 `corpus import`의 **건너뜀 0건**은 ADR-015가 의도한 확인 장치가 통과했다는 뜻이다 — 빈 본문 판례 정리가 끝났으므로
 색인이 `complete=true`가 될 수 있고 `eval freeze --stage final`이 막히지 않는다.
 적재된 `corpus_version`: `e7e52477…54d10b5`
+
+**색인 결과 (2026-11-24 14:23~14:29, 약 6분)**
+
+| 종류 | 청크 | 문서 | 문서당 | 최대 길이 |
+|---|---:|---:|---:|---:|
+| PRECEDENT | 50,690 | 35,831 | 1.41 | 1,500자 |
+| STATUTE_ARTICLE | 4,279 | 4,265 | 1.00 | 1,494자 |
+| **합계** | **54,969** | **40,096** | | |
+
+판례는 판시사항·판결요지의 `[n]` 항목 묶음과 1,500자 분할로 문서당 평균 1.41청크가 나왔고,
+조문은 거의 "1조 = 1청크"(4,265조 → 4,279청크, 긴 조문 14개만 항 경계로 나뉨)다.
+임베딩 API 550회(배치 100개), `langchain_pg_embedding` 54,969행으로 청크 수와 일치한다.

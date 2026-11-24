@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -581,3 +581,47 @@ next_readers: [DB, FE, QA]
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | GATE-06·07·08·09 | 06-quality-gates 명령 | 각 0줄 |
 | 실제 연동 | 시험 DB에 fixtures 가져오기·색인(16청크) 후 구성 A·B로 5개 보기 검색(실제 OpenAI 임베딩·PGVector) | A: 보기마다 벡터 순위·점수, B: BM25·벡터 순위와 결합 순위, 보기 목록 중복 없음, 문항 목록 16개 |
+
+### TKT-BE-M3-01 (검색 구성 C)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M3-01 | AC-08-1 재정렬 전 순위·후 순위 기록(입력 후보 수 `n_fuse`, 출력 `k_opt`) | 충족 | `Candidate.fused_rank`(전)·`final_rank`(후)·`rerank_score`, `test_output_order_follows_rerank_scores_not_fused_order` |
+| TKT-BE-M3-01 | AC-08-2 출력 순서 = reranker 점수 순서(결합 점수 순서 아님) | 충족 | 같은 시험 + 시험 DB 실제 실행(보기 5개 모두 점수 내림차순) |
+| TKT-BE-M3-01 | `reranker_device` 설정 반영 | 충족 | `huggingface_cross_encoder(model, device)`, `resolve_device`(cuda 불가 시 cpu + 경고) |
+| TKT-BE-M3-01 | GATE-04, LLM 재정렬 없음 | 충족 | §검증 결과 |
+- reranker 이름·입력 후보 수·출력 k의 실행 기록 저장은 `versions`·`config_sha`를 쓰는 TKT-BE-M3-05 몫이다.
+
+#### 만든 것
+- `retrieval/infrastructure/reranker.py`
+  - `RecordingCrossEncoder` — CrossEncoder를 감싸 재정렬이 계산한 점수를 남김(S-04 확인: `CrossEncoderReranker.compress_documents`는 점수를 문서에 붙이지 않음)
+  - `RerankOptionRetriever`(구성 C) — 구성 B 결과(상위 `n_fuse`) → `CrossEncoderReranker(top_n=k_opt)`(langchain_classic) → 상위 `k_opt`. 동점은 B 순서(정렬이 안정적). 모델 오류는 `RetrievalFailedError`
+  - `resolve_device(requested)`, `huggingface_cross_encoder(model_name, device)`
+- `retrieval/infrastructure/__init__.py`: `RetrieverFactory`가 구성 C를 조립(재정렬 모델은 처음 쓸 때 한 번 적재), `build_retrieval_service(..., cross_encoder=None)`(없으면 설정 `reranker`·`reranker_device`)
+- 시험 `tests/unit/retrieval/test_rerank_order.py` 7개(가짜 점수)
+
+#### 구현 중 자율 결정
+##### TKT-BE-M3-01 재정렬 점수는 한 번만 계산
+- 결정: ADR-010의 "`score()`로 따로 구해 기록" 대신 모델을 감싸 `CrossEncoderReranker`가 계산한 점수를 그대로 기록
+- 선택지: **A. 감싸서 기록 (권장·채택)** / B. 재정렬 후 `score()`를 한 번 더
+- 권장 이유: GPU 계산이 절반이고, 기록 점수와 실제 정렬에 쓴 점수가 반드시 같다(AC-08-2를 구조로 보장).
+- trade-off: A — `CrossEncoderReranker` 내부가 `model.score`를 한 번 부른다는 점에 기대(라이브러리 갱신 때 시험으로 확인). B — 계산 2배.
+
+##### TKT-BE-M3-01 `ContextualCompressionRetriever`는 조립하지 않음
+- 결정: 같은 B 결과에 `CrossEncoderReranker.compress_documents`를 직접 적용 — M2-04와 같은 이유(기록용 B 순위·점수를 이미 구했으므로 기본 검색기를 다시 부르면 질의 임베딩이 두 번)
+- 선택지: **A. 압축기 직접 적용 (권장·채택)** / B. `ContextualCompressionRetriever(base_retriever=Ensemble)`
+- 권장 이유: 재정렬 전 순위(B)와 재정렬 입력이 같은 목록임이 보장된다.
+- trade-off: A — ADR-010 조립 문구와 형태가 다름(부품은 같음). B — 호출 2배, 기록 불일치 가능.
+
+#### 설계와 다르게 한 것 / 질문
+- 위 두 결정(ADR-010 조립·점수 기록 방식) → ARCH에 ADR-010 문구 갱신 요청.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b·07·08·09 | 06-quality-gates 명령 + `retrieval/`의 다른 모듈 infrastructure import | 각 0줄 |
+| GATE-04 | `uv run pytest tests/unit -q` | 204 passed(이번 티켓 7개) |
+| GATE-04b | `uv run pytest tests/integration -q` | 46 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| 실제 연동 | 시험 DB 16청크, 구성 C로 5개 보기 검색(OpenAI 임베딩·PGVector·`bge-reranker-v2-m3` GPU, 캐시된 모델) | 보기마다 4개(`k_opt`), 재정렬 점수 내림차순, 결합 순위 7위 청크가 1위로 오르는 등 B 순서와 다름, 모델 적재 후 문항 1개 검색 3.8초 |

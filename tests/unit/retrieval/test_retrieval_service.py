@@ -198,7 +198,7 @@ def test_rrf_is_not_score_sum():
 
 
 # ── 조립 ──
-def test_factory_reuses_retriever_and_rejects_config_c():
+def test_factory_config_c_needs_cross_encoder():
     class Chunks:
         def list_chunks(self, index_version: str) -> list[Chunk]:
             return CHUNKS

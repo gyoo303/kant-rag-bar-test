@@ -6,12 +6,11 @@ LLM 에게 번호를 직접 고르게 하지 않고, 진술별 판단(verdict)�
 
 from __future__ import annotations
 
-import json
 import re
 import time
 
 from kant_rag.config import Settings
-from kant_rag.generation.llm import get_chat_model
+from kant_rag.generation.llmcall import call_llm, extract_json
 from kant_rag.mcq.parse import parse_combo, parse_ox
 from kant_rag.mcq.prompts import (
     MCQ_CLOSED_SYSTEM,
@@ -85,12 +84,12 @@ def rewrite_statement_queries(q: ExamQuestion, settings: Settings) -> tuple[dict
     original = {k: statement_query(q, v, c.stem_chars_in_query) for k, v in statements.items()}
     info: dict = {"original": original, "rewritten": {}, "fallback_keys": [], "error": None}
     try:
-        llm = get_chat_model(settings.models.llm_provider, settings.models.llm_model, 1024)
         listing = "\n".join(f"{k}. {v}" for k, v in statements.items())
-        raw = _text(llm.invoke([("system", MCQ_REWRITE_SYSTEM), ("human", MCQ_REWRITE_USER.format(
-            stem=q.stem[: c.stem_chars_in_query], statements=listing))]))
-        m = re.search(r"\{.*\}", raw, re.S)
-        data = json.loads(m.group(0)) if m else {}
+        raw, calls = call_llm(settings.models.llm_provider, settings.models.llm_model,
+                              [("system", MCQ_REWRITE_SYSTEM), ("human", MCQ_REWRITE_USER.format(
+                                  stem=q.stem[: c.stem_chars_in_query], statements=listing))], c.rewrite_max_tokens)
+        info["llm_calls"] = calls
+        data = extract_json(raw)
     except Exception as e:
         data = {}
         info["error"] = f"{type(e).__name__}: {e}"
@@ -107,10 +106,7 @@ def rewrite_statement_queries(q: ExamQuestion, settings: Settings) -> tuple[dict
 
 
 def _parse_judgments(raw: str, keys: list[str]) -> dict[str, StatementJudgment]:
-    m = re.search(r"\{.*\}", raw, re.S)
-    if not m:
-        raise ValueError("JSON 응답 없음")
-    data = json.loads(m.group(0)).get("judgments", {})
+    data = extract_json(raw, "judgments").get("judgments", {})
     return {k: StatementJudgment.model_validate(data[k]) for k in keys if k in data}
 
 
@@ -193,9 +189,9 @@ class MCQSolver:
         statements = q.statements()
         t = time.perf_counter()
         try:
-            llm = get_chat_model(self.s.models.llm_provider, self.s.models.llm_model, self.s.mcq.max_tokens)
-            msg = llm.invoke([("system", system), ("human", user)])
-            raw = _text(msg)
+            raw, calls = call_llm(self.s.models.llm_provider, self.s.models.llm_model,
+                                  [("system", system), ("human", user)], self.s.mcq.max_tokens)
+            rec.setdefault("llm_calls", []).extend({"step": "judge", **c} for c in calls)
             rec["raw_output"] = raw
             judgments = _parse_judgments(raw, list(statements))
         except Exception as e:

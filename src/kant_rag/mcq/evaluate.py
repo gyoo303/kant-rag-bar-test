@@ -54,6 +54,25 @@ def _latency(recs: list[dict], status_of) -> dict:
             "median_ms": round(statistics.median(ok), 1) if ok else None}
 
 
+def _tokens(recs: list[dict]) -> dict:
+    """호출 비용 비교용: 입력·출력(추론 포함) 토큰 합계와 재시도 수."""
+    calls = [c for r in recs for c in r.get("llm_calls", []) + (r.get("rewrite") or {}).get("llm_calls", [])]
+    tot = lambda k: sum(c.get(k) or 0 for c in calls)  # noqa: E731
+    return {"calls": len(calls), "input": tot("input_tokens"), "output": tot("output_tokens"),
+            "reasoning": tot("reasoning_tokens"), "retries": sum(c.get("attempt", 1) > 1 for c in calls),
+            "empty_responses": sum(bool(c.get("empty")) for c in calls)}
+
+
+def _git_commit() -> str | None:
+    import subprocess
+
+    try:
+        return subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True,
+                              timeout=5).stdout.strip() or None
+    except Exception:
+        return None
+
+
 def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode], label: str = "") -> Path:
     es = load_bar_evalset(eval_path)
     if es.split == "test" and not es.frozen:
@@ -101,7 +120,7 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             w.writerow([run_id, r["question_id"], r["config"], "no_answer", "no_answer", "", "", "", "",
                         r["answer"]["status"], "", "", "", "", ""])
 
-    summary = {"run_id": run_id, "eval": {"path": str(eval_path), "version": es.version, "split": es.split},
+    summary = {"run_id": run_id, "git_commit": _git_commit(), "eval": {"path": str(eval_path), "version": es.version, "split": es.split},
                "composition_warnings": check_bar_composition(es), "versions": settings.versions.model_dump(),
                "models": settings.models.model_dump(), "settings_fingerprint": settings.fingerprint(),
                "optimization": settings.optimization.model_dump(), "by_config": {}}
@@ -119,6 +138,7 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             "invalid_citation": sum(r["status"] == "invalid_citation" for r in rs),
             "no_answer_insufficient_status(사람 검토 전)": f"{sum(r['answer']['status'] == 'insufficient_evidence' for r in na)}/{len(na)}",
             "latency_mcq": _latency(rs, lambda r: r["status"]),
+            "llm_tokens": _tokens(rs),
             "latency_no_answer": _latency(na, lambda r: r["answer"]["status"]),
         }
     # 함정 유형별 정답률: 'RAG 가 어떤 함정을 막는가'

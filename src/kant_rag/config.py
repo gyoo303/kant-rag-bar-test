@@ -90,7 +90,8 @@ class MCQ(BaseModel):
     per_statement_k: int = 4
     stem_chars_in_query: int = 300
     max_context_chars: int = 16000
-    max_tokens: int = 4096
+    max_tokens: int = 16000  # 추론형 모델은 추론 토큰도 포함 → 넉넉히 (빈 응답이면 2배로 1회 재시도)
+    rewrite_max_tokens: int = 4000
 
 
 class Models(BaseModel):

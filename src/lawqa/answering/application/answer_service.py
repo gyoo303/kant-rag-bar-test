@@ -22,7 +22,6 @@ from lawqa.retrieval.domain.errors import (
     InvalidExamItemError,
     RerankerFailedError,
     RetrievalFailedError,
-    RewriteFailedError,
 )
 from lawqa.retrieval.domain.models import (
     Candidate,
@@ -31,7 +30,6 @@ from lawqa.retrieval.domain.models import (
     RetrievalConfig,
     RetrievalResult,
 )
-from lawqa.retrieval.domain.ports import QueryRewriterPort
 from lawqa.shared.logging_setup import log_event
 
 log = logging.getLogger(__name__)
@@ -107,13 +105,11 @@ class AnswerService:
         retrieval: RetrievalService,
         generator: AnswerGenerator,
         configs: Mapping[str, RetrievalConfig],
-        rewriter: QueryRewriterPort | None = None,
         timer: Callable[[], float] = time.perf_counter,
     ) -> None:
         self._retrieval = retrieval
         self._generator = generator
         self._configs = configs
-        self._rewriter = rewriter
         self._timer = timer
 
     def answer(self, item_input: Mapping[str, Any], config_name: str) -> AnswerEnvelope:
@@ -121,14 +117,12 @@ class AnswerService:
         config = self._configs.get(config_name)
         if config is None:
             raise ValueError(f"알 수 없는 구성: {config_name}")  # 호출 쪽 프로그램 오류
-        queries: tuple[OptionQuery, ...] = ()
         result: RetrievalResult | None = None
         context: tuple[Candidate, ...] = ()
         raw_output = ""
         try:
             item = _exam_item(item_input)
-            queries = tuple(self._queries(item, config))
-            result = self._retrieval.retrieve(item, config, list(queries))
+            result = self._retrieval.retrieve(item, config)  # C+R 리라이트·fallback 포함
             context = tuple(result.context(config.k_opt))
             model_answer = self._generator.generate(item, context)
             raw_output = model_answer.raw_output
@@ -170,19 +164,8 @@ class AnswerService:
             prompt_sha=self._generator.prompt_sha,
             raw_output=raw_output,
             latency_ms=latency_ms,
-            queries=queries,
+            queries=tuple(o.query for o in result.options) if result else (),
         )
-
-    def _queries(self, item: ExamItem, config: RetrievalConfig) -> list[OptionQuery]:
-        """기본 분해, C+R이면 리라이트(실패하면 모두 원 질의, INV-10)."""
-        queries = self._retrieval.decompose(item)
-        if not config.use_rewrite or self._rewriter is None:
-            return queries
-        try:
-            return self._rewriter.rewrite(item, queries)
-        except RewriteFailedError as exc:
-            log_event(log, "rewrite_fallback", reason=type(exc).__name__)
-            return [OptionQuery(q.option_no, q.original, None, fallback=True) for q in queries]
 
     @staticmethod
     def _failed(outcome: Outcome, code: ErrorCode, exc: Exception) -> Answer:

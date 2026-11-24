@@ -117,11 +117,18 @@ def test_service_searches_each_option_with_its_query():
     assert result.options[2].candidates[0].chunk_id == "d3#ARTICLE#1"
 
 
-def test_service_uses_given_queries_effective_text():
+def test_service_searches_with_rewritten_queries_for_c_plus_r():
+    class Rewriter:
+        def rewrite(self, item, queries):
+            return [OptionQuery(q.option_no, q.original, f"법률{q.option_no}") for q in queries]
+
     fake = RecordingRetriever()
-    queries = [OptionQuery(n, f"원{n}", rewritten=f"법률{n}") for n in range(1, 6)]
-    RetrievalService(retriever_for=lambda c: fake).retrieve(ITEM, _config(), queries)
+    config = _config("C+R", RetrievalMode.C)
+    result = RetrievalService(retriever_for=lambda c: fake, rewriter=Rewriter()).retrieve(
+        ITEM, config
+    )
     assert fake.queries == [f"법률{n}" for n in range(1, 6)]
+    assert result.options[0].query.rewritten == "법률1"
 
 
 def test_service_propagates_retrieval_failure():

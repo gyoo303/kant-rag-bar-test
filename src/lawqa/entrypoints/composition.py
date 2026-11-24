@@ -22,7 +22,12 @@ from lawqa.corpus.infrastructure import build_chunk_query_service, openai_embedd
 from lawqa.corpus.infrastructure.kiwi_tokenizer import KiwiTokenizer
 from lawqa.corpus.infrastructure.vector_index import sqlalchemy_url
 from lawqa.retrieval.domain.models import RetrievalConfig
-from lawqa.retrieval.infrastructure import build_retrieval_service, retrieval_config
+from lawqa.retrieval.domain.ports import QueryRewriterPort
+from lawqa.retrieval.infrastructure import (
+    build_retrieval_service,
+    build_rewriter,
+    retrieval_config,
+)
 from lawqa.shared.settings import RUN_CONFIGS, Settings, load_settings
 
 
@@ -56,6 +61,7 @@ def build_answer_runtime(
     embeddings: Embeddings | None = None,
     cross_encoder: Callable[[], BaseCrossEncoder] | None = None,
     generator: AnswerGenerator | None = None,
+    rewriter: QueryRewriterPort | None = None,
 ) -> AnswerRuntime:
     """`conn`은 프로세스가 살아 있는 동안 열어 둔다(검색기가 청크를 처음 쓸 때 읽음)."""
     base = settings or load_settings("base")
@@ -69,6 +75,7 @@ def build_answer_runtime(
         embeddings=embeddings or openai_embeddings(base),
         tokenize=KiwiTokenizer(),
         cross_encoder=cross_encoder,
+        rewriter=rewriter or build_rewriter(base),
     )
     service = AnswerService(
         retrieval=retrieval,

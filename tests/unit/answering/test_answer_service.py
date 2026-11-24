@@ -93,10 +93,11 @@ def _model(answer=2, cites=("c2a",), sufficient=True) -> ModelAnswer:
 def _service(retriever=None, generator=None, rewriter=None, ticks=(0.0, 0.25)):
     clock = iter(ticks)
     return AnswerService(
-        retrieval=RetrievalService(retriever_for=lambda c: retriever or FakeRetriever()),
+        retrieval=RetrievalService(
+            retriever_for=lambda c: retriever or FakeRetriever(), rewriter=rewriter
+        ),
         generator=generator or FakeGenerator(_model()),
         configs=CONFIGS,
-        rewriter=rewriter,
         timer=lambda: next(clock),
     )
 

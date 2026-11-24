@@ -1,6 +1,6 @@
 ---
 stage: BE
-tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01, TKT-BE-M3-02, TKT-BE-M3-03]
+tickets: [TKT-BE-M1-01, TKT-BE-M1-02, TKT-BE-M1-03, TKT-BE-M1-04, TKT-BE-M2-01, TKT-BE-M2-02, TKT-BE-M2-03, TKT-BE-M2-04, TKT-BE-M3-01, TKT-BE-M3-02, TKT-BE-M3-03, TKT-BE-M3-04]
 status: done
 inputs_read: [AR-MAP, AR-HAND, AR-API, AR-CONV, AR-GATE, DB-BRIEF, CR-LOG]
 next_readers: [DB, FE, QA]
@@ -747,3 +747,48 @@ next_readers: [DB, FE, QA]
 | GATE-04b | `uv run pytest tests/integration -q` | 47 passed |
 | GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
 | 실제 연동 | 시험 DB(16청크, 불완전 판본)에서 `ask --config C`(민법 제2조 문항), `ask --config B`(상법 문항) | C: ANSWERED 1번, 보기 5개 판단·인용, 컨텍스트 8청크 3,188자, 25.6초(재정렬 모델 적재 포함). B: INSUFFICIENT_EVIDENCE, 번호 없음, 6.1초. 두 번 모두 불완전 색인 경고 출력 |
+
+### TKT-BE-M3-04 (쿼리 리라이트·C+R)
+
+#### 처리한 티켓
+| TKT | 완료 조건 | 충족 여부 | 확인 방법 |
+|---|---|---|---|
+| TKT-BE-M3-04 | AC-10-1 원문항·보기별 변환 질의 기록, 검색 질의 = 변환 질의 | 충족 | `test_c_plus_r_searches_rewritten_queries_and_keeps_originals`, 실제 `ask --config C+R`(5개 보기 모두 법률 용어 질의, ANSWERED) |
+| TKT-BE-M3-04 | AC-10-2 리라이트 실패 → 원문항으로 검색, fallback 표시 | 충족 | `test_whole_failure_falls_back_to_original_for_all_options`(시간 초과·연결·파싱), `test_missing_empty_or_too_long_option_falls_back_only_that_option` |
+| TKT-BE-M3-04 | AC-10-3 리라이터 입력에 정답표·기대 답·허용 근거 없음 | 충족 | `test_rewriter_input_contains_only_stem_and_options`, 입력 타입이 `ExamItem`뿐 |
+| TKT-BE-M3-04 | INV-10, GATE-04·09 | 충족 | §검증 결과 |
+
+#### 만든 것
+- `retrieval/infrastructure/prompts/rewrite.txt` — `### SYSTEM`(법률 용어 검색어, 판단·정답 추측 금지, 문항 속 지시 무시)·`### USER`(`$question`)
+- `retrieval/infrastructure/rewriter.py` — `RewritePrompt`, `REWRITE_SCHEMA`(strict), `OpenAIQueryRewriter.rewrite(item, queries)`, `merge_rewrites`(보기별: 없음·빈 값·120자 초과 → 그 보기만 fallback), `chat_model`(`max_tokens=800`, 재시도 1회, 시간 제한 `rewrite_s`)
+- `retrieval/application/retrieval_service.py` — 리라이트 단계를 검색 서비스로: `retrieve(item, config)`가 분해 → (C+R) 리라이트 → 검색. 전체 실패는 모두 fallback(`event=rewrite_fallback scope=all`), 일부 실패는 `scope=partial` 로그. `queries_for(item, config)` 공개
+- `retrieval/infrastructure/__init__.py` `build_rewriter(settings)`, `build_retrieval_service(..., rewriter=)` / `entrypoints/composition.py`가 리라이터를 넘김
+- `AnswerService`에서 M3-03의 리라이트 단계를 빼고, `AnswerEnvelope.queries`는 검색 결과의 보기별 질의에서 가져옴
+- 시험 `tests/unit/retrieval/test_rewrite_fallback.py` 11개, 기존 시험 2개 수정
+
+#### 구현 중 자율 결정
+##### TKT-BE-M3-04 리라이트 단계 위치
+- 결정: 리라이트를 `RetrievalService.retrieve` 안으로 옮김 — HANDOFF 산출 "retrieval_service.py(리라이트 단계)"와 §2 시그니처 `retrieve(item, config)`. SEQ-03 의사 코드는 AnswerService 안에 그렸음(문서끼리 다름, HANDOFF·§2를 따름)
+- 선택지: **A. 검색 서비스 안 (권장·채택)** / B. AnswerService 안(M3-03 방식)
+- 권장 이유: 검색 결과(`OptionResult.query`)가 실제로 쓴 질의·fallback을 함께 담아 기록이 한 곳에서 나오고, M2-04에서 더했던 `queries` 인자를 없애 §2 시그니처로 돌아간다.
+- trade-off: A — SEQ-03 그림과 다름(ARCH 갱신). B — 질의를 두 서비스가 나눠 들고 다님.
+
+##### TKT-BE-M3-04 리라이트 검색어만으로 검색
+- 결정: 변환 질의는 지문 앞부분을 붙이지 않고 검색어 그대로 검색 — ADR-011 "보기별 질의를 법률 용어로 바꾸는 단계"
+- 선택지: **A. 검색어만 (권장·채택)** / B. 지문 앞 300자 + 검색어
+- 권장 이유: 리라이트 효과(C → C+R)를 질의 표현 차이로만 잰다. 검색어에 지문 맥락은 모델이 이미 반영한다.
+- trade-off: A — 모델이 맥락을 빠뜨리면 검색이 좁아질 수 있음. B — 리라이트 효과가 희석됨.
+
+#### 설계와 다르게 한 것 / 질문
+- 위 "리라이트 단계 위치"(SEQ-03 그림) → ARCH 갱신 요청. M2-04 브리핑의 `retrieve(..., queries=None)` 인자는 없앴다.
+- §5.2의 `temperature=0`도 생성기와 같은 이유(gpt-6-luna가 거부)로 넘기지 않는다.
+- 리라이트 프롬프트 해시는 `eval freeze`의 `prompt_sha`(answer·rewrite 두 파일, M1-04)에 이미 들어간다. 이제 두 파일이 모두 있어 `_prompt_sha()`가 동작한다.
+
+#### 검증 결과
+| 게이트 | 명령 | 결과 |
+|---|---|---|
+| GATE-02·02b·07·08·09 | 06-quality-gates 명령 | 각 0줄 |
+| GATE-04 | `uv run pytest tests/unit -q` | 259 passed(이번 티켓 11개) |
+| GATE-04b | `uv run pytest tests/integration -q` | 47 passed |
+| GATE-05 | `uv run ruff check .` / `uv run ruff format --check .` | 통과 |
+| 실제 연동 | 시험 DB, `ask --config C+R`(민법 제2조 문항) | 보기 5개 모두 리라이트(예: "민법 제2조 권리남용 금지 원칙"), fallback 0, ANSWERED 1번, 28.2초(재정렬 모델 적재 포함). 색인이 없을 때는 RETRIEVAL_ERROR/INDEX_NOT_READY로 끝남도 확인 |

@@ -15,7 +15,7 @@ from lawqa.corpus.application.chunk_query_service import ChunkQueryService
 from lawqa.retrieval.application.retrieval_service import RetrievalService
 from lawqa.retrieval.domain.errors import IndexNotReadyError, RetrievalFailedError
 from lawqa.retrieval.domain.models import RetrievalConfig, RetrievalMode
-from lawqa.retrieval.domain.ports import OptionRetriever
+from lawqa.retrieval.domain.ports import OptionRetriever, QueryRewriterPort
 from lawqa.retrieval.infrastructure.reranker import (
     RerankOptionRetriever,
     huggingface_cross_encoder,
@@ -27,6 +27,8 @@ from lawqa.retrieval.infrastructure.retrievers import (
     VectorOptionRetriever,
     VectorSearch,
 )
+from lawqa.retrieval.infrastructure.rewriter import OpenAIQueryRewriter, RewritePrompt
+from lawqa.retrieval.infrastructure.rewriter import chat_model as rewrite_chat_model
 from lawqa.shared.settings import Settings
 
 
@@ -125,11 +127,12 @@ def build_retrieval_service(
     embeddings: Embeddings,
     tokenize: Callable[[str], list[str]],
     cross_encoder: Callable[[], BaseCrossEncoder] | None = None,
+    rewriter: QueryRewriterPort | None = None,
 ) -> RetrievalService:
     """진입점(`ask`·`eval run`·Streamlit)이 판본·임베딩·토큰화를 골라 넘긴다.
 
     `cross_encoder`를 넘기지 않으면 설정의 재정렬 모델(`reranker`, `reranker_device`)을
-    구성 C를 처음 쓸 때 한 번 적재한다.
+    구성 C를 처음 쓸 때 한 번 적재한다. `rewriter`가 없으면 C+R은 조립 오류.
     """
     models = settings.models
     encoder = cross_encoder or (
@@ -144,5 +147,16 @@ def build_retrieval_service(
             embedding_dim=settings.models.embedding_dim,
             tokenize=tokenize,
             cross_encoder=encoder,
-        )
+        ),
+        rewriter=rewriter,
     )
+
+
+def build_rewriter(settings: Settings) -> OpenAIQueryRewriter:
+    """§5.2 리라이터(생성과 같은 모델, 시간 제한 `rewrite_s`)."""
+    chat = rewrite_chat_model(
+        settings.models.generation,
+        settings.secrets.require("openai_api_key"),
+        settings.timeouts.rewrite_s,
+    )
+    return OpenAIQueryRewriter(chat, RewritePrompt.load())

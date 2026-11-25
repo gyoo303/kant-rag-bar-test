@@ -1,17 +1,15 @@
 {
   "run_id": "20261125-152123-bar12-adv-v5",
   "graded": 70,
-  "correct": 65,
+  "correct": 67,
   "wrong": [
-    2,
     13,
-    21,
     40,
     69
   ],
   "by_form": {
     "single": "45/47",
-    "count": "4/7",
+    "count": "6/7",
     "ox": "4/4",
     "combination": "11/11",
     "blank": "1/1"
@@ -37,8 +35,8 @@
       "config": "hybrid_rerank",
       "form": "count",
       "predicted": 3,
-      "answer": 2,
-      "correct": false,
+      "answer": 3,
+      "correct": true,
       "status": "ok"
     },
     {
@@ -208,8 +206,8 @@
       "config": "hybrid_rerank",
       "form": "count",
       "predicted": 3,
-      "answer": 4,
-      "correct": false,
+      "answer": 3,
+      "correct": true,
       "status": "ok"
     },
     {

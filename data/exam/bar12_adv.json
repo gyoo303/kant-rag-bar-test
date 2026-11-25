@@ -1,6 +1,6 @@
 {
   "exam": "제12회(2023) 변호사시험 민사법 선택형 레드팀 변형본",
-  "source": "사용자 제공 레드팀 변형본 · 변형 정답(레드팀 검증 문서)",
+  "source": "사용자 제공 레드팀 변형본 · 변형 정답(레드팀 문서, 문 2·21 원문 대조로 정정)",
   "items": [
     {
       "id": "BAR12-ADV-001",
@@ -49,7 +49,7 @@
         "4": "3개",
         "5": "4개"
       },
-      "answer": 2,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": null,
@@ -613,7 +613,7 @@
         "4": "3개",
         "5": "4개"
       },
-      "answer": 4,
+      "answer": 3,
       "statement_labels": {},
       "evidence": [],
       "split": null,

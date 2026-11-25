@@ -363,3 +363,41 @@ def calibration_samples(run_dirs: list[Path], items: dict[int, ExamQuestion] | N
                 conf = j["confidence"] / 0.5 if j.get("source") == "knowledge" else j["confidence"]  # 결합 배율 되돌림
                 out.append((j.get("source", "evidence"), min(conf, 1.0), (j["verdict"] == "true") == labels[k]))
     return out
+
+
+# ---------- 나중 채점 (regrade): 정답 없이 푼 실행을 정답이 들어간 문항 파일로 채점 ----------
+def regrade_run(run_dir: Path, items: dict[int, ExamQuestion]) -> dict:
+    """예측(predicted)은 그대로 두고 정답만 대조. 진술 단위(정답/유보/확신 오답)와 오답 목록을 regrade.json 에."""
+    from kant_rag.mcq.schemas import derive_statement_labels
+
+    recs = [json.loads(x) for x in (run_dir / "records.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+    rows, st = [], {"correct": 0, "unknown": 0, "wrong": 0, "confident_wrong(≥0.9)": 0}
+    by_form: dict[str, list[int]] = {}
+    for r in recs:
+        if r.get("eval", {}).get("kind", "mcq") != "mcq":
+            continue
+        q = items.get(r.get("number"))
+        if q is None or q.answer is None:
+            continue
+        ok = r.get("predicted") == q.answer
+        rows.append({"number": q.number, "config": r.get("config"), "form": q.form, "predicted": r.get("predicted"),
+                     "answer": q.answer, "correct": ok, "status": r.get("status")})
+        by_form.setdefault(q.form, [0, 0])
+        by_form[q.form][0] += ok
+        by_form[q.form][1] += 1
+        labels = derive_statement_labels(q)
+        for k, j in (r.get("judgments") or {}).items():
+            if k not in labels:
+                continue
+            if j["verdict"] == "unknown":
+                st["unknown"] += 1
+            elif (j["verdict"] == "true") == labels[k]:
+                st["correct"] += 1
+            else:
+                st["wrong"] += 1
+                st["confident_wrong(≥0.9)"] += j["confidence"] >= 0.9
+    out = {"run_id": run_dir.name, "graded": len(rows), "correct": sum(x["correct"] for x in rows),
+           "wrong": [x["number"] for x in rows if not x["correct"]],
+           "by_form": {k: f"{a}/{b}" for k, (a, b) in by_form.items()}, "statements": st, "rows": rows}
+    (run_dir / "regrade.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    return out

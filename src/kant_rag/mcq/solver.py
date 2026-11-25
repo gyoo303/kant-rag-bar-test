@@ -70,6 +70,13 @@ def choose_answer(q: ExamQuestion, judgments: dict[str, StatementJudgment],
             for key in q.items:
                 s *= _support(judgments.get(key), target if key in chosen else not target)
             scores[n] = s
+    elif q.form == "blank":  # 괄호 넣기형: 보기의 값 조합이 모두 참일 정도
+        cands = {lv: k for k, lv in q.blank_candidates().items()}
+        for n, fill in q.blanks.items():
+            s = 1.0
+            for letter, v in fill.items():
+                s *= _support(judgments.get(cands.get((letter, v), "")), True)
+            scores[n] = s
     elif q.form == "ox":
         for n, text in q.options.items():
             labels = parse_ox(text)
@@ -133,6 +140,9 @@ def _required(q: ExamQuestion, n: int) -> dict[str, bool]:
         return {k: (target if k in chosen else not target) for k in q.items}
     if q.form == "ox":
         return parse_ox(text)
+    if q.form == "blank":
+        fill = q.blanks.get(n, {})
+        return {k: fill.get(letter) == v for k, (letter, v) in q.blank_candidates().items()}
     return {}
 
 

@@ -135,3 +135,34 @@ def test_solve_end_to_end(monkeypatch, preset):
         assert rec["judgments"]["ㄴ"]["confidence"] == pytest.approx(0.95 * 0.85, abs=1e-3)
     else:
         assert "asof" not in rec and "quote_check" not in rec and all(d is None for _, d in r.calls)
+
+
+def test_blank_form_and_regrade(tmp_path):
+    from kant_rag.mcq.evaluate import regrade_run
+    from kant_rag.mcq.parse import parse_exam_text
+    from kant_rag.mcq.solver import choose_answer
+    text = """문  56.
+  설명 중 각 괄호 안에 들어갈 말을 올바르게 나열한 것은?
+ㄱ. 압류는 ( A ).
+ㄴ. 피보전채권이 될 수 ( B ).
+  A          B
+    ① 허용되지 않는다  있다
+    ② 허용된다     없다
+    ③ 허용된다     있다
+    ④ 허용되지 않는다  없다
+    ⑤ 허용된다  있다
+"""
+    q = parse_exam_text(text, "T")[0]
+    assert q.form == "blank" and q.blank_items == {"A": "ㄱ", "B": "ㄴ"}
+    assert set(q.statements()) == {"A1", "A2", "B1", "B2"} and "[허용된다]" in q.statements()["A2"]
+    t = StatementJudgment(verdict="true", confidence=0.9, reason="")
+    f = StatementJudgment(verdict="false", confidence=0.9, reason="")
+    best, _ = choose_answer(q, {"A1": f, "A2": t, "B1": t, "B2": f})
+    assert best in (3, 5)  # ③·⑤ 같은 조합 (시험지 오류 대비, 동점이면 작은 번호)
+    d = tmp_path / "run"
+    d.mkdir()
+    rec = {"number": 56, "config": "hybrid_rerank", "predicted": 3, "status": "ok", "eval": {"kind": "mcq"},
+           "judgments": {"A2": t.model_dump(), "A1": f.model_dump(), "B1": t.model_dump(), "B2": f.model_dump()}}
+    (d / "records.jsonl").write_text(json.dumps(rec, ensure_ascii=False) + "\n", encoding="utf-8")
+    r = regrade_run(d, {56: q.model_copy(update={"answer": 3})})
+    assert r["correct"] == 1 and r["statements"]["correct"] == 4

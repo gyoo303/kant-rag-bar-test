@@ -189,3 +189,26 @@ def test_parse_circled_numbers_inside_stem():
     q = parse_exam_text(text, "T")[0]
     assert q.form == "combination" and set(q.items) == {"ㄱ", "ㄴ", "ㄷ"}
     assert "① 중도금 미지급" in q.stem and q.options[5] == "ㄱ, ㄴ, ㄷ"
+
+
+def test_parse_count_form():
+    from kant_rag.mcq.parse import parse_exam_text
+    from kant_rag.mcq.solver import choose_answer
+    from kant_rag.mcq.schemas import StatementJudgment
+
+    text = """문  2.
+ 설명 중 옳은 것은 모두 몇 개인가?
+ㄱ. 가 진술
+ㄴ. 나 진술
+ㄷ. 다 진술
+ ① 0개
+ ② 1개
+ ③ 2개
+ ④ 3개
+ ⑤ 4개
+"""
+    q = parse_exam_text(text, "T")[0]
+    assert q.form == "count" and set(q.items) == {"ㄱ", "ㄴ", "ㄷ"}
+    t = StatementJudgment(verdict="true", confidence=1.0, reason="")
+    f = StatementJudgment(verdict="false", confidence=1.0, reason="")
+    assert choose_answer(q, {"ㄱ": t, "ㄴ": t, "ㄷ": f})[0] == 3   # 옳은 것 2개 → ③

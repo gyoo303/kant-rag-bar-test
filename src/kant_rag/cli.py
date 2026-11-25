@@ -133,6 +133,10 @@ def main(argv: list[str] | None = None) -> None:
     cp.add_argument("run_b")
     cp.add_argument("--exam", default=None, help="eval 기록에 정답이 없을 때 문항 파일")
 
+    rg = sub.add_parser("regrade", help="정답 없이 푼 실행을 나중에 정답이 들어간 문항 파일로 채점 (→ regrade.json)")
+    rg.add_argument("run_dir")
+    rg.add_argument("--exam", required=True, help="정답을 넣어 다시 만든 문항 JSON")
+
     cb = sub.add_parser("calibrate", help="실행 기록의 진술 판단으로 확신도 보정표 생성 (튜닝 세트 실행만 쓸 것)")
     cb.add_argument("run_dirs", nargs="+")
     cb.add_argument("--exam", default=None)
@@ -564,6 +568,15 @@ def main(argv: list[str] | None = None) -> None:
         print(f"→ {r['a_correct']} vs {r['b_correct']} / {r['n']}, 한쪽만 정답 {len(r['only_a'])}:{len(r['only_b'])}, "
               f"McNemar p={r['mcnemar_p']}" + (" (0.05 미만: 차이가 우연일 가능성 낮음)" if r["mcnemar_p"] < 0.05
                                                else " (0.05 이상: 이 차이만으로는 우열을 말하기 어려움)"))
+
+    elif args.cmd == "regrade":
+        from kant_rag.mcq.evaluate import regrade_run
+        from kant_rag.mcq.io import load_bar_evalset
+
+        items = {q.number: q for q in load_bar_evalset(Path(args.exam)).items}
+        r = regrade_run(Path(args.run_dir), items)
+        print(f"{r['run_id']}: 정답 {r['correct']}/{r['graded']} · 오답 {r['wrong']} · 형식별 {r['by_form']} · "
+              f"진술 {r['statements']} → {Path(args.run_dir) / 'regrade.json'}")
 
     elif args.cmd == "calibrate":
         from kant_rag.mcq.defense import fit_calibration

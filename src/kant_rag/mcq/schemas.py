@@ -10,7 +10,7 @@ from kant_rag.evaluation.dataset import EvidenceRef
 
 CIRCLED = "①②③④⑤"
 Polarity = Literal["correct", "incorrect"]  # "옳은 것은?" / "옳지 않은 것은?"
-Form = Literal["single", "combination", "ox", "count"]  # 보기 하나 / ㄱㄴㄷ 조합 / ○× 조합 / 옳은 것의 개수
+Form = Literal["single", "combination", "ox", "count", "blank"]  # 보기 하나 / ㄱㄴㄷ 조합 / ○× 조합 / 옳은 것의 개수 / 괄호 넣기
 
 
 class ExamQuestion(BaseModel):
@@ -28,6 +28,9 @@ class ExamQuestion(BaseModel):
     type: Literal["direct", "paraphrase", "no_answer"] | None = None
     note: str | None = None  # 유형 분류 근거, 근거 표기 메모 등
     traps: list[str] = Field(default_factory=list)  # AI 함정 유형 (mcq/traps.py: 자동 + 팀 수동)
+    # 괄호 넣기형: 보기 번호 → {빈칸: 값}, 빈칸 → 그 빈칸이 있는 진술 키
+    blanks: dict[int, dict[str, str]] = Field(default_factory=dict)
+    blank_items: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _check(self):
@@ -44,14 +47,39 @@ class ExamQuestion(BaseModel):
 
     @property
     def form(self) -> Form:
+        if self.blanks:
+            return "blank"
         if self.items and all("(○)" in o or "(×)" in o for o in self.options.values()):
             return "ox"
         if self.items and ("몇 개" in self.stem or "개수" in self.stem):
             return "count"
         return "combination" if self.items else "single"
 
+    def blank_candidates(self) -> dict[str, tuple[str, str]]:
+        """괄호 넣기형: 후보 진술 키(A1, A2 …) → (빈칸, 값). 빈칸마다 보기에 나온 값의 순서대로."""
+        out: dict[str, tuple[str, str]] = {}
+        for letter in sorted(self.blank_items):
+            seen: list[str] = []
+            for n in sorted(self.blanks):
+                v = self.blanks[n].get(letter)
+                if v is not None and v not in seen:
+                    seen.append(v)
+            for i, v in enumerate(seen, 1):
+                out[f"{letter}{i}"] = (letter, v)
+        return out
+
     def statements(self) -> dict[str, str]:
-        """판단 대상 진술: 조합/개수형은 ㄱㄴㄷ…, 단일형은 보기 1~5."""
+        """판단 대상 진술: 조합/개수형은 ㄱㄴㄷ…, 단일형은 보기 1~5, 괄호 넣기형은 빈칸에 후보 값을 넣은 문장."""
+        if self.blanks:
+            import re as _re
+
+            out = {}
+            for key, (letter, value) in self.blank_candidates().items():
+                item = self.blank_items[letter]
+                text = _re.sub(r"\(\s*" + letter + r"\s*\)", f"[{value}]", self.items[item])
+                text = _re.sub(r"\(\s*([A-H])\s*\)", r"(빈칸 \1)", text)
+                out[key] = f"({item} 진술, 빈칸 {letter} = {value}) {text}"
+            return out
         return dict(self.items) if self.items else {str(k): v for k, v in self.options.items()}
 
 
@@ -86,4 +114,7 @@ def derive_statement_labels(q: ExamQuestion) -> dict[str, bool]:
         return {k: (target if k in chosen else not target) for k in q.items}
     if q.form == "ox":
         return parse_ox(q.options[q.answer])
+    if q.form == "blank":
+        right = q.blanks.get(q.answer, {})
+        return {k: right.get(letter) == v for k, (letter, v) in q.blank_candidates().items()}
     return {}

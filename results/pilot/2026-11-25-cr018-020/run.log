@@ -1,0 +1,20 @@
+문항 70개 중 70개 실행 (이미 완료 0개), 구성 C+R
+W1125 09:59:29.339000 17348 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]Loading weights:  11%|█         | 42/393 [00:00<00:00, 416.33it/s]Loading weights:  21%|██▏       | 84/393 [00:00<00:00, 347.09it/s]Loading weights:  31%|███       | 120/393 [00:00<00:00, 325.43it/s]Loading weights:  39%|███▉      | 153/393 [00:00<00:00, 305.43it/s]Loading weights:  47%|████▋     | 186/393 [00:00<00:00, 299.97it/s]Loading weights:  56%|█████▌    | 219/393 [00:00<00:00, 300.06it/s]Loading weights:  65%|██████▍   | 254/393 [00:00<00:00, 313.93it/s]Loading weights: 100%|██████████| 393/393 [00:00<00:00, 447.43it/s]
+[1/70] 문 1: ANSWERED answer_no=3 58.6s
+[2/70] 문 2: ANSWERED answer_no=5 23.6s
+[3/70] 문 3: ANSWERED answer_no=5 21.2s
+[4/70] 문 4: ANSWERED answer_no=5 20.1s
+[5/70] 문 5: ANSWERED answer_no=1 22.1s
+[6/70] 문 6: ANSWERED answer_no=1 26.9s
+[7/70] 문 7: ANSWERED answer_no=3 32.0s
+[8/70] 문 8: ANSWERED answer_no=2 76.4s
+[9/70] 문 9: ANSWERED answer_no=1 70.1s
+[10/70] 문 10: ANSWERED answer_no=4 24.1s
+[11/70] 문 11: ANSWERED answer_no=4 78.0s
+[12/70] 문 12: ANSWERED answer_no=4 20.5s
+[13/70] 문 13: ANSWERED answer_no=2 24.2s
+[14/70] 문 14: ANSWERED answer_no=1 76.3s
+[15/70] 문 15: ANSWERED answer_no=4 76.5s
+[16/70] 문 16: ANSWERED answer_no=3 73.5s
+문항 70개 중 54개 실행 (이미 완료 16개), 구성 C+R

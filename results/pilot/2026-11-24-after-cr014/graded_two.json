@@ -1,0 +1,702 @@
+[
+ {
+  "no": 1,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 2,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 3,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 4,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 5,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 6,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 7,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 8,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 5,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 9,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 3,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 10,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 11,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 4,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 12,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 13,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 14,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 15,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 4,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 16,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": false
+ },
+ {
+  "no": 17,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 18,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 19,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 4,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 20,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 21,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 22,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": false
+ },
+ {
+  "no": 23,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 24,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 25,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 26,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 2,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 27,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 28,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 29,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 30,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 2,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 31,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 32,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 33,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": false
+ },
+ {
+  "no": 34,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 35,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 4,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 36,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 37,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 38,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 39,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 40,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": false
+ },
+ {
+  "no": 41,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 42,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 43,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 44,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 45,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 46,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": false
+ },
+ {
+  "no": 47,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 48,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 49,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 50,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 51,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 52,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 5,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 53,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": false
+ },
+ {
+  "no": 54,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 55,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 56,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 57,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 58,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 59,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 60,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 61,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 62,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 63,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 5,
+  "answer_correct": 0,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 64,
+  "outcome": "ANSWERED",
+  "picked": 2,
+  "key": 2,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 65,
+  "outcome": "ANSWERED",
+  "picked": 1,
+  "key": 1,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 66,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 67,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": false,
+  "confident_correct": 0,
+  "combo": true
+ },
+ {
+  "no": 68,
+  "outcome": "ANSWERED",
+  "picked": 5,
+  "key": 5,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ },
+ {
+  "no": 69,
+  "outcome": "ANSWERED",
+  "picked": 3,
+  "key": 3,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": false
+ },
+ {
+  "no": 70,
+  "outcome": "ANSWERED",
+  "picked": 4,
+  "key": 4,
+  "answer_correct": 1,
+  "evidence_sufficient": true,
+  "confident_correct": 1,
+  "combo": true
+ }
+]

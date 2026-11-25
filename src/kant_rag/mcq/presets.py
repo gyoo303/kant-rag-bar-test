@@ -6,8 +6,10 @@
   a34  : + 같은 판결 다른 항목(A3) + 준용 조문(A4)
   b    : + 판단 프롬프트 v2
   c    : + closed-book 판단 결합(유보 진술만, 확신도×0.5)  = v3 전체
-  d    : b + 번호 계산 예비 규칙 + 당사자 지위 리라이트(질의 3개) + 판례 선고일·전원합의체 표시 + 판단 프롬프트 v3
-  dc   : d + 판단 결합 (= v4 전체)
+  d    : b + 번호 계산 예비 규칙 + 당사자 지위 리라이트(질의 3개) + 진술 원문 질의 + 판례 선고일·전원합의체 표시
+         + 판단 프롬프트 v4(진술 풀어 쓰기·조문 단서 범위) + 동점 재판단
+  dc   : d + 판단 결합(지식 원 확신도 0.8 이상만)
+  v4   : = d (별칭)
 """
 
 from __future__ import annotations
@@ -27,8 +29,11 @@ PRESETS["c"] = {**PRESETS["b"], "mcq.fusion": "fill_unknown"}
 PRESETS["v3"] = PRESETS["c"]
 # 개선안 v4 (bar13 오답 분석): b 기반 + 번호 계산 예비 규칙 + 당사자 지위 리라이트 + 판례 선고일·전원합의체 표시 + 판단 프롬프트 v3
 PRESETS["d"] = {**PRESETS["b"], "mcq.answer_fallback": True, "mcq.rewrite_version": "v3", "mcq.rewrite_queries": 3,
-                "mcq.rewrite_stem_chars": 800, "mcq.case_meta": True, "mcq.prompt_version": "v3"}
-PRESETS["dc"] = {**PRESETS["d"], "mcq.fusion": "fill_unknown"}  # d + 유보 진술 지식 결합
+                "mcq.rewrite_stem_chars": 800, "mcq.case_meta": True, "mcq.prompt_version": "v4",
+                # 적대적 변형본 분석 (docs/analysis/report-2026-adv-v3.md): 진술 풀어 쓰기, 원문 질의, 동점 재판단
+                "mcq.original_query": True, "mcq.tie_rejudge": True}
+PRESETS["dc"] = {**PRESETS["d"], "mcq.fusion": "fill_unknown", "mcq.fusion_min_conf": 0.8}  # d + 지식 결합(원 확신도 0.8 이상만)
+PRESETS["v4"] = PRESETS["d"]  # 별칭: --preset v4 = d
 
 
 def parse_sets(items: list[str] | None) -> dict[str, Any]:

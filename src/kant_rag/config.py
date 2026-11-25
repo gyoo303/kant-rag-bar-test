@@ -109,6 +109,9 @@ class MCQ(BaseModel):
     rewrite_version: str = "v2"       # v3 = 쟁점·예외 + 사례 속 당사자 지위 질의 (rewrite_queries 3 까지)
     rewrite_stem_chars: int = 300     # 리라이트에 보여 줄 발문 길이 (사례형은 당사자 관계가 뒤쪽에 있음)
     case_meta: bool = False           # 근거 머리에 판례 선고일·전원합의체 여부 표시
+    original_query: bool = False      # 리라이트 질의에 진술 원문(발문 제외) 질의도 더해 검색 (검색 안정성)
+    tie_rejudge: bool = False         # 최고점 보기가 동점이면 동점을 만든 진술만 다시 판단 (LLM 1회)
+    fusion_min_conf: float = 0.0      # C: 지식 판단의 원 확신도가 이 값 미만이면 채우지 않음 (0 = 제한 없음)
 
 
 class Models(BaseModel):

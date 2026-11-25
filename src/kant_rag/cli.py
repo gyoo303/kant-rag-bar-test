@@ -88,12 +88,12 @@ def main(argv: list[str] | None = None) -> None:
     sv.add_argument("number", type=int)
     sv.add_argument("--mode", default="hybrid_rerank", choices=["vector", "hybrid", "hybrid_rerank", "closed_book"])
     sv.add_argument("--show-answer", action="store_true")
-    sv.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3)")
+    sv.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc")
     sv.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value")
 
     st_ = sub.add_parser("solve-text", help="붙여넣은 시험지 텍스트를 변환 없이 바로 풀이 (문항 여러 개 가능)")
     st_.add_argument("text_path", help="시험지 텍스트 파일 (- 이면 표준입력)")
-    st_.add_argument("--preset", default="v3", help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3), 기본 v3")
+    st_.add_argument("--preset", default="v3", help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc, 기본 v3")
     st_.add_argument("--mode", default="hybrid_rerank", choices=["vector", "hybrid", "hybrid_rerank", "closed_book"])
     st_.add_argument("--answers", default=None, help="정답(선택): '3,5,5,…' 또는 number,answer CSV 파일")
     st_.add_argument("--label", default="text")
@@ -104,6 +104,11 @@ def main(argv: list[str] | None = None) -> None:
     pg.add_argument("--watch", type=int, default=0, help="N초마다 다시 확인 (실행이 끝나면 멈춤, Ctrl+C 로 종료)")
     pg.add_argument("--total", type=int, default=None, help="전체 문항 수 (진행률 표시용)")
 
+    dx = sub.add_parser("diff-exam", help="원본 vs 변형본 진술 비교 → 정답이 바뀌었을 수 있는 진술 CSV (사람 확인용)")
+    dx.add_argument("original", help="원본 시험 JSON (예: data/exam/2026_civil.json)")
+    dx.add_argument("variant", help="변형본 시험 JSON 또는 solve-text 실행의 records.jsonl")
+    dx.add_argument("--out", required=True, help="CSV 저장 경로")
+
     eb = sub.add_parser("eval", help="평가셋 실행: 선택형 + 근거 없음 문항 × 구성 A/B/C (캐시는 꺼진 상태)")
     eb.add_argument("eval_path")
     eb.add_argument("--modes", nargs="+", default=["vector", "hybrid", "hybrid_rerank"],
@@ -111,7 +116,7 @@ def main(argv: list[str] | None = None) -> None:
                     help="closed_book = 검색 없는 기준선 (선택형만, 본 60건과 별도 보고)")
     eb.add_argument("--label", default="")
     eb.add_argument("--rewrite", action="store_true", help="쿼리 리라이트 적용 (선택형 진술별 질의 + 근거 없음 문항)")
-    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) — mcq/presets.py")
+    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc — mcq/presets.py")
     eb.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value (여러 번)")
 
     args = p.parse_args(argv)
@@ -442,6 +447,15 @@ def main(argv: list[str] | None = None) -> None:
             watch(settings.resolve(settings.paths.results_dir), args.label, args.watch, args.total)
         except KeyboardInterrupt:
             pass
+
+    elif args.cmd == "diff-exam":
+        from kant_rag.mcq.variant import compare, load_items, write_csv
+
+        rows = compare(load_items(Path(args.original)), load_items(Path(args.variant)))
+        write_csv(rows, Path(args.out))
+        need = [r for r in rows if r["check_needed"]]
+        kinds = {k: sum(r[k] for r in rows) for k in ("number_changed", "negation_changed", "double_negation", "large_edit")}
+        print(f"바뀐 진술 {len(rows)}개 · 확인 필요 {len(need)}개 {kinds} → {args.out}")
 
     elif args.cmd == "eval":
         from kant_rag.mcq.evaluate import run_bar_eval

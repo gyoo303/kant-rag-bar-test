@@ -24,6 +24,8 @@ from kant_rag.mcq.prompts import (
     MCQ_REWRITE_SYSTEM_V3,
     MCQ_SYSTEM_V2,
     MCQ_SYSTEM_V3,
+    MCQ_SYSTEM_V4,
+    MCQ_TIEBREAK_USER,
     MCQ_USER,
 )
 from kant_rag.mcq.schemas import ExamQuestion, StatementJudgment
@@ -78,6 +80,19 @@ def choose_answer(q: ExamQuestion, judgments: dict[str, StatementJudgment],
             scores[n] = -abs(int(m.group(1)) - expected) if m else float("-inf")
     best = max(scores, key=lambda n: (scores[n], -n))
     return best, scores
+
+
+CIRCLED_NUM = "①②③④⑤"
+
+
+def tied_options(scores: dict, eps: float = 1e-9) -> list[int]:
+    """최고점(>0)과 같은 점수의 보기들. 동점이 아니면 길이 1 이하."""
+    if not scores:
+        return []
+    top = max(scores.values())
+    if top <= 0 or top == float("inf"):
+        return []
+    return sorted(int(n) for n, v in scores.items() if abs(v - top) <= eps)
 
 
 def _capped_support(cap: float):
@@ -292,6 +307,8 @@ class MCQSolver:
             rec["timing_ms"]["rewrite"] = round((time.perf_counter() - t) * 1000, 1)
         else:
             queries = {k: [statement_query(q, v, c.stem_chars_in_query)] for k, v in statements.items()}
+        if c.original_query:  # 리라이트 표현에 따라 결정적 근거를 놓치지 않도록 진술 원문도 검색
+            queries = {k: v + ([statements[k]] if statements[k] not in v else []) for k, v in queries.items()}
         rec["search_queries"] = queries
 
         t = time.perf_counter()
@@ -319,11 +336,61 @@ class MCQSolver:
         rec["context_chunk_ids"] = used
         rec["context_expansions"] = exp
         rec["prompt_version"] = c.prompt_version
-        system = {"v2": MCQ_SYSTEM_V2, "v3": MCQ_SYSTEM_V3}.get(c.prompt_version, MCQ_SYSTEM)
+        system = {"v2": MCQ_SYSTEM_V2, "v3": MCQ_SYSTEM_V3, "v4": MCQ_SYSTEM_V4}.get(c.prompt_version, MCQ_SYSTEM)
         rec = self._judge(q, rec, t0, system, MCQ_USER.format(
             evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements)), used)
         if c.fusion == "fill_unknown" and rec.get("judgments") is not None:
             rec = self._fuse(q, rec, t0)
+        if c.tie_rejudge and rec.get("judgments") is not None:
+            rec = self._tiebreak(q, rec, t0, system, evidence, used)
+        return rec
+
+    def _tiebreak(self, q: ExamQuestion, rec: dict, t0: float, system: str, evidence: str, used: list[str]) -> dict:
+        """최고점 보기가 둘 이상이면(동점) 그 보기들 사이에서 요구가 갈리는 진술만 근거와 다시 판단한다 (LLM 1회)."""
+        tied = tied_options(rec.get("option_scores") or {})
+        if len(tied) < 2:
+            return rec
+        keys = [k for k in q.statements() if len({_required(q, n).get(k) for n in tied}) > 1]
+        info: dict = {"tied": tied, "keys": keys, "before": rec.get("predicted"), "error": None}
+        rec["tiebreak"] = info
+        if not keys:
+            rec["status"] = "tie"
+            return rec
+        statements = q.statements()
+        listing = "\n".join(f"{k}. {statements[k]}" for k in keys)
+        note = "보기 " + ", ".join(CIRCLED_NUM[n - 1] for n in tied) + " 가 같은 점수"
+        t = time.perf_counter()
+        try:
+            raw, calls = call_llm(self.s.models.llm_provider, self.s.models.llm_model,
+                                  [("system", system), ("human", MCQ_TIEBREAK_USER.format(
+                                      evidence=evidence, stem=q.stem, statements=listing, note=note,
+                                      keys=", ".join(keys)))], self.s.mcq.max_tokens)
+            rec.setdefault("llm_calls", []).extend({"step": "tiebreak", **x} for x in calls)
+            again = _parse_judgments(raw, keys)
+        except Exception as e:  # 실패하면 기존 판단 유지
+            info["error"] = f"{type(e).__name__}: {e}"
+            rec["status"] = "tie"
+            return rec
+        rec["timing_ms"]["tiebreak"] = round((time.perf_counter() - t) * 1000, 1)
+        judgments = {k: StatementJudgment.model_validate(v) for k, v in rec["judgments"].items()}
+        info["changed"] = {}
+        for k, j in again.items():
+            if j.verdict == "unknown":
+                continue
+            old = judgments.get(k)
+            if old is None or (old.verdict, old.confidence) != (j.verdict, j.confidence):
+                info["changed"][k] = {"from": [old.verdict, old.confidence] if old else None,
+                                      "to": [j.verdict, j.confidence]}
+            judgments[k] = j
+        predicted, scores, chk = self._choose(q, judgments)
+        rec.update(judgments={k: j.model_dump() for k, j in judgments.items()}, option_scores=scores,
+                   predicted=predicted)
+        rec["answer_check"] = chk
+        info["after"] = predicted
+        still = len(tied_options(scores)) > 1
+        rec["status"] = "tie" if still else ("inconsistent_judgments" if chk.get("inconsistent") else
+                                             ("ok" if rec["status"] in ("ok", "tie") else rec["status"]))
+        rec["timing_ms"]["total"] = round((time.perf_counter() - t0) * 1000, 1)
         return rec
 
     def _choose(self, q: ExamQuestion, judgments: dict[str, StatementJudgment]):
@@ -357,6 +424,9 @@ class MCQSolver:
         judgments = {k: StatementJudgment.model_validate(v) for k, v in rec["judgments"].items()}
         for k, j in kb.items():
             if j.verdict == "unknown":
+                continue
+            if j.confidence < c.fusion_min_conf:  # 확신이 낮은 지식 판단은 채우지 않고 유보로 둠
+                rec["fusion"].setdefault("skipped_low_conf", {})[k] = {"verdict": j.verdict, "raw_confidence": j.confidence}
                 continue
             filled = j.model_copy(update={"confidence": round(j.confidence * c.fusion_weight, 3),
                                           "reason": "[지식 판단·근거 없음] " + j.reason,

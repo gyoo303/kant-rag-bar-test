@@ -88,5 +88,75 @@ def test_date_filter():
 def test_presets_v3_unchanged_and_d():
     assert "mcq.answer_fallback" not in PRESETS["v3"] and "mcq.case_meta" not in PRESETS["c"]
     s = apply_overrides(get_settings(), PRESETS["d"])
-    assert s.mcq.answer_fallback and s.mcq.case_meta and s.mcq.prompt_version == "v3" and s.mcq.fusion == "none"
+    assert s.mcq.answer_fallback and s.mcq.case_meta and s.mcq.prompt_version == "v4" and s.mcq.fusion == "none" and s.mcq.tie_rejudge and s.mcq.original_query
     assert apply_overrides(get_settings(), PRESETS["dc"]).mcq.fusion == "fill_unknown"
+
+
+# ---------- 적대적 변형본 분석 반영 ----------
+from kant_rag.mcq.solver import MCQSolver, tied_options  # noqa: E402
+
+
+def test_tied_options():
+    assert tied_options({1: 0.005, 3: 1.0, 5: 1.0}) == [3, 5]
+    assert tied_options({1: 0.2, 2: 0.9}) == [2]
+    assert tied_options({1: 0.0, 2: 0.0}) == []
+
+
+def test_restated_field_parsed():
+    j = StatementJudgment.model_validate({"restated": "소멸한다", "verdict": "true", "confidence": 0.9, "reason": "r"})
+    assert j.restated == "소멸한다"
+
+
+def _single():
+    return ExamQuestion(id="S", number=55, stem="옳은 것은?", options={i: f"진술{i}" for i in range(1, 6)})
+
+
+def test_tie_rejudge_resolves(monkeypatch):
+    s = apply_overrides(get_settings(), PRESETS["d"])
+    solver = MCQSolver(s, retriever=object())
+    q = _single()
+    js = {str(i): _j("false", 1.0) for i in range(1, 6)}
+    js["3"], js["5"] = _j("true", 1.0), _j("true", 1.0)
+    _, scores = choose_answer(q, js)
+    rec = {"judgments": {k: v.model_dump() for k, v in js.items()}, "option_scores": scores, "predicted": 3,
+           "status": "ok", "timing_ms": {}}
+    again = {"judgments": {"3": {"verdict": "false", "confidence": 0.9, "reason": "단서 대상 아님"},
+                           "5": {"verdict": "true", "confidence": 0.95, "reason": "조문"}}}
+    seen = {}
+
+    def fake_llm(*a, **k):
+        seen["user"] = a[2][1][1]
+        return json.dumps(again, ensure_ascii=False), [{"finish_reason": "stop"}]
+    monkeypatch.setattr("kant_rag.mcq.solver.call_llm", fake_llm)
+    out = solver._tiebreak(q, rec, 0.0, "sys", "<doc/>", [])
+    assert out["tiebreak"]["tied"] == [3, 5] and out["tiebreak"]["keys"] == ["3", "5"]
+    assert out["predicted"] == 5 and out["status"] == "ok" and "③, ⑤" in seen["user"]
+
+
+def test_fusion_min_conf(monkeypatch):
+    s = apply_overrides(get_settings(), PRESETS["dc"])
+    solver = MCQSolver(s, retriever=object())
+    q = _single()
+    js = {str(i): _j("false", 0.9) for i in range(1, 6)}
+    js["1"] = _j("unknown", 0.0)
+    js["2"] = _j("unknown", 0.0)
+    rec = {"judgments": {k: v.model_dump() for k, v in js.items()}, "predicted": None, "status": "ok", "timing_ms": {}}
+    kb = {"judgments": {"1": {"verdict": "true", "confidence": 0.95, "reason": "a"},
+                        "2": {"verdict": "true", "confidence": 0.41, "reason": "b"}}}
+    monkeypatch.setattr("kant_rag.mcq.solver.call_llm",
+                        lambda *a, **k: (json.dumps(kb, ensure_ascii=False), [{"finish_reason": "stop"}]))
+    out = solver._fuse(q, rec, 0.0)
+    assert list(out["fusion"]["filled"]) == ["1"] and "2" in out["fusion"]["skipped_low_conf"]
+    assert out["judgments"]["2"]["verdict"] == "unknown"
+
+
+def test_variant_compare_flags():
+    from kant_rag.mcq.variant import compare
+    base = dict(id="V", number=1, stem="옳은 것은?", answer=1)
+    o = ExamQuestion(**base, options={1: "기간은 5년이다", 2: "b", 3: "c", 4: "d", 5: "청산이 끝나야 소멸한다"})
+    v = ExamQuestion(**base, options={1: "기간은 6년이다", 2: "b", 3: "c", 4: "d", 5: "청산이 끝나야 소멸하지 않는 것이 아니다"})
+    rows = {r["key"]: r for r in compare({1: o}, {1: v})}
+    assert set(rows) == {"1", "5"}
+    assert rows["1"]["number_changed"] and rows["5"]["double_negation"] and rows["5"]["negation_changed"]
+def test_v4_alias():
+    assert PRESETS["v4"] == PRESETS["d"]

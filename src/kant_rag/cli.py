@@ -94,6 +94,11 @@ def main(argv: list[str] | None = None) -> None:
     st_.add_argument("--label", default="text")
     st_.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value")
 
+    pg = sub.add_parser("progress", help="진행 중인 평가 실행의 문항별 예측/정답 표 (--watch 초 간격 새로고침)")
+    pg.add_argument("label", help="결과 폴더 이름 끝부분, 예) bar13-v3")
+    pg.add_argument("--watch", type=int, default=0, help="N초마다 다시 확인 (실행이 끝나면 멈춤, Ctrl+C 로 종료)")
+    pg.add_argument("--total", type=int, default=None, help="전체 문항 수 (진행률 표시용)")
+
     eb = sub.add_parser("eval", help="평가셋 실행: 선택형 + 근거 없음 문항 × 구성 A/B/C (캐시는 꺼진 상태)")
     eb.add_argument("eval_path")
     eb.add_argument("--modes", nargs="+", default=["vector", "hybrid", "hybrid_rerank"],
@@ -420,6 +425,14 @@ def main(argv: list[str] | None = None) -> None:
             raise SystemExit(f"프리셋 이름: {', '.join(PRESETS_NAMES())}")
         text = sys.stdin.read() if args.text_path == "-" else Path(args.text_path).read_text(encoding="utf-8-sig")
         solve_text(settings, text, args.preset, args.mode, args.answers, args.label, args.sets)
+
+    elif args.cmd == "progress":
+        from kant_rag.mcq.progress import watch
+
+        try:
+            watch(settings.resolve(settings.paths.results_dir), args.label, args.watch, args.total)
+        except KeyboardInterrupt:
+            pass
 
     elif args.cmd == "eval":
         from kant_rag.mcq.evaluate import run_bar_eval

@@ -68,6 +68,7 @@ uv run kant-rag eval eval/test.json --modes closed_book --label final-closedbook
 uv run kant-rag eval eval/test.json --modes hybrid_rerank --rewrite --label final-rewrite   # 선택 최적화: C+리라이트 20건
 uv run kant-rag grade results/<run_id>/grading.csv                  # 사람 채점(근거 적합·정보 부족 안내) 집계
 uv run kant-rag eval data/exam/2026_civil_tune.json --preset c --label tune-c   # 개선안 v3 (단계: v2·a1·a2·a34·b·c, docs/analysis/improvement-plan.md)
+uv run kant-rag progress bar13-v3 --watch 60 --total 70             # 실행 중인 결과를 1분마다 표로 (다른 터미널에서)
 uv run streamlit run app/streamlit_app.py
 uv run pytest
 ```

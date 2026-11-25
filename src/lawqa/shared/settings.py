@@ -51,6 +51,7 @@ class RetrievalSettings:
     n_bm25: int
     n_fuse: int
     k_opt: int
+    k_law: int
     rrf_c: int
     weights: tuple[float, float]
     question_list_max: int
@@ -236,6 +237,7 @@ def _retrieval(s: dict[str, Any]) -> RetrievalSettings:
         n_bm25=_positive_int(s, "n_bm25", "retrieval"),
         n_fuse=_positive_int(s, "n_fuse", "retrieval"),
         k_opt=_positive_int(s, "k_opt", "retrieval"),
+        k_law=int(s.get("k_law", 0)),  # CR-018: 0이면 조문 몫 없음
         rrf_c=_positive_int(s, "rrf_c", "retrieval"),
         weights=(float(weights[0]), float(weights[1])),
         question_list_max=_positive_int(s, "question_list_max", "retrieval"),

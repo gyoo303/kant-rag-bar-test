@@ -13,7 +13,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from langchain_classic.retrievers import EnsembleRetriever
@@ -27,6 +27,7 @@ from rank_bm25 import BM25Okapi
 from lawqa.corpus.domain.models import Chunk, collection_name_for
 from lawqa.retrieval.domain.errors import RetrievalFailedError
 from lawqa.retrieval.domain.models import Candidate, RetrievalConfig
+from lawqa.retrieval.domain.ports import OptionRetriever
 
 ID_KEY = "chunk_id"
 
@@ -47,6 +48,7 @@ def chunk_document(chunk: Chunk) -> Document:
         metadata={
             ID_KEY: chunk.chunk_id,
             "doc_id": chunk.doc_id,
+            "kind": chunk.kind.value,  # CR-018: 조문 몫 보장에 쓴다
             "location": chunk.location.text,
             "index_version": chunk.index_version,
         },
@@ -69,11 +71,14 @@ class Bm25Search:
             preprocess_func=tokenize,
         )
 
-    def search(self, query: str, k: int) -> list[Scored]:
-        """점수 > 0인(질의 낱말이 하나라도 겹치는) 상위 k개."""
+    def search(self, query: str, k: int, kind: str | None = None) -> list[Scored]:
+        """점수 > 0인(질의 낱말이 하나라도 겹치는) 상위 k개. `kind`를 주면 그 종류만(CR-018)."""
         tokens = self.retriever.preprocess_func(query)
         scores = self.retriever.vectorizer.get_scores(tokens)
-        order = sorted(range(len(scores)), key=lambda i: (-scores[i], i))[:k]
+        allowed = range(len(scores))
+        if kind is not None:
+            allowed = [i for i in allowed if self.retriever.docs[i].metadata.get("kind") == kind]
+        order = sorted(allowed, key=lambda i: (-scores[i], i))[:k]
         hits = [(i, float(scores[i])) for i in order if scores[i] > 0]
         return [
             Scored(self.retriever.docs[i], rank, score)
@@ -96,8 +101,10 @@ class VectorSearch:
             create_extension=False,
         )
 
-    def search(self, query: str, k: int) -> list[Scored]:
-        pairs = self.store.similarity_search_with_score(query, k=k)
+    def search(self, query: str, k: int, kind: str | None = None) -> list[Scored]:
+        """`kind`를 주면 그 종류의 청크만 본다(PGVector 메타데이터 필터, CR-018)."""
+        kw = {"filter": {"kind": {"$eq": kind}}} if kind is not None else {}
+        pairs = self.store.similarity_search_with_score(query, k=k, **kw)
         return [
             Scored(doc, rank, 1.0 - float(distance))
             for rank, (doc, distance) in enumerate(pairs, start=1)
@@ -110,13 +117,16 @@ class VectorSearch:
 class VectorOptionRetriever:
     """구성 A: 벡터 상위 `n_vec`(`final_rank` = 벡터 순위)."""
 
-    def __init__(self, vector: VectorSearch, config: RetrievalConfig) -> None:
+    def __init__(
+        self, vector: VectorSearch, config: RetrievalConfig, *, kind: str | None = None
+    ) -> None:
         self._vector = vector
         self._n_vec = config.n_vec
+        self._kind = kind  # CR-018: 조문 보충 검색용
 
     def retrieve(self, query: str) -> list[Candidate]:
         try:
-            hits = self._vector.search(query, self._n_vec)
+            hits = self._vector.search(query, self._n_vec, self._kind)
         except Exception as exc:  # 외부(OpenAI·DB) 오류 → 도메인 예외(ADR-004)
             raise RetrievalFailedError(f"벡터 검색 실패: {type(exc).__name__}: {exc}") from exc
         return [_candidate(h.doc, vector=h, final_rank=h.rank) for h in hits]
@@ -125,10 +135,18 @@ class VectorOptionRetriever:
 class HybridOptionRetriever:
     """구성 B: BM25 + 벡터 → 가중 RRF(`EnsembleRetriever`) 상위 `n_fuse`."""
 
-    def __init__(self, bm25: Bm25Search, vector: VectorSearch, config: RetrievalConfig) -> None:
+    def __init__(
+        self,
+        bm25: Bm25Search,
+        vector: VectorSearch,
+        config: RetrievalConfig,
+        *,
+        kind: str | None = None,
+    ) -> None:
         self._bm25 = bm25
         self._vector = vector
         self._config = config
+        self._kind = kind  # CR-018: 조문 보충 검색용
         self.ensemble = EnsembleRetriever(
             retrievers=[
                 bm25.retriever,
@@ -141,8 +159,8 @@ class HybridOptionRetriever:
 
     def retrieve(self, query: str) -> list[Candidate]:
         try:
-            bm25_hits = self._bm25.search(query, self._config.n_bm25)
-            vector_hits = self._vector.search(query, self._config.n_vec)
+            bm25_hits = self._bm25.search(query, self._config.n_bm25, self._kind)
+            vector_hits = self._vector.search(query, self._config.n_vec, self._kind)
         except Exception as exc:  # 외부(OpenAI·DB) 오류 → 도메인 예외(ADR-004)
             raise RetrievalFailedError(
                 f"하이브리드 검색 실패: {type(exc).__name__}: {exc}"
@@ -188,3 +206,69 @@ def _candidate(
         fused_rank=fused_rank,
         final_rank=final_rank,
     )
+
+
+STATUTE_KIND = "STATUTE_ARTICLE"
+
+
+def is_statute(candidate: Candidate) -> bool:
+    """조문 청크인가. `doc_id`가 `law:<법령명>:<조>-<가지>` 형식이다(ADR-015)."""
+    return candidate.doc_id.startswith("law:")
+
+
+class StatuteQuotaRetriever:
+    """상위 `k_opt` 안에 조문을 최소 `k_law`개 보장한다 (CR-018).
+
+    말뭉치가 판례 89%라 조문이 점수 경쟁에서 묻힌다. 실측(2026-11-24 재측정)에서 틀린 10문항의
+    조문 비율이 3.8%였고 7문항은 조문이 0개였는데, 필요한 조문은 색인에 있었다 — 순위 문제다.
+
+    모자라면 ① 이미 받은 목록의 더 아래쪽 조문을 끌어올리고 ② 그래도 모자라면 같은 질의로
+    **조문만** 검색해 채운다. 채우는 자리는 상위 `k_opt` 안에서 가장 순위가 낮은 판례를 밀어낸다.
+    모든 구성(A·B·C·C+R)을 같은 방식으로 감싸 비교 공정성을 지킨다(INV-08).
+    """
+
+    def __init__(
+        self, inner: OptionRetriever, statutes: OptionRetriever, *, k_law: int, k_opt: int
+    ) -> None:
+        self._inner = inner
+        self._statutes = statutes
+        self._k_law = k_law
+        self._k_opt = k_opt
+
+    def retrieve(self, query: str) -> list[Candidate]:
+        base = self._inner.retrieve(query)
+        if self._k_law < 1:
+            return base
+        head, tail = base[: self._k_opt], base[self._k_opt :]
+        need = self._k_law - sum(1 for c in head if is_statute(c))
+        if need < 1:
+            return base
+
+        seen = {c.chunk_id for c in base}
+        extra = [c for c in tail if is_statute(c)][:need]
+        if len(extra) < need:
+            for c in self._statutes.retrieve(query):
+                if len(extra) == need:
+                    break
+                if c.chunk_id not in seen:
+                    extra.append(c)
+                    seen.add(c.chunk_id)
+        if not extra:
+            return base
+
+        promoted = [c for c in extra]
+        keep = [c for c in head if c.chunk_id not in {c.chunk_id for c in promoted}]
+        # 상위 k_opt 안에서 순위가 낮은 판례부터 밀어낸다(조문은 남긴다)
+        drop = len(keep) + len(promoted) - self._k_opt
+        for _ in range(max(drop, 0)):
+            victim = next((c for c in reversed(keep) if not is_statute(c)), None)
+            if victim is None:
+                break
+            keep.remove(victim)
+        rest = [c for c in base if c.chunk_id not in {c.chunk_id for c in keep + promoted}]
+        return _renumber(keep + promoted + rest)
+
+
+def _renumber(candidates: list[Candidate]) -> list[Candidate]:
+    """합친 뒤 `final_rank`를 1부터 다시 매긴다(기록·재정렬 순서의 기준)."""
+    return [replace(c, final_rank=rank) for rank, c in enumerate(candidates, start=1)]

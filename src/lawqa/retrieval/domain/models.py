@@ -76,6 +76,8 @@ class RetrievalConfig:
     k_opt: int
     rrf_c: int
     weights: tuple[float, float]
+    # CR-018: 보기별 상위 k_opt 안에 보장할 조문 수. 0이면 몫을 두지 않는다.
+    k_law: int = 0
 
     def __post_init__(self) -> None:
         want = _MODE_OF.get(self.name)
@@ -88,15 +90,25 @@ class RetrievalConfig:
         for key in ("n_vec", "n_bm25", "n_fuse", "k_opt", "rrf_c"):
             if getattr(self, key) < 1:
                 raise ValueError(f"{key}는 1 이상이어야 합니다.")
+        if not 0 <= self.k_law <= self.k_opt:
+            raise ValueError(f"k_law는 0 이상 k_opt({self.k_opt}) 이하여야 합니다: {self.k_law}")
         weights = tuple(float(w) for w in self.weights)
         if len(weights) != 2 or min(weights) < 0 or sum(weights) <= 0:
             raise ValueError(f"weights는 0 이상 숫자 2개이고 합이 0보다 커야 합니다: {weights}")
         object.__setattr__(self, "weights", weights)
 
     @property
-    def comparable_key(self) -> tuple[int, int, int, int, int, tuple[float, float]]:
-        """구성끼리 같아야 하는 값(이름·모드·리라이트를 뺀 나머지, INV-08)."""
-        return (self.n_vec, self.n_bm25, self.n_fuse, self.k_opt, self.rrf_c, self.weights)
+    def comparable_key(self) -> tuple[int, int, int, int, int, tuple[float, float], int]:
+        """구성끼리 같아야 하는 값(이름·모드·리라이트를 뺀 나머지, INV-08). k_law 포함(CR-018)."""
+        return (
+            self.n_vec,
+            self.n_bm25,
+            self.n_fuse,
+            self.k_opt,
+            self.rrf_c,
+            self.weights,
+            self.k_law,
+        )
 
 
 @dataclass(frozen=True, slots=True)

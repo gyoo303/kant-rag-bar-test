@@ -86,11 +86,14 @@ class FakeVectorSearch:
         self.fail = fail
         self.queries: list[str] = []
 
-    def search(self, query: str, k: int) -> list[Scored]:
+    def search(self, query: str, k: int, kind: str | None = None) -> list[Scored]:
         self.queries.append(query)
         if self.fail:
             raise ConnectionError("db down")
-        return [Scored(d, r, 0.9 - r / 10) for r, d in enumerate(self.docs[:k], start=1)]
+        docs = self.docs
+        if kind is not None:  # CR-018: 조문 전용 보충 검색
+            docs = [d for d in docs if d.metadata.get("kind") == kind]
+        return [Scored(d, r, 0.9 - r / 10) for r, d in enumerate(docs[:k], start=1)]
 
     def as_retriever(self, k: int) -> BaseRetriever:
         return _ListRetriever(docs=self.docs[:k])

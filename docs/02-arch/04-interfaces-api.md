@@ -152,6 +152,7 @@ n_vec = 20
 n_bm25 = 20
 n_fuse = 20
 k_opt = 4
+k_law = 1          # CR-018: 보기별 상위 k_opt 안에 보장할 조문 수
 rrf_c = 60
 weights = [0.5, 0.5]
 question_list_max = 20

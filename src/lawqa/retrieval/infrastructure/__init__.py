@@ -22,8 +22,10 @@ from lawqa.retrieval.infrastructure.reranker import (
     resolve_device,
 )
 from lawqa.retrieval.infrastructure.retrievers import (
+    STATUTE_KIND,
     Bm25Search,
     HybridOptionRetriever,
+    StatuteQuotaRetriever,
     VectorOptionRetriever,
     VectorSearch,
 )
@@ -43,6 +45,7 @@ def retrieval_config(settings: Settings) -> RetrievalConfig:
         n_bm25=r.n_bm25,
         n_fuse=r.n_fuse,
         k_opt=r.k_opt,
+        k_law=r.k_law,  # CR-018
         rrf_c=r.rrf_c,
         weights=r.weights,
     )
@@ -85,6 +88,9 @@ class RetrieverFactory:
             raise IndexNotReadyError(
                 "검색할 색인 판본이 없습니다. corpus import·index를 먼저 실행하세요."
             )
+        return self._with_statute_quota(self._base(config), config)
+
+    def _base(self, config: RetrievalConfig) -> OptionRetriever:
         if config.mode is RetrievalMode.A:
             return VectorOptionRetriever(self._vector_search(), config)
         if config.mode is RetrievalMode.B:
@@ -92,6 +98,26 @@ class RetrieverFactory:
         encoder = self._cross_encoder()  # 모델이 없으면 DB에 연결하기 전에 실패
         hybrid = HybridOptionRetriever(self._bm25_search(), self._vector_search(), config)
         return RerankOptionRetriever(hybrid, encoder, config)
+
+    def _with_statute_quota(
+        self, base: OptionRetriever, config: RetrievalConfig
+    ) -> OptionRetriever:
+        """CR-018: 보기별 상위 `k_opt` 안에 조문 `k_law`개를 보장한다.
+
+        보충 검색은 같은 모드의 **조문 전용** 검색기다(재정렬은 보충에 쓰지 않는다 — 보조 경로이고
+        모든 구성에 같은 방식이어야 INV-08이 지켜진다).
+        """
+        if config.k_law < 1:
+            return base
+        if config.mode is RetrievalMode.A:
+            statutes: OptionRetriever = VectorOptionRetriever(
+                self._vector_search(), config, kind=STATUTE_KIND
+            )
+        else:
+            statutes = HybridOptionRetriever(
+                self._bm25_search(), self._vector_search(), config, kind=STATUTE_KIND
+            )
+        return StatuteQuotaRetriever(base, statutes, k_law=config.k_law, k_opt=config.k_opt)
 
     def _cross_encoder(self) -> BaseCrossEncoder:
         if self._encoder is None:

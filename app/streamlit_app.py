@@ -25,18 +25,25 @@ with st.sidebar:
 tab_qa, tab_mcq = st.tabs(["질의응답", "선택형 풀이"])
 
 with tab_mcq:
-    from kant_rag.mcq.parse import parse_exam_text
+    from kant_rag.mcq.presets import PRESETS, apply_overrides
     from kant_rag.mcq.solver import MCQSolver
+    from kant_rag.mcq.textsolve import parse_pasted
 
-    raw = st.text_area("문항 붙여넣기 (【문 N】 발문, ①~⑤ 보기, 조합형은 ㄱ.~ㅁ.)", height=260)
+    preset = st.selectbox("풀이 구성", list(PRESETS), index=list(PRESETS).index("v3"),
+                          help="v2=기존, b=개선안(지식 채우기 제외), c=v3=개선안 전체")
+    raw = st.text_area("시험지 붙여넣기 (문항 여러 개 가능: '문 1.' 또는 【문 1】, 보기 ①~⑤, 조합형 ㄱ.~ㅁ.)",
+                       height=260)
     if st.button("풀이", type="primary", key="solve") and raw.strip():
-        qs = parse_exam_text(raw if "【문" in raw else "【문 1】 " + raw, id_prefix="UI")
+        qs, problems = parse_pasted(raw, id_prefix="UI")
+        for msg in problems:
+            st.warning(msg)
         if not qs:
             st.error("문항을 인식하지 못했습니다.")
-        else:
-            q = qs[0]
-            with st.spinner("진술별 검색 및 판단 중..."):
-                rec = MCQSolver(get_settings(), load_agent().retriever).solve(q, RetrievalMode(mode))
+        solver = MCQSolver(apply_overrides(get_settings(), PRESETS[preset]), load_agent().retriever) if qs else None
+        for q in qs:
+            st.subheader(f"문 {q.number}")
+            with st.spinner(f"문 {q.number}: 진술별 검색 및 판단 중..."):
+                rec = solver.solve(q, RetrievalMode(mode))
             st.caption(f"형식={q.form} · 극성={q.polarity} · 상태={rec['status']}")
             if rec.get("predicted"):
                 st.success(f"예측 정답: {'①②③④⑤'[rec['predicted'] - 1]}")
@@ -46,7 +53,8 @@ with tab_mcq:
                 st.error(f"{rec['status']}: {rec.get('error')}")
             for key, j in (rec.get("judgments") or {}).items():
                 icon = {"true": "⭕", "false": "❌", "unknown": "❔"}[j["verdict"]]
-                with st.expander(f"{icon} {key}. {q.statements()[key][:60]}  ({j['confidence']:.2f})"):
+                src = " [지식]" if j.get("source") == "knowledge" else ""
+                with st.expander(f"{icon} {key}. {q.statements()[key][:60]}  ({j['confidence']:.2f}){src}"):
                     st.write(j["reason"])
                     st.caption("근거: " + ", ".join(j["cited_chunk_ids"]))
             with st.expander("진술별 검색 결과 / 시간"):

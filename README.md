@@ -93,3 +93,10 @@ bash scripts/cloud_run.sh all70-cloud-v1
 
 ## 보안·데이터
 `.env`, API 키, 색인(`index/`)은 커밋하지 않습니다. 시험 문제·정답·해설은 색인·프롬프트에 넣지 않고, 수험서·해설서는 수집하지 않습니다. 문서 속 지시문은 데이터로만 취급합니다.
+
+## 새 시험지 바로 풀기 (변환 단계 없음)
+1. 메모장에 시험지 텍스트를 붙여넣고 UTF-8 로 저장 (예: `new_exam.txt`, 저장소 폴더)
+2. 풀이: `uv run kant-rag solve-text new_exam.txt` (기본 `--preset v3`, `--preset b` 가능)
+   - 정답이 있으면 채점: `--answers "3,5,5,1,…"` (1번부터 순서) 또는 `--answers 정답.csv`
+3. 결과: 화면에 문항별 예측·진술 판단, `results/<시각>-text/answers.csv · records.jsonl · summary.json`
+- 화면으로 보려면 `uv run streamlit run app/streamlit_app.py` → "선택형 풀이" 탭에 붙여넣기 (문항 여러 개 가능, 구성 선택)

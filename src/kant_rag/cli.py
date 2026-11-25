@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 
 from kant_rag.config import ROOT, get_settings
@@ -84,6 +85,14 @@ def main(argv: list[str] | None = None) -> None:
     sv.add_argument("--show-answer", action="store_true")
     sv.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3)")
     sv.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value")
+
+    st_ = sub.add_parser("solve-text", help="붙여넣은 시험지 텍스트를 변환 없이 바로 풀이 (문항 여러 개 가능)")
+    st_.add_argument("text_path", help="시험지 텍스트 파일 (- 이면 표준입력)")
+    st_.add_argument("--preset", default="v3", help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3), 기본 v3")
+    st_.add_argument("--mode", default="hybrid_rerank", choices=["vector", "hybrid", "hybrid_rerank", "closed_book"])
+    st_.add_argument("--answers", default=None, help="정답(선택): '3,5,5,…' 또는 number,answer CSV 파일")
+    st_.add_argument("--label", default="text")
+    st_.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value")
 
     eb = sub.add_parser("eval", help="평가셋 실행: 선택형 + 근거 없음 문항 × 구성 A/B/C (캐시는 꺼진 상태)")
     eb.add_argument("eval_path")
@@ -404,6 +413,14 @@ def main(argv: list[str] | None = None) -> None:
             print("정답:", q.answer)
         print("timing_ms:", rec["timing_ms"])
 
+    elif args.cmd == "solve-text":
+        from kant_rag.mcq.textsolve import solve_text
+
+        if args.preset not in PRESETS_NAMES():
+            raise SystemExit(f"프리셋 이름: {', '.join(PRESETS_NAMES())}")
+        text = sys.stdin.read() if args.text_path == "-" else Path(args.text_path).read_text(encoding="utf-8-sig")
+        solve_text(settings, text, args.preset, args.mode, args.answers, args.label, args.sets)
+
     elif args.cmd == "eval":
         from kant_rag.mcq.evaluate import run_bar_eval
         from kant_rag.retrieval.pipeline import RetrievalMode
@@ -422,6 +439,12 @@ def main(argv: list[str] | None = None) -> None:
         print("설정:", meta)
         print("saved:", run_bar_eval(s, Path(args.eval_path), [RetrievalMode(m) for m in args.modes], args.label,
                                      meta=meta))
+
+
+def PRESETS_NAMES() -> list[str]:
+    from kant_rag.mcq.presets import PRESETS
+
+    return list(PRESETS)
 
 
 if __name__ == "__main__":

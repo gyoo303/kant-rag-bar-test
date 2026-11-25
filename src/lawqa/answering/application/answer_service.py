@@ -14,9 +14,10 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from lawqa.answering.domain.errors import ModelCallError, ModelOutputFormatError, ModelTimeoutError
-from lawqa.answering.domain.models import Answer, ErrorCode, Outcome
+from lawqa.answering.domain.models import Answer, ErrorCode, Outcome, Verdict
 from lawqa.answering.domain.ports import AnswerGenerator
 from lawqa.retrieval.application.retrieval_service import RetrievalService
+from lawqa.retrieval.domain.decomposer import followup_queries
 from lawqa.retrieval.domain.errors import (
     IndexNotReadyError,
     InvalidExamItemError,
@@ -52,6 +53,8 @@ class AnswerEnvelope:
     queries: tuple[OptionQuery, ...] = field(default=())
     retrieval_ms: int | None = None  # 리라이트·검색·재정렬 포함
     generation_ms: int | None = None
+    followup_queries: tuple[str, ...] = ()  # CR-019: 2차 검색에 쓴 질의(없으면 비어 있음)
+    followup_added: int = 0  # 2차 검색으로 컨텍스트에 더해진 청크 수
 
     @property
     def context_chars(self) -> int:
@@ -100,6 +103,8 @@ class AnswerEnvelope:
             "latency_ms": self.latency_ms,
             "retrieval_ms": self.retrieval_ms,
             "generation_ms": self.generation_ms,
+            "followup_queries": list(self.followup_queries),
+            "followup_added": self.followup_added,
         }
 
 
@@ -125,6 +130,8 @@ class AnswerService:
         result: RetrievalResult | None = None
         context: tuple[Candidate, ...] = ()
         raw_output = ""
+        followups: tuple[str, ...] = ()
+        added = 0
         retrieval_ms: int | None = None
         generation_ms: int | None = None
         try:
@@ -142,6 +149,10 @@ class AnswerService:
                 {c.chunk_id for c in context},
                 {c.chunk_id: c.location for c in context},
             )
+            if not answer.evidence_sufficient:
+                retry = self._second_pass(item, config, answer, context)
+                if retry is not None:
+                    answer, context, raw_output, followups, added = retry
         except InvalidExamItemError as exc:
             answer = Answer.error(
                 Outcome.INPUT_ERROR, ErrorCode.INVALID_INPUT, f"입력 오류: {exc.reason}"
@@ -178,6 +189,59 @@ class AnswerService:
             queries=tuple(o.query for o in result.options) if result else (),
             retrieval_ms=retrieval_ms,
             generation_ms=generation_ms,
+            followup_queries=followups,
+            followup_added=added,
+        )
+
+    def _second_pass(
+        self,
+        item: ExamItem,
+        config: RetrievalConfig,
+        first: Answer,
+        context: tuple[Candidate, ...],
+    ) -> tuple[Answer, tuple[Candidate, ...], str, tuple[str, ...], int] | None:
+        """근거가 모자란 보기의 명제만 다시 찾아 한 번 더 답한다 (CR-019).
+
+        모델이 `insufficient`로 표시한 보기가 가리키는 명제로 2차 검색을 하고, 1차 컨텍스트에
+        더해 다시 생성한다. **2차가 근거 충족일 때만 채택한다** — 아니면 1차를 그대로 둔다
+        (근거 없이 답만 바뀌는 것을 막는다). 2차도 실패하면 1차를 쓴다.
+        """
+        wanted = {j.option_no for j in first.judgments if j.verdict is Verdict.INSUFFICIENT}
+        queries = followup_queries(item, wanted)
+        if not queries:
+            return None
+        try:
+            extra = self._retrieval.retrieve_for(queries, config)
+        except RetrievalFailedError:
+            return None  # 2차는 보조 경로다. 실패해도 1차 답을 버리지 않는다
+        known = {c.chunk_id for c in context}
+        merged = list(context) + [c for c in extra[: config.k_opt] if c.chunk_id not in known]
+        if len(merged) == len(context):
+            return None
+        try:
+            model_answer = self._generator.generate(item, merged)
+            second = Answer.from_model_output(
+                model_answer,
+                {c.chunk_id for c in merged},
+                {c.chunk_id: c.location for c in merged},
+            )
+        except (ModelCallError, ModelTimeoutError, ModelOutputFormatError):
+            return None
+        log_event(
+            log,
+            "second_pass",
+            options=sorted(wanted),
+            added=len(merged) - len(context),
+            adopted=second.evidence_sufficient,
+        )
+        if not second.evidence_sufficient:
+            return None
+        return (
+            second,
+            tuple(merged),
+            model_answer.raw_output,
+            tuple(q.effective for q in queries),
+            len(merged) - len(context),
         )
 
     def _elapsed_ms(self, since: float) -> int:

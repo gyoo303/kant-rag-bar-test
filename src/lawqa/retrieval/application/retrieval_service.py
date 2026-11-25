@@ -8,11 +8,12 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 from lawqa.retrieval.domain.decomposer import QueryDecomposer
 from lawqa.retrieval.domain.errors import RewriteFailedError
 from lawqa.retrieval.domain.models import (
+    Candidate,
     ExamItem,
     OptionQuery,
     OptionResult,
@@ -47,6 +48,30 @@ class RetrievalService:
                 for q in queries
             ),
         )
+
+    def retrieve_for(
+        self, queries: Sequence[OptionQuery], config: RetrievalConfig
+    ) -> list[Candidate]:
+        """주어진 질의들로만 검색해 후보를 합친다 (CR-019 2차 검색).
+
+        `RetrievalResult`를 만들지 않는다 — 보기 1~5 구조가 아니라 "모자란 명제 몇 개"이기 때문이다.
+        질의 순서대로 라운드로빈으로 합치고 같은 청크는 처음 것만 남긴다(ADR-011과 같은 규칙).
+        """
+        retriever = self._retriever_for(config)
+        lists = [retriever.retrieve(q.effective) for q in queries]
+        merged: list[Candidate] = []
+        seen: set[str] = set()
+        depth = max((len(x) for x in lists), default=0)
+        for rank in range(depth):
+            for one in lists:
+                if rank >= len(one):
+                    continue
+                candidate = one[rank]
+                if candidate.chunk_id in seen:
+                    continue
+                seen.add(candidate.chunk_id)
+                merged.append(candidate)
+        return merged
 
     def queries_for(self, item: ExamItem, config: RetrievalConfig) -> list[OptionQuery]:
         """기본 분해, `use_rewrite`이면 리라이트(실패하면 모두 원 질의, INV-10)."""

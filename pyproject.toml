@@ -21,6 +21,7 @@ dependencies = [
     "datasets",
     "pandas",
     "streamlit",
+    "kiwipiepy>=0.25.1",
 ]
 
 [project.scripts]

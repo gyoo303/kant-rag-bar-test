@@ -7,7 +7,12 @@ from civil_rag.evaluation.metrics import (
     verdict_correct,
 )
 from civil_rag.retrieval.fusion import weighted_rrf
-from civil_rag.retrieval.tokenize import whitespace_tokenize
+from civil_rag.retrieval.tokenize import bigram_tokenize, whitespace_tokenize
+
+
+def test_bigram_tokenizer_matches_with_particles():
+    a, b = set(bigram_tokenize("계약을 해제하였다")), set(bigram_tokenize("계약 해제"))
+    assert "계약" in a and "해제" in a and {"계약", "해제"} <= b
 
 
 def test_weighted_rrf_formula_and_dedup():

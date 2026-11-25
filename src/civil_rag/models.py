@@ -41,4 +41,17 @@ def cross_encoder():
     """교안 5-4: HuggingFaceCrossEncoder(Dongjin-kr/ko-reranker). 첫 호출 때 모델을 내려받는다."""
     from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
-    return HuggingFaceCrossEncoder(model_name=config.RERANKER_MODEL)
+    return HuggingFaceCrossEncoder(model_name=config.RERANKER_MODEL, model_kwargs={"device": reranker_device()})
+
+
+def reranker_device() -> str:
+    """RERANKER_DEVICE=auto 면 CUDA GPU 가 보이면 'cuda', 아니면 'cpu'."""
+    dev = (config.RERANKER_DEVICE or "auto").lower()
+    if dev != "auto":
+        return dev
+    try:
+        import torch
+
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except Exception:  # noqa: BLE001
+        return "cpu"

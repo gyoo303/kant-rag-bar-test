@@ -40,6 +40,12 @@ def _ingest(a):
     )
 
 
+def _overruled(a):
+    from civil_rag.ingest.overruled import write_overruled
+
+    write_overruled(a.date_to)
+
+
 def _index(a):
     from civil_rag.ingest.build import build_vector_index
 
@@ -114,7 +120,8 @@ def _eval(a):
 def _exam(a):
     from civil_rag.exam.runner import run_exam
 
-    run_exam(Path(a.exam_file), a.configs, strategy=a.strategy, limit=a.limit, numbers=a.numbers, tag=a.tag)
+    run_exam(Path(a.exam_file), a.configs, strategy=a.strategy, limit=a.limit, numbers=a.numbers, tag=a.tag,
+             workers=a.workers)
 
 
 def _ragas(a):
@@ -139,6 +146,10 @@ def main(argv: list[str] | None = None) -> None:
     s.add_argument("--date-to", default=None, help="판례 선고일 상한 YYYYMMDD (기본: config PREC_DATE_TO=시험일 전날)")
     s.add_argument("--no-date-filter", action="store_true", help="시험 시점 필터 끄기 (비교 실험용)")
     s.set_defaults(func=_ingest)
+
+    s = sub.add_parser("overruled", help="전원합의체 판례 변경 관계 → 색인 폴더 overruled.json")
+    s.add_argument("--date-to", default=None, help="변경 판결 선고일 상한 YYYYMMDD (기본: config PREC_DATE_TO)")
+    s.set_defaults(func=_overruled)
 
     s = sub.add_parser("index", help="청크 → 벡터 저장소 (임베딩)")
     s.add_argument("--backend", choices=["pgvector", "memory"], default=None)
@@ -175,10 +186,14 @@ def main(argv: list[str] | None = None) -> None:
     s = sub.add_parser("exam", help="시험지(5지선다) 풀이·채점")
     s.add_argument("exam_file", help="exams/<시험>.json")
     s.add_argument("--configs", nargs="+", choices=list(RUN_CONFIGS), default=["C"])
-    s.add_argument("--strategy", choices=["whole", "per_choice"], default="whole")
+    s.add_argument("--strategy", choices=["whole", "per_choice", "statements", "statements_v1"], default="whole",
+                   help="statements: 지문별 검색 + 1회 판단 + 재검토 (오답 분석 2차 반영) / "
+                        "statements_v1: 2026 62점을 낸 개선 전 고정본")
     s.add_argument("--numbers", nargs="*", type=int, default=None, help="특정 문항 번호만")
     s.add_argument("--limit", type=int, default=0)
     s.add_argument("--tag", default="")
+    s.add_argument("--workers", type=int, default=1,
+                   help="동시에 풀 문항 수 (예: 5). LLM 응답 대기를 겹쳐 빨라짐. OpenAI 한도 초과 시 줄이기")
     s.set_defaults(func=_exam)
 
     s = sub.add_parser("ragas", help="RAGAS 보조 지표")

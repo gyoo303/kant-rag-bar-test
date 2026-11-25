@@ -30,6 +30,7 @@ uv run civil-rag ingest
 # 2) 청크 → 벡터 색인 (OpenAI 임베딩 비용 발생, 캐시되므로 재색인은 무료)
 uv run civil-rag index                      # pgvector (docker compose up -d 먼저)
 uv run civil-rag index --backend memory     # Docker 없이 (.env 에 VECTOR_BACKEND=memory)
+uv run civil-rag overruled                  # 전원합의체 판례 변경 관계 → data/index/overruled.json (비용 없음, 몇 분)
 
 # 3) 검색만 확인 — 평가셋 근거 매핑할 때 (bm25 는 비용 없음)
 uv run civil-rag search "임대차보증금 반환 동시이행" --mode bm25
@@ -42,6 +43,8 @@ uv run streamlit run app/streamlit_app.py
 
 # 5) 1단계: 시험지 풀기 (exams/README.md)
 uv run civil-rag exam exams/<시험>.json --configs LLM A B C C+RW
+#    지문별 검색 전략: --strategy statements (개선판) / statements_v1 (2026 기출 62점 고정본), --workers 5 로 동시 풀이
+uv run civil-rag exam exams/2026-civil-mc-variant-v1.json --configs C --strategy statements --workers 5
 
 # 6) 2단계: 고정 평가 (eval/README.md)
 uv run civil-rag check-eval

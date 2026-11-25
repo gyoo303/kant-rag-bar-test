@@ -1,0 +1,96 @@
+{
+  "batch_id": "20261125-092220-exam-2025-civil-mc-rag-C-idx2025",
+  "exam_id": "2025-civil-mc",
+  "exam_file": "exams\\2025-civil-mc.json",
+  "run_config": "C",
+  "strategy": "whole",
+  "n_items": 70,
+  "started_at": "2026-11-25T09:22:20",
+  "settings": {
+    "llm_model": "gpt-6-luna",
+    "llm_temperature": null,
+    "embedding_model": "text-embedding-3-small",
+    "reranker_model": "Dongjin-kr/ko-reranker",
+    "vector_backend": "pgvector",
+    "index_version": "v2-2025",
+    "law_as_of": "20250101",
+    "prec_date_from": "",
+    "prec_date_to": "20241231",
+    "collection": "civil_precedents_v2-2025_field",
+    "chunk_strategy": "field",
+    "field_fulltext_fallback": false,
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "first_stage_k": 20,
+    "final_k": 5,
+    "ensemble_weights": [
+      0.5,
+      0.5
+    ],
+    "rrf_c": 60,
+    "bm25_tokenizer": "whitespace",
+    "min_vector_similarity": null,
+    "min_rerank_score": null
+  },
+  "index_manifest": {
+    "built_at": "2026-11-24T12:16:19",
+    "index_version": "v2-2025",
+    "collection": "civil_precedents_v2-2025_field",
+    "chunk_strategy": "field",
+    "field_fulltext_fallback": false,
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "filters": {
+      "limit": 0,
+      "court": null,
+      "keywords": [],
+      "ids_file": null,
+      "laws": "all",
+      "prec_date_from": "",
+      "prec_date_to": "20241231",
+      "law_as_of": "20250101",
+      "law_dir": "law_collector\\data\\law_20250101"
+    },
+    "skipped": {
+      "no_summary": 6581,
+      "date": 678
+    },
+    "prec_docs": 35278,
+    "prec_chunks": 108711,
+    "laws": [
+      "가등기담보 등에 관한 법률",
+      "가사소송법",
+      "민법",
+      "민사소송법",
+      "민사집행법",
+      "부동산 실권리자명의 등기에 관한 법률",
+      "부동산등기법",
+      "상가건물 임대차보호법",
+      "상법",
+      "수표법",
+      "신탁법",
+      "약관의 규제에 관한 법률",
+      "어음법",
+      "이자제한법",
+      "제조물 책임법",
+      "주택임대차보호법",
+      "집합건물의 소유 및 관리에 관한 법률",
+      "채무자 회생 및 파산에 관한 법률"
+    ],
+    "law_chunks": 4658,
+    "total_chunks": 113369,
+    "source": "법제처 국가법령정보센터 (open.law.go.kr)",
+    "vector_index": {
+      "backend": "pgvector",
+      "num_added": 113369,
+      "num_updated": 0,
+      "num_skipped": 0,
+      "num_deleted": 0,
+      "indexed_at": "2026-11-24T12:34:06"
+    }
+  },
+  "git": {
+    "commit": "47500507ec1469d3353ddffc5757e5f4d01a7431",
+    "dirty": true
+  }
+}

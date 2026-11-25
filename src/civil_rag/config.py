@@ -24,6 +24,8 @@ def _env(name: str, default: str) -> str:
 LAW_AS_OF = _env("LAW_AS_OF", "20260101")        # 이 날짜에 시행 중이던 법령 버전 사용
 PREC_DATE_FROM = _env("PREC_DATE_FROM", "")      # 판례 선고일 하한 (기본: 제한 없음)
 PREC_DATE_TO = _env("PREC_DATE_TO", "20251231")  # 판례 선고일 상한 (시험일 이후 판례 제외)
+# 검색 시점 필터: 색인을 다시 만들지 않고 더 이른 해의 시험을 풀 때 시험일 이후 판례를 검색에서 뺀다 (예: 20221231)
+RETRIEVAL_DATE_TO = "".join(ch for ch in _env("RETRIEVAL_DATE_TO", "") if ch.isdigit())
 
 # ── 경로 ─────────────────────────────────────────────
 PREC_DIR = ROOT / "law_collector" / "data" / "prec"   # 수집한 판례 원문 (git 제외)
@@ -49,6 +51,7 @@ LLM_TEMPERATURE: float | None = None if _t in ("none", "") else float(_t)
 LLM_TIMEOUT = 120          # 초. 넘으면 status=timeout
 EMBEDDING_MODEL = "text-embedding-3-small"
 RERANKER_MODEL = "Dongjin-kr/ko-reranker"
+RERANKER_DEVICE = _env("RERANKER_DEVICE", "cpu")  # cpu(기본) | cuda | auto — 점수는 같고 속도만 다름. 노트북 GPU 는 2026-11-25 부하 중 시스템 재시작이 반복돼 기본값을 cpu 로 둠
 JUDGE_MODEL = _env("JUDGE_MODEL", "gpt-6-luna")  # RAGAS 판정용 (교안 7장은 gpt-4o-mini, 팀 모델로 통일)
 
 # ── 청킹 ─────────────────────────────────────────────
@@ -71,7 +74,7 @@ FIRST_STAGE_K = 20             # BM25·Vector 각각 1차 후보 수
 FINAL_K = 5                    # 최종 근거 수 (Hit@5)
 ENSEMBLE_WEIGHTS = (0.5, 0.5)  # (BM25, Vector) — 교안 5-3 기본값
 RRF_C = 60                     # 교안 5-3 RRF 상수 (EnsembleRetriever 기본값과 동일)
-BM25_TOKENIZER = _env("BM25_TOKENIZER", "whitespace")  # whitespace(교안) | kiwi(비교 실험)
+BM25_TOKENIZER = _env("BM25_TOKENIZER", "whitespace")  # whitespace(교안) | bigram | kiwi (비교 실험)
 
 # ── 근거 부족 판정 (개발셋으로 정한 뒤 고정. None 이면 사용 안 함) ──
 # 교안 3-3: 벡터 코사인 거리 <= 0.60 만 근거로 인정 → 여기서는 유사도(1-거리) 기준으로 저장
@@ -88,11 +91,13 @@ def snapshot() -> dict:
         "llm_temperature": LLM_TEMPERATURE,
         "embedding_model": EMBEDDING_MODEL,
         "reranker_model": RERANKER_MODEL,
+        "reranker_device": RERANKER_DEVICE,
         "vector_backend": VECTOR_BACKEND,
         "index_version": INDEX_VERSION,
         "law_as_of": LAW_AS_OF,
         "prec_date_from": PREC_DATE_FROM,
         "prec_date_to": PREC_DATE_TO,
+        "retrieval_date_to": RETRIEVAL_DATE_TO,
         "collection": COLLECTION_NAME,
         "chunk_strategy": CHUNK_STRATEGY,
         "field_fulltext_fallback": FIELD_FULLTEXT_FALLBACK,

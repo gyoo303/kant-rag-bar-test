@@ -1,0 +1,103 @@
+{
+  "batch_id": "20261125-145927-exam-2026-civil-mc-v3-fast",
+  "exam_id": "2026-civil-mc",
+  "exam_file": "exams\\2026-civil-mc.json",
+  "run_config": "C",
+  "strategy": "statements",
+  "n_items": 3,
+  "started_at": "2026-11-25T14:59:27",
+  "settings": {
+    "llm_model": "gpt-6-luna",
+    "llm_temperature": null,
+    "embedding_model": "text-embedding-3-small",
+    "reranker_model": "Dongjin-kr/ko-reranker",
+    "reranker_device": "cpu",
+    "vector_backend": "pgvector",
+    "index_version": "v2",
+    "law_as_of": "20260101",
+    "prec_date_from": "",
+    "prec_date_to": "20251231",
+    "collection": "civil_precedents_v2_field",
+    "chunk_strategy": "field",
+    "field_fulltext_fallback": false,
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "first_stage_k": 20,
+    "final_k": 5,
+    "ensemble_weights": [
+      0.5,
+      0.5
+    ],
+    "rrf_c": 60,
+    "bm25_tokenizer": "whitespace",
+    "min_vector_similarity": null,
+    "min_rerank_score": null
+  },
+  "index_manifest": {
+    "built_at": "2026-11-25T10:22:57",
+    "index_version": "v2",
+    "collection": "civil_precedents_v2_field",
+    "chunk_strategy": "field",
+    "field_fulltext_fallback": false,
+    "chunk_size": 500,
+    "chunk_overlap": 50,
+    "filters": {
+      "limit": 0,
+      "court": null,
+      "keywords": [],
+      "ids_file": null,
+      "laws": "all",
+      "prec_date_from": "",
+      "prec_date_to": "20251231",
+      "law_as_of": "20260101",
+      "law_dir": "law_collector\\data\\law_20260101"
+    },
+    "skipped": {
+      "no_summary": 6689,
+      "date": 172
+    },
+    "prec_docs": 35676,
+    "prec_chunks": 109911,
+    "laws": [
+      "가등기담보 등에 관한 법률",
+      "가사소송법",
+      "민법",
+      "민사소송법",
+      "민사집행법",
+      "부동산 실권리자명의 등기에 관한 법률",
+      "부동산등기법",
+      "상가건물 임대차보호법",
+      "상법",
+      "수표법",
+      "신탁법",
+      "약관의 규제에 관한 법률",
+      "어음법",
+      "이자제한법",
+      "제조물 책임법",
+      "주택임대차보호법",
+      "집합건물의 소유 및 관리에 관한 법률",
+      "채무자 회생 및 파산에 관한 법률"
+    ],
+    "law_chunks": 4682,
+    "total_chunks": 114593,
+    "source": "법제처 국가법령정보센터 (open.law.go.kr)",
+    "vector_index": {
+      "backend": "pgvector",
+      "num_added": 114593,
+      "num_updated": 0,
+      "num_skipped": 0,
+      "num_deleted": 114575,
+      "indexed_at": "2026-11-25T10:36:41"
+    }
+  },
+  "git": {
+    "commit": "47500507ec1469d3353ddffc5757e5f4d01a7431",
+    "dirty": true
+  },
+  "wall_seconds": 250.6,
+  "workers": 3,
+  "tokens": {
+    "input": 30974,
+    "output": 8836
+  }
+}

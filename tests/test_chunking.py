@@ -47,6 +47,20 @@ def test_field_strategy_items_meta_and_no_fulltext():
     assert second.metadata["item"] == "[2]"
 
 
+def test_law_addendum_articles_after_last_main_article():
+    law = {"법령": {
+        "기본정보": {"법령명_한글": "어음법", "시행일자": "20100331"},
+        "조문": {"조문단위": [{"조문번호": "78", "조문여부": "조문", "조문내용": "제78조(발행인의 책임)"}]},
+        "부칙": {"부칙단위": [{"부칙내용": [["제1조 (시행일) 이 법은 공포한 날부터 시행한다.",
+                                          "제80조 (소송고지로 인한 시효중단) ①배서인의 …",
+                                          "②전항의 규정에 의하여 중단된 시효는 …"]]}]},
+    }}
+    ids = [c.chunk_id for c in law_to_chunks(law)]
+    assert ids == ["law:어음법:78", "law:어음법:80"]          # 부칙 제1조(시행일)는 본문 번호 이하라 제외
+    c80 = law_to_chunks(law)[1]
+    assert "②전항" in c80.text and c80.metadata["in_addendum"]
+
+
 def test_field_strategy_skips_case_without_summary():
     prec = {**PREC, "판시사항": "", "판결요지": ""}
     assert prec_to_chunks(prec, strategy="field") == []

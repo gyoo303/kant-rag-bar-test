@@ -1,0 +1,4 @@
+﻿no,subject,predicted,answer,correct,status,polarity,seconds,error
+1,민사법,3,3,1,ok,correct,147.73,
+8,민사법,5,5,1,ok,incorrect,227.72,
+26,민사법,2,2,1,ok,incorrect,165.65,

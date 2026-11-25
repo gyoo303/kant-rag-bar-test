@@ -19,7 +19,7 @@ from civil_rag import config
 from civil_rag.ingest.build import MEMORY_STORE_FILE, load_chunks
 from civil_rag.ingest.chunking import Chunk
 from civil_rag.retrieval.fusion import weighted_rrf
-from civil_rag.retrieval.tokenize import get_tokenizer
+from civil_rag.retrieval.tokenize import cached_tokens, get_tokenizer
 from civil_rag.retrieval.types import Candidate, RetrievalResult
 
 CONFIGS = ("A", "B", "C")
@@ -39,6 +39,7 @@ class Retriever:
         self.final_k = final_k
         self.weights = weights
         self.tokenizer_name = tokenizer
+        self.date_to = config.RETRIEVAL_DATE_TO
         t0 = time.perf_counter()
         self.chunks: dict[str, Chunk] = {c.chunk_id: c for c in load_chunks()}
         self.load_seconds = time.perf_counter() - t0
@@ -50,10 +51,13 @@ class Retriever:
         from langchain_community.retrievers import BM25Retriever
         from langchain_core.documents import Document
 
+        from rank_bm25 import BM25Okapi
+
         docs = [Document(page_content=c.text, metadata={"chunk_id": c.chunk_id}) for c in self.chunks.values()]
-        return BM25Retriever.from_documents(
-            docs, preprocess_func=get_tokenizer(self.tokenizer_name), k=self.first_stage_k
-        )
+        tokenized = cached_tokens(self.tokenizer_name, list(self.chunks), [c.text for c in self.chunks.values()])
+        # BM25Retriever.from_documents 와 같은 구성. 토큰화 결과만 캐시에서 가져온다 (kiwi 는 전체 토큰화에 수 분)
+        return BM25Retriever(vectorizer=BM25Okapi(tokenized), docs=docs,
+                             preprocess_func=get_tokenizer(self.tokenizer_name), k=self.first_stage_k)
 
     @cached_property
     def vector_store(self):
@@ -79,34 +83,100 @@ class Retriever:
         docs = self.bm25.docs
         return np.array([key in self.chunks[d.metadata["chunk_id"]].metadata.get("ref_articles", []) for d in docs])
 
-    def bm25_search(self, query: str, k: int, article: str | None = None) -> list[tuple[str, float]]:
+    @cached_property
+    def _bm25_matrix(self):
+        """BM25Okapi 점수를 미리 (문서 × 단어) 희소행렬로 계산해 둔다. 점수는 rank_bm25 get_scores 와 같고,
+        질의마다 전체 문서를 파이썬으로 도는 대신 행렬 곱 한 번이라 빠르다 (동시 실행 시 GIL 경합도 줄어듦)."""
+        from scipy.sparse import csr_matrix
+
+        v = self.bm25.vectorizer
+        vocab: dict[str, int] = {}
+        rows, cols, vals = [], [], []
+        k1, b, avgdl = v.k1, v.b, v.avgdl
+        for i, (freqs, dl) in enumerate(zip(v.doc_freqs, v.doc_len)):
+            norm = k1 * (1 - b + b * dl / avgdl)
+            for term, tf in freqs.items():
+                j = vocab.setdefault(term, len(vocab))
+                rows.append(i)
+                cols.append(j)
+                vals.append(v.idf.get(term, 0.0) * tf * (k1 + 1) / (tf + norm))
+        m = csr_matrix((np.asarray(vals, dtype=np.float64), (rows, cols)), shape=(len(v.doc_freqs), len(vocab)))
+        return m.tocsc(), vocab
+
+    def bm25_scores(self, query: str) -> np.ndarray:
+        """rank_bm25 의 get_scores(preprocess(query)) 와 같은 값 (질의 단어 중복은 그만큼 더함)."""
+        m, vocab = self._bm25_matrix
+        qv = np.zeros(m.shape[1])
+        for t in self.bm25.preprocess_func(query):
+            j = vocab.get(t)
+            if j is not None:
+                qv[j] += 1.0
+        if not qv.any():
+            return np.zeros(m.shape[0])
+        return m @ qv
+
+    @cached_property
+    def _doc_type_arr(self) -> np.ndarray:
+        return np.array([self.chunks[d.metadata["chunk_id"]].doc_type for d in self.bm25.docs])
+
+    def date_ok(self, cid: str) -> bool:
+        """검색 시점 필터 (RETRIEVAL_DATE_TO). 판례는 선고일이 상한 이하일 때만, 조문은 항상 통과.
+        색인을 새로 만들지 않고 더 이른 해의 시험을 풀 때 시험일 이후 판례를 빼기 위한 것."""
+        if not self.date_to:
+            return True
+        ch = self.chunks.get(cid)
+        if ch is None or ch.doc_type != "prec":
+            return True
+        d = "".join(x for x in str(ch.metadata.get("decision_date") or "") if x.isdigit())
+        return len(d) == 8 and d <= self.date_to
+
+    @cached_property
+    def _date_mask(self) -> np.ndarray:
+        return np.array([self.date_ok(d.metadata["chunk_id"]) for d in self.bm25.docs])
+
+    def bm25_search(self, query: str, k: int, article: str | None = None,
+                    doc_type: str | None = None) -> list[tuple[str, float]]:
         """BM25Retriever 내부 BM25Okapi 점수를 그대로 사용 (점수 기록용). 점수 0(겹치는 단어 없음)은 제외.
         article(조문 키) 가 있으면 그 조문을 참조하는 청크 안에서만 찾는다 (교안 3-4 메타데이터 필터)."""
         retriever = self.bm25
-        scores = retriever.vectorizer.get_scores(retriever.preprocess_func(query))
+        scores = self.bm25_scores(query)
         if len(scores) == 0:
             return []
         if article:
             scores = np.where(self.article_mask(article), scores, 0.0)
+        if doc_type:
+            scores = np.where(self._doc_type_arr == doc_type, scores, 0.0)
+        if self.date_to:
+            scores = np.where(self._date_mask, scores, 0.0)
         top = np.argsort(scores)[::-1][:k]
         return [(retriever.docs[i].metadata["chunk_id"], float(scores[i])) for i in top if scores[i] > 0]
 
-    def vector_search(self, query: str, k: int, article: str | None = None) -> list[tuple[str, float]]:
-        """반환 점수는 코사인 유사도로 통일 (pgvector는 거리 → 1-거리). article 이 있으면 메타데이터 필터."""
+    def vector_search(self, query: str, k: int, article: str | None = None,
+                      doc_type: str | None = None) -> list[tuple[str, float]]:
+        """반환 점수는 코사인 유사도로 통일 (pgvector는 거리 → 1-거리).
+        article(참조조문)·doc_type(prec|law) 이 있으면 메타데이터 필터."""
         kwargs = {}
-        if article:
+        if article or doc_type:
             if self.backend == "pgvector":
-                kwargs["filter"] = {"ref_articles_str": {"$like": f"%|{article}|%"}}
+                conds = []
+                if article:
+                    conds.append({"ref_articles_str": {"$like": f"%|{article}|%"}})
+                if doc_type:
+                    conds.append({"doc_type": {"$eq": doc_type}})
+                kwargs["filter"] = conds[0] if len(conds) == 1 else {"$and": conds}
             else:
-                kwargs["filter"] = lambda doc: article in doc.metadata.get("ref_articles", [])
-        pairs = self.vector_store.similarity_search_with_score(query, k=k, **kwargs)
+                kwargs["filter"] = lambda doc: ((not article or article in doc.metadata.get("ref_articles", []))
+                                                and (not doc_type or doc.metadata.get("doc_type") == doc_type))
+        # 시점 필터가 있으면 넉넉히 받아서 시험일 이후 판례를 뺀 뒤 k개로 자른다
+        fetch = k * 2 if self.date_to else k
+        pairs = self.vector_store.similarity_search_with_score(query, k=fetch, **kwargs)
         out = []
         for doc, score in pairs:
             cid = doc.metadata.get("chunk_id") or doc.id
             sim = 1.0 - float(score) if self.backend == "pgvector" else float(score)
-            if cid in self.chunks:
+            if cid in self.chunks and self.date_ok(cid):
                 out.append((cid, sim))
-        return out
+        return out[:k]
 
     def rerank(self, query: str, candidates: list[Candidate]) -> list[Candidate]:
         """교안 5-4 CrossEncoder(ko-reranker)로 질의–청크 관련도를 다시 매겨 정렬 (점수 기록)."""
@@ -128,8 +198,9 @@ class Retriever:
         return Candidate(chunk_id=cid, doc_id=ch.doc_id, section=ch.section, text=ch.text, metadata=ch.metadata)
 
     def retrieve(self, question: str, mode: str = "C", rewrite: bool = False,
-                 article: str | None = None) -> RetrievalResult:
-        """article: '민법 제750조' 또는 'law:민법:750' — 주면 그 조문 관련 청크에서만 검색."""
+                 article: str | None = None, doc_type: str | None = None) -> RetrievalResult:
+        """article: '민법 제750조' 또는 'law:민법:750' — 주면 그 조문 관련 청크에서만 검색.
+        doc_type: 'law' | 'prec' — 주면 그 종류 청크에서만 검색 (조문 몫 보장용)."""
         if mode not in CONFIGS:
             raise ValueError(f"mode 는 {CONFIGS} 중 하나")
         if article and not article.startswith("law:"):
@@ -152,7 +223,7 @@ class Retriever:
             timings["rewrite"] = time.perf_counter() - t
 
         t = time.perf_counter()
-        vec = self.vector_search(query, self.final_k if mode == "A" else self.first_stage_k, article)
+        vec = self.vector_search(query, self.final_k if mode == "A" else self.first_stage_k, article, doc_type)
         timings["vector"] = time.perf_counter() - t
         stages["vector"] = [cid for cid, _ in vec]
         vec_score = {cid: s for cid, s in vec}
@@ -162,7 +233,7 @@ class Retriever:
         bm_rank: dict[str, int] = {}
         if mode in ("B", "C"):
             t = time.perf_counter()
-            bm = self.bm25_search(query, self.first_stage_k, article)
+            bm = self.bm25_search(query, self.first_stage_k, article, doc_type)
             timings["bm25"] = time.perf_counter() - t
             stages["bm25"] = [cid for cid, _ in bm]
             bm_score = {cid: s for cid, s in bm}
@@ -205,6 +276,8 @@ class Retriever:
         timings["retrieval_total"] = sum(v for k, v in timings.items())
         if article:
             stages["article_filter"] = [article]
+        if doc_type:
+            stages["doc_type_filter"] = [doc_type]
         return RetrievalResult(
             config=mode,
             query=query,

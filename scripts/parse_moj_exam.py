@@ -57,9 +57,23 @@ def page_text(path: Path) -> str:
     return "".join(p.parts)
 
 
+def _keep_blank_columns(line: str) -> str:
+    """빈칸 채우기형 보기('① 허용된다    있다    사실심 변론종결시    성립한다')는 칸 사이가 여러 칸 띄어쓰기다.
+    공백을 하나로 합치기 전에 그 경계를 ' / '로 남겨, 풀이 단계에서 칸(A~D)별 값을 나눌 수 있게 한다.
+    칸이 3개 이상이고 칸마다 짧을 때만 (일반 보기의 우연한 두 칸 띄어쓰기는 건드리지 않음)."""
+    m = re.match(r"^(\s*[①②③④⑤])\s*(.+)$", line)
+    if not m or sum(ch in CIRCLED for ch in line) > 1:
+        return line
+    cols = [c.strip() for c in re.split(r"[ \t]{2,}", m.group(2).strip()) if c.strip()]
+    if len(cols) >= 3 and all(len(c) <= 30 for c in cols):
+        return f"{m.group(1)} " + " / ".join(cols)
+    return line
+
+
 def clean_lines(text: str) -> list[str]:
     out = []
     for line in text.replace("\xa0", " ").replace("　", " ").splitlines():
+        line = _keep_blank_columns(line)
         line = re.sub(r"[ \t]+", " ", line).strip()
         line = line.replace("｢", "「").replace("｣", "」")
         line = re.sub(r"\s*이하부터는\s*여백입니다\.?\s*$", "", line)

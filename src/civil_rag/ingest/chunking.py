@@ -268,4 +268,60 @@ def law_to_chunks(law_json: dict, fetched_at: str | None = None) -> list[Chunk]:
             "fetched_at": fetched_at or "",
         }
         chunks.append(Chunk(cid, f"law:{name}", "law", label, f"[{name} {label}]\n{body}", meta))
+    chunks += _addendum_articles(law, name, info, fetched_at, chunks)
     return chunks
+
+
+_ADD_ART = re.compile(r"^\s*제\s*(\d+)\s*조(?:\s*의\s*(\d+))?\s*\(([^)]*)\)\s*(.*)$")
+
+
+def _addendum_lines(node) -> list[str]:
+    out: list[str] = []
+    if isinstance(node, list):
+        for x in node:
+            out.extend(_addendum_lines(x))
+    elif isinstance(node, str):
+        out.extend(line for line in node.splitlines() if line.strip())
+    return out
+
+
+def _addendum_articles(law: dict, name: str, info: dict, fetched_at: str | None, main: list[Chunk]) -> list[Chunk]:
+    """부칙 안에 실린 본문 성격의 조문 (예: 어음법 제79조 이득상환청구권, 제80조 소송고지로 인한 시효중단).
+    부칙의 '제1조(시행일)' 같은 경과규정과 섞이지 않도록 본문 마지막 조번호보다 큰 번호만 받는다."""
+    if not main:
+        return []
+    max_main = max(int(c.chunk_id.rsplit(":", 1)[1].split("-")[0]) for c in main)
+    units = law.get("부칙", {}).get("부칙단위", [])
+    if isinstance(units, dict):
+        units = [units]
+    found: dict[str, list[str]] = {}
+    titles: dict[str, str] = {}
+    for u in units:
+        cur = None
+        for line in _addendum_lines(u.get("부칙내용", [])):
+            line = clean_text(line)
+            m = _ADD_ART.match(line)
+            if m:
+                num, branch, title = int(m.group(1)), m.group(2), m.group(3).strip()
+                key = f"{num}-{branch}" if branch else str(num)
+                if num <= max_main or key in found:
+                    cur = None
+                    continue
+                cur = key
+                found[key] = [line]
+                titles[key] = title
+            elif cur:
+                found[cur].append(line)
+    out = []
+    for key, lines in found.items():
+        num, _, branch = key.partition("-")
+        label = f"제{num}조" + (f"의{branch}" if branch else "")
+        cid = f"law:{name}:{key}"
+        meta = {
+            "ref_articles": [cid], "ref_articles_str": f"|{cid}|", "chunk_id": cid, "doc_id": f"law:{name}",
+            "doc_type": "law", "law_name": name, "article": label, "article_title": titles[key], "section": label,
+            "in_addendum": True, "effective_date": _fmt_date(info.get("시행일자")), "source": SOURCE_NAME,
+            "fetched_at": fetched_at or "",
+        }
+        out.append(Chunk(cid, f"law:{name}", "law", label, f"[{name} {label}]\n" + "\n".join(lines), meta))
+    return out

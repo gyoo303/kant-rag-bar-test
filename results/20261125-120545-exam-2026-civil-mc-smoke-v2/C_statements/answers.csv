@@ -1,0 +1,9 @@
+﻿no,subject,predicted,answer,correct,status,polarity,seconds,error
+2,민사법,5,5,1,ok,incorrect,585.18,
+4,민사법,5,5,1,ok,correct,446.68,
+6,민사법,1,1,1,ok,correct,501.64,
+13,민사법,2,2,1,ok,incorrect,500.59,
+17,민사법,1,1,1,ok,correct,590.1,
+23,민사법,2,2,1,ok,incorrect,494.34,
+26,민사법,2,2,1,ok,incorrect,525.85,
+47,민사법,5,5,1,ok,correct,465.41,

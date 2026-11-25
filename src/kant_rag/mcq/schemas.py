@@ -64,6 +64,7 @@ class StatementJudgment(BaseModel):
     cited_chunk_ids: list[str] = Field(default_factory=list)
     source: Literal["evidence", "knowledge"] = "evidence"  # knowledge = 근거 없이 모델 지식으로 채운 판단 (개선안 C)
     restated: str | None = None  # 판단 프롬프트 v4: 이중부정·우회 표현을 단순한 평서문으로 풀어 쓴 문장
+    quote: str | None = None     # 판단 프롬프트 v5: 결정적 근거 문장 (인용 청크와 대조)
 
 
 def derive_statement_labels(q: ExamQuestion) -> dict[str, bool]:

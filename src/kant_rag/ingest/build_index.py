@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 
@@ -15,11 +16,10 @@ from kant_rag.schemas import Chunk
 
 def build_chunks(settings: Settings) -> list[Chunk]:
     docs = read_manifest(settings.resolve(settings.paths.manifest))
-    raw_dir = settings.resolve(settings.paths.raw_dir)
     chunks: list[Chunk] = []
     missing: list[str] = []
     for meta in docs:
-        path = raw_dir / meta.path
+        path = settings.raw_path(meta.path)
         if not path.exists():
             # 아직 수집하지 않은 문서(예: kant-rag fetch-laws 미실행)는 건너뛰고 index_info 에 기록
             missing.append(meta.doc_id)
@@ -59,7 +59,7 @@ def build_index(settings: Settings) -> dict:
     from kant_rag.retrieval.vector import VectorIndex
 
     t0 = time.perf_counter()
-    index_dir = settings.resolve(settings.paths.index_dir)
+    index_dir = settings.index_path()
     index_dir.mkdir(parents=True, exist_ok=True)
 
     chunks = build_chunks(settings)
@@ -89,6 +89,9 @@ def build_index(settings: Settings) -> dict:
         "n_docs": len({c.doc_id for c in chunks}),
         "n_chunks": len(chunks),
         "missing_docs": getattr(build_chunks, "missing", []),
+        "chunk_ids_sha256": hashlib.sha256("\n".join(sorted(c.chunk_id for c in chunks)).encode()).hexdigest()[:16],
+        "statute_snapshot": settings.corpus.statute_snapshot,
+        "case_date_to": settings.corpus.case_date_to,
         "built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "elapsed_s": round(time.perf_counter() - t0, 2),
     }
@@ -99,6 +102,6 @@ def build_index(settings: Settings) -> dict:
 
 
 def load_chunks(settings: Settings) -> list[Chunk]:
-    path = settings.resolve(settings.paths.index_dir) / "chunks.jsonl"
+    path = settings.index_path() / "chunks.jsonl"
     with path.open(encoding="utf-8") as f:
         return [Chunk.model_validate_json(line) for line in f if line.strip()]

@@ -10,6 +10,8 @@
          + 판단 프롬프트 v4(진술 풀어 쓰기·조문 단서 범위) + 동점 재판단
   dc   : d + 판단 결합(지식 원 확신도 0.8 이상만)
   v4   : = d (별칭)
+  v5   : v4 + 발문 기준 시점·색인 밖 법령 경고·진술 간 참조·발문 전체 리라이트·인용 대조·근소 차 재판단
+  v5c  : v5 + 판단 결합(지식 원 확신도 0.8 이상만)
 """
 
 from __future__ import annotations
@@ -34,6 +36,15 @@ PRESETS["d"] = {**PRESETS["b"], "mcq.answer_fallback": True, "mcq.rewrite_versio
                 "mcq.original_query": True, "mcq.tie_rejudge": True, "mcq.statute_parts": True}
 PRESETS["dc"] = {**PRESETS["d"], "mcq.fusion": "fill_unknown", "mcq.fusion_min_conf": 0.8}  # d + 지식 결합(원 확신도 0.8 이상만)
 PRESETS["v4"] = PRESETS["d"]  # 별칭: --preset v4 = d
+# v5 (레드팀 공략안 + 구조 분석): v4 + 발문 기준 시점, 색인 밖 법령 경고, 진술 간 참조 질의, 리라이트 v4(발문 전체),
+# 판단 v5(인용 문장·가정 사실·논거 분리), 인용 대조(실패 시 확신도 ×0.85), 점수 차이가 작은 보기 재판단(2등 ≥ 1등×0.5).
+# 확신도 보정(mcq.calibration)은 기존 기록 재계산에서 오히려 낮아져(v2 58→57, bar13 closed-book 53→49) 기본에서 뺐다.
+# 표본이 쌓이면 --set mcq.calibration=configs/calibration.json 으로 비교
+PRESETS["v5"] = {**PRESETS["d"], "mcq.asof_from_stem": True, "mcq.out_of_corpus_warn": True,
+                 "mcq.cross_ref_queries": True, "mcq.rewrite_version": "v4", "mcq.rewrite_stem_chars": 0,
+                 "mcq.prompt_version": "v5", "mcq.quote_check": True, "mcq.quote_penalty": 0.85,
+                 "mcq.rejudge_ratio": 0.5}
+PRESETS["v5c"] = {**PRESETS["v5"], "mcq.fusion": "fill_unknown", "mcq.fusion_min_conf": 0.8}
 
 
 def parse_sets(items: list[str] | None) -> dict[str, Any]:

@@ -32,6 +32,7 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("api-check", help="law.go.kr API 연결·응답 구조 점검 (법령 1건, 판례 1건)")
     fl = sub.add_parser("fetch-laws", help="문서 목록의 법령(doc_type=statute)을 law.go.kr 에서 시험일 기준 버전으로 수집")
     fl.add_argument("--only", nargs="*", help="법령명 일부만 (기본: 목록 전체)")
+    fl.add_argument("--snapshot", default=None, help="이 날짜(YYYYMMDD)에 시행 중이던 버전을 data/raw/statutes@<날짜>/ 에 받음 (과거 시험용)")
     sub.add_parser("build-topics", help="수집한 법령 구조 → 판례 검색 주제어 (data/cases/topics.txt)")
     fc = sub.add_parser("fetch-cases", help="주제어별 대법원 판례 판결요지 수집 → data/raw/cases/cases.jsonl (재시작 가능)")
     fc.add_argument("--limit-topics", type=int, default=None, help="앞에서 N개 주제어만 (시험 실행용)")
@@ -50,7 +51,9 @@ def main(argv: list[str] | None = None) -> None:
     fd.add_argument("keywords", nargs="+", help="모두 포함(AND). 예: 성명 모용 표현대리")
     fd.add_argument("--limit", type=int, default=30)
 
-    sub.add_parser("build-index", help="문서 목록 → 청크 → BM25/벡터 색인 재생성")
+    bi = sub.add_parser("build-index", help="문서 목록 → 청크 → BM25/벡터 색인 재생성")
+    bi.add_argument("--snapshot", default=None, help="법령 스냅숏 날짜 → statutes@<날짜> 로 index@<날짜> 생성")
+    bi.add_argument("--case-date-to", default=None, help="이 날짜 이후 선고 판례 제외 (스냅숏과 같이 쓰면 시험 시점 색인)")
     sub.add_parser("chunks", help="청킹 결과만 출력 (모델 불필요)")
 
     for name in ("ask", "search"):
@@ -125,11 +128,28 @@ def main(argv: list[str] | None = None) -> None:
     rs.add_argument("--exam", default=None, help="eval 실행이면 문항 파일 (solve-text 실행은 불필요)")
     rs.add_argument("--cap", type=float, default=0.95)
 
+    cp = sub.add_parser("compare", help="두 실행의 문항별 정답 교차표 + 정확 McNemar p (차이가 노이즈인지)")
+    cp.add_argument("run_a")
+    cp.add_argument("run_b")
+    cp.add_argument("--exam", default=None, help="eval 기록에 정답이 없을 때 문항 파일")
+
+    cb = sub.add_parser("calibrate", help="실행 기록의 진술 판단으로 확신도 보정표 생성 (튜닝 세트 실행만 쓸 것)")
+    cb.add_argument("run_dirs", nargs="+")
+    cb.add_argument("--exam", default=None)
+    cb.add_argument("--out", default="configs/calibration.json")
+
     fz = sub.add_parser("freeze-test", help="eval/test.json 을 최종 평가용으로 고정 (frozen=true, 시각·커밋 기록)")
     fz.add_argument("--yes", action="store_true", help="실제로 고정 (없으면 점검만)")
 
     args = p.parse_args(argv)
     settings = get_settings(args.config)
+    if getattr(args, "snapshot", None):  # 법령 스냅숏: 그 날짜의 법령으로 수집·색인
+        settings = settings.model_copy(deep=True)
+        settings.corpus.statute_snapshot = str(args.snapshot)
+        settings.corpus.law_date = str(args.snapshot)
+    if getattr(args, "case_date_to", None):
+        settings = settings.model_copy(deep=True)
+        settings.corpus.case_date_to = str(args.case_date_to)
 
     if args.cmd == "api-check":
         from kant_rag.ingest.lawapi import LawAPI
@@ -187,24 +207,43 @@ def main(argv: list[str] | None = None) -> None:
         manifest = settings.resolve(settings.paths.manifest)
         docs = read_manifest(manifest)
         rows = list(_csv.DictReader(manifest.open(encoding="utf-8")))
+        snap, snap_versions, failed = settings.corpus.statute_snapshot, {}, []
         for meta in docs:
             if meta.doc_type != "statute" or meta.doc_id.startswith("LAW-SAMPLE"):
                 continue
             if args.only and not any(o in meta.title for o in args.only):
                 continue
-            info = api.find_law(meta.title, settings.corpus.law_date)
-            path = settings.resolve(settings.paths.raw_dir) / meta.path
+            try:
+                info = api.find_law(meta.title, settings.corpus.law_date)
+                text = api.law_text(info["법령일련번호"], str(info.get("시행일자", "")))
+            except (SystemExit, Exception) as e:  # 한 법령 실패(예: 대법원규칙 미지원)로 전체를 멈추지 않음
+                failed.append(meta.title)
+                print(f"[warn] {meta.title}: 수집 실패 → 건너뜀 ({e})")
+                continue
+            path = settings.raw_path(meta.path)
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(api.law_text(info["법령일련번호"], str(info.get("시행일자", ""))), encoding="utf-8")
-            for r in rows:  # 문서 목록에 시행일자·수집일 기록
-                if r["doc_id"] == meta.doc_id:
-                    r["version"] = f"시행 {info.get('시행일자')} (공포 {info.get('공포일자')}, MST {info['법령일련번호']})"
-                    r["collected_at"] = _time.strftime("%Y-%m-%d")
+            path.write_text(text, encoding="utf-8")
+            version = f"시행 {info.get('시행일자')} (공포 {info.get('공포일자')}, MST {info['법령일련번호']})"
+            if snap:  # 스냅숏은 문서 목록을 바꾸지 않고 폴더에 버전 기록
+                snap_versions[meta.doc_id] = version
+            else:
+                for r in rows:  # 문서 목록에 시행일자·수집일 기록
+                    if r["doc_id"] == meta.doc_id:
+                        r["version"] = version
+                        r["collected_at"] = _time.strftime("%Y-%m-%d")
             print(f"{meta.title}: 시행 {info.get('시행일자')} → {path.relative_to(ROOT)}")
-        with manifest.open("w", encoding="utf-8", newline="") as f:
-            w = _csv.DictWriter(f, fieldnames=list(rows[0]))
-            w.writeheader()
-            w.writerows(rows)
+        if snap:
+            vf = settings.raw_path("statutes/_versions.json")
+            vf.parent.mkdir(parents=True, exist_ok=True)
+            vf.write_text(json.dumps({"law_date": snap, "versions": snap_versions}, ensure_ascii=False, indent=2),
+                          encoding="utf-8")
+        else:
+            with manifest.open("w", encoding="utf-8", newline="") as f:
+                w = _csv.DictWriter(f, fieldnames=list(rows[0]), lineterminator="\n")
+                w.writeheader()
+                w.writerows(rows)
+        if failed:
+            print(f"[warn] 수집 실패 {len(failed)}개: {failed}")
 
     elif args.cmd == "build-topics":
         from kant_rag.ingest.cases import build_topics
@@ -509,6 +548,34 @@ def main(argv: list[str] | None = None) -> None:
             r = rescore_run(Path(d), items, args.cap)
             print(f"{r['run_id']}: {r['before']} → {r['after']} / {r['graded']}  바뀐 문항 {r['changed']}  "
                   f"판단 불일치 {[x['number'] for x in r['inconsistent']]}")
+
+    elif args.cmd == "compare":
+        from kant_rag.mcq.evaluate import compare_runs
+        from kant_rag.mcq.io import load_bar_evalset
+
+        items = {q.number: q for q in load_bar_evalset(Path(args.exam)).items} if args.exam else None
+        r = compare_runs(Path(args.run_a), Path(args.run_b), items)
+        print(json.dumps(r, ensure_ascii=False, indent=2))
+        print(f"→ {r['a_correct']} vs {r['b_correct']} / {r['n']}, 한쪽만 정답 {len(r['only_a'])}:{len(r['only_b'])}, "
+              f"McNemar p={r['mcnemar_p']}" + (" (0.05 미만: 차이가 우연일 가능성 낮음)" if r["mcnemar_p"] < 0.05
+                                               else " (0.05 이상: 이 차이만으로는 우열을 말하기 어려움)"))
+
+    elif args.cmd == "calibrate":
+        from kant_rag.mcq.defense import fit_calibration
+        from kant_rag.mcq.evaluate import calibration_samples
+        from kant_rag.mcq.io import load_bar_evalset
+
+        items = {q.number: q for q in load_bar_evalset(Path(args.exam)).items} if args.exam else None
+        samples = calibration_samples([Path(d) for d in args.run_dirs], items)
+        table = fit_calibration(samples)
+        table["source_runs"] = [Path(d).name for d in args.run_dirs]
+        out = settings.resolve(Path(args.out))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(table, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"표본 {table['n']}개 → {out}")
+        for k in ("all", "evidence", "knowledge"):
+            if k in table:
+                print(f"  {k}: " + ", ".join(f"≤{ub}:{acc}" for ub, acc in table[k]))
 
     elif args.cmd == "freeze-test":
         import datetime as _dt

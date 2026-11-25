@@ -160,6 +160,13 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             "invalid_citation": sum(r["status"] == "invalid_citation" for r in rs),
             "inconsistent_judgments": _inconsistent(rs),
             "rewrite_fallback": _rewrite_fallback(rs),
+            "v5": {"asof": {str(r.get("number")): r["asof"] for r in rs if r.get("asof")},
+                   "out_of_corpus": {str(r.get("number")): r["out_of_corpus"] for r in rs if r.get("out_of_corpus")},
+                   "cross_refs": {str(r.get("number")): r["cross_refs"] for r in rs if r.get("cross_refs")},
+                   "quote_check": {"verified": sum(v is True for r in rs for v in (r.get("quote_check") or {}).values()),
+                                   "failed": sum(v is False for r in rs for v in (r.get("quote_check") or {}).values()),
+                                   "no_quote": sum(v is None for r in rs for v in (r.get("quote_check") or {}).values())},
+                   "calibrated": any((r.get("answer_check") or {}).get("calibrated") for r in rs)},
             "tiebreak": {"rejudged": [r.get("number") for r in rs if r.get("tiebreak")],
                          "still_tied": [r.get("number") for r in rs if r["status"] == "tie"],
                          "correct_after": sum(r["eval"]["correct"] for r in rs if r.get("tiebreak"))},
@@ -177,10 +184,21 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             sub = [r for r in rs if tag in r["eval"]["traps"]]
             trap_table.setdefault(tag, {})[mode.value] = f"{sum(r['eval']['correct'] for r in sub)}/{len(sub)}"
     summary["accuracy_by_trap"] = trap_table
+    summary["index"] = _index_info(settings)
+    summary["complete"] = True  # 끝까지 돈 실행 (중단되면 summary 자체가 없거나 이 값이 없다)
     (out / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({"by_config": summary["by_config"], "accuracy_by_trap": trap_table},
                      ensure_ascii=False, indent=2))
     return out
+
+
+def _index_info(settings: Settings) -> dict:
+    """실행에 쓴 색인 식별 정보 (팀원 색인과 같은지 비교용)."""
+    try:
+        info = json.loads((settings.index_path() / "index_info.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {k: info.get(k) for k in ("n_chunks", "chunk_ids_sha256", "built_at", "statute_snapshot", "case_date_to")}
 
 
 def _inconsistent(rs: list[dict]) -> dict:
@@ -279,4 +297,69 @@ def rescore_run(run_dir: Path, items: dict[int, ExamQuestion] | None, cap: float
     out = {"run_id": run_dir.name, "graded": n, "before": before, "after": after,
            "changed": changed, "inconsistent": inconsistent, "cap": cap}
     (run_dir / "rescore_fallback.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    return out
+
+
+# ---------- 두 실행 대응 비교 (compare) ----------
+def _correct_map(run_dir: Path, items: dict[int, ExamQuestion] | None) -> dict[int, bool]:
+    out = {}
+    for line in (run_dir / "records.jsonl").read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        r = json.loads(line)
+        if r.get("eval", {}).get("kind", "mcq") != "mcq":
+            continue
+        if "eval" in r and "correct" in r["eval"]:
+            out[r["number"]] = bool(r["eval"]["correct"])
+        else:
+            q = ExamQuestion(**r["question"]) if r.get("question") else (items or {}).get(r["number"])
+            if q is not None and q.answer is not None:
+                out[r["number"]] = r.get("predicted") == q.answer
+    return out
+
+
+def mcnemar_exact(b: int, c: int) -> float:
+    """대응 표본 정확 McNemar 양측 p (불일치 b, c 의 이항검정)."""
+    from math import comb
+    n = b + c
+    if n == 0:
+        return 1.0
+    k = min(b, c)
+    p = sum(comb(n, i) for i in range(k + 1)) / 2 ** n
+    return min(1.0, 2 * p)
+
+
+def compare_runs(a: Path, b: Path, items: dict[int, ExamQuestion] | None = None) -> dict:
+    """같은 문항을 푼 두 실행의 정답 교차표와 정확 McNemar p. 단일 실행 차이가 노이즈인지 본다."""
+    ma, mb = _correct_map(a, items), _correct_map(b, items)
+    qs = sorted(set(ma) & set(mb))
+    only_a = [n for n in qs if ma[n] and not mb[n]]
+    only_b = [n for n in qs if mb[n] and not ma[n]]
+    return {"a": a.name, "b": b.name, "n": len(qs), "a_correct": sum(ma[n] for n in qs),
+            "b_correct": sum(mb[n] for n in qs), "both": sum(ma[n] and mb[n] for n in qs),
+            "neither": sum(not ma[n] and not mb[n] for n in qs), "only_a": only_a, "only_b": only_b,
+            "mcnemar_p": round(mcnemar_exact(len(only_a), len(only_b)), 4)}
+
+
+# ---------- 확신도 보정 표본 (calibrate) ----------
+def calibration_samples(run_dirs: list[Path], items: dict[int, ExamQuestion] | None = None) -> list[tuple[str, float, bool]]:
+    from kant_rag.mcq.schemas import derive_statement_labels
+
+    out = []
+    for d in run_dirs:
+        for line in (d / "records.jsonl").read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            r = json.loads(line)
+            if r.get("eval", {}).get("kind", "mcq") != "mcq" or not r.get("judgments"):
+                continue
+            q = ExamQuestion(**r["question"]) if r.get("question") else (items or {}).get(r.get("number"))
+            if q is None or q.answer is None:
+                continue
+            labels = q.statement_labels or derive_statement_labels(q)
+            for k, j in r["judgments"].items():
+                if j["verdict"] == "unknown" or k not in labels:
+                    continue
+                conf = j["confidence"] / 0.5 if j.get("source") == "knowledge" else j["confidence"]  # 결합 배율 되돌림
+                out.append((j.get("source", "evidence"), min(conf, 1.0), (j["verdict"] == "true") == labels[k]))
     return out

@@ -39,6 +39,9 @@ class Corpus(BaseModel):
     case_kinds: list[str] = ["민사", "가사"]
     case_codes: list[str] = ["다", "다카", "재다", "민상", "민재항", "마", "그", "스", "므", "으", "브", "카", "라", "머"]
     case_courts: list[str] = ["대법원"]
+    # 법령 스냅숏 (YYYYMMDD): 설정하면 법령을 data/raw/statutes@<날짜>/ 에서 읽고 색인을 index@<날짜>/ 에 둔다.
+    # 과거 시험을 그 시험 시점 법령으로 풀 때 (fetch-laws → build-index → eval 에 같은 값을 준다)
+    statute_snapshot: str | int | None = None
 
 
 class Chunking(BaseModel):
@@ -114,6 +117,14 @@ class MCQ(BaseModel):
     fusion_min_conf: float = 0.0      # C: 지식 판단의 원 확신도가 이 값 미만이면 채우지 않음 (0 = 제한 없음)
     statute_parts: bool = False       # 항 단위로 나뉜 긴 조문의 다른 조각을 함께 제공 (본문·단서 분리 방지)
     max_statute_parts: int = 6
+    # ---- v5 스위치 (레드팀 공략안 + 구조 분석, 프리셋 v5 에서 켬) ----
+    asof_from_stem: bool = False      # 발문의 "YYYY. M. D. 당시/현재/기준" → 그 날짜 이후 판례를 검색에서 제외
+    out_of_corpus_warn: bool = False  # 진술·발문의 법령 중 색인에 없는 것을 판단 입력에 경고로 표시
+    cross_ref_queries: bool = False   # 다른 진술을 전제로 하는 진술은 그 진술 내용을 검색 질의에 더함
+    quote_check: bool = False         # 판단의 인용 문장(quote)이 인용 청크에 실제 있는지 대조
+    quote_penalty: float = 1.0        # 대조 실패 판단의 확신도 배율 (1.0 = 기록만)
+    calibration: str | None = None    # 확신도 보정표 경로 (kant-rag calibrate 로 생성). 있으면 보기 점수에 보정 확률 사용
+    rejudge_ratio: float = 1.0        # 동점 재판단 범위: 2등 점수가 1등 × 이 값 이상이면 재판단 (1.0 = 완전 동점만)
 
 
 class Models(BaseModel):
@@ -138,6 +149,20 @@ class Settings(BaseModel):
 
     def resolve(self, p: Path) -> Path:
         return p if p.is_absolute() else ROOT / p
+
+    def index_path(self) -> Path:
+        """색인 폴더 (법령 스냅숏이면 index@<날짜>)."""
+        base = self.resolve(self.paths.index_dir)
+        snap = self.corpus.statute_snapshot
+        return base.with_name(f"{base.name}@{snap}") if snap else base
+
+    def raw_path(self, rel: str | Path) -> Path:
+        """문서 목록의 원문 경로 (법령 스냅숏이면 statutes/ → statutes@<날짜>/)."""
+        rel = Path(rel)
+        snap = self.corpus.statute_snapshot
+        if snap and rel.parts and rel.parts[0] == "statutes":
+            rel = Path(f"statutes@{snap}", *rel.parts[1:])
+        return self.resolve(self.paths.raw_dir) / rel
 
     def fingerprint(self) -> str:
         """검색·생성 결과에 영향을 주는 설정의 해시 (캐시 키·실행 기록용)."""

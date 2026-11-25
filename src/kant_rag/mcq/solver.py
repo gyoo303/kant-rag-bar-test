@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import re
 import time
+from pathlib import Path
 
 from kant_rag.config import Settings
 from kant_rag.generation.llmcall import call_llm, extract_json
 from kant_rag.mcq.parse import parse_combo, parse_ox
 from kant_rag.mcq.context import ChunkGraph
+from kant_rag.mcq.defense import Calibrator, asof_date, cross_refs, out_of_corpus, quote_supported
 from kant_rag.mcq.prompts import (
     MCQ_CLOSED_SYSTEM,
     MCQ_CLOSED_USER,
@@ -25,6 +27,8 @@ from kant_rag.mcq.prompts import (
     MCQ_SYSTEM_V2,
     MCQ_SYSTEM_V3,
     MCQ_SYSTEM_V4,
+    MCQ_SYSTEM_V5,
+    MCQ_REWRITE_SYSTEM_V4,
     MCQ_TIEBREAK_USER,
     MCQ_USER,
 )
@@ -85,14 +89,28 @@ def choose_answer(q: ExamQuestion, judgments: dict[str, StatementJudgment],
 CIRCLED_NUM = "①②③④⑤"
 
 
-def tied_options(scores: dict, eps: float = 1e-9) -> list[int]:
-    """최고점(>0)과 같은 점수의 보기들. 동점이 아니면 길이 1 이하."""
+def tied_options(scores: dict, eps: float = 1e-9, ratio: float = 1.0) -> list[int]:
+    """최고점(>0)과 같은(ratio<1 이면 최고점×ratio 이상인) 보기들. 해당 없으면 길이 1 이하."""
     if not scores:
         return []
     top = max(scores.values())
     if top <= 0 or top == float("inf"):
         return []
-    return sorted(int(n) for n, v in scores.items() if abs(v - top) <= eps)
+    if ratio >= 1.0:
+        return sorted(int(n) for n, v in scores.items() if abs(v - top) <= eps)
+    return sorted(int(n) for n, v in scores.items() if v >= top * ratio - eps)
+
+
+def exact_match_exists(q: ExamQuestion, judgments: dict[str, StatementJudgment]) -> bool:
+    """단정한 진술 판단과 완전히 맞는 보기가 있는가 (없으면 '판단 불일치')."""
+    if q.form == "count":
+        return True
+    for n in q.options:
+        req = _required(q, n)
+        if all(j.verdict == "unknown" or k not in req or (j.verdict == "true") == req[k]
+               for k, j in judgments.items()):
+            return True
+    return False
 
 
 def _capped_support(cap: float):
@@ -153,11 +171,15 @@ def rewrite_statement_queries(q: ExamQuestion, settings: Settings) -> tuple[dict
     multi = c.rewrite_queries >= 2
     statements = q.statements()
     original = {k: statement_query(q, v, c.stem_chars_in_query) for k, v in statements.items()}
-    v3 = multi and c.rewrite_version == "v3"
-    system = MCQ_REWRITE_SYSTEM_V3 if v3 else (MCQ_REWRITE_SYSTEM_V2 if multi else MCQ_REWRITE_SYSTEM)
-    stem_chars = c.rewrite_stem_chars if v3 else c.stem_chars_in_query
-    info: dict = {"original": original, "rewritten": {}, "fallback_keys": [], "error": None,
-                  "prompt": "v3-party" if v3 else ("v2-multi" if multi else "v1")}
+    v3 = multi and c.rewrite_version in ("v3", "v4")
+    if multi and c.rewrite_version == "v4":
+        system, label = MCQ_REWRITE_SYSTEM_V4, "v4-facts"
+    elif v3:
+        system, label = MCQ_REWRITE_SYSTEM_V3, "v3-party"
+    else:
+        system, label = (MCQ_REWRITE_SYSTEM_V2, "v2-multi") if multi else (MCQ_REWRITE_SYSTEM, "v1")
+    stem_chars = (c.rewrite_stem_chars or len(q.stem)) if v3 else c.stem_chars_in_query  # 0 = 발문 전체
+    info: dict = {"original": original, "rewritten": {}, "fallback_keys": [], "error": None, "prompt": label}
     try:
         listing = "\n".join(f"{k}. {v}" for k, v in statements.items())
         raw, calls = call_llm(settings.models.llm_provider, settings.models.llm_model,
@@ -311,6 +333,17 @@ class MCQSolver:
             queries = {k: [statement_query(q, v, c.stem_chars_in_query)] for k, v in statements.items()}
         if c.original_query:  # 리라이트 표현에 따라 결정적 근거를 놓치지 않도록 진술 원문도 검색
             queries = {k: v + ([statements[k]] if statements[k] not in v else []) for k, v in queries.items()}
+        if c.cross_ref_queries:  # 다른 진술을 전제로 하는 진술: 전제 진술 + 이 진술을 합친 질의 추가 (v5)
+            keys = list(statements)
+            refs = {k: cross_refs(k, statements[k], keys) for k in keys}
+            refs = {k: v for k, v in refs.items() if v}
+            for k, rs in refs.items():
+                queries[k] = queries[k] + [" ".join(statements[r] for r in rs) + " " + statements[k]]
+            if refs:
+                rec["cross_refs"] = refs
+        cutoff = asof_date(q.stem) if c.asof_from_stem else None  # 발문 기준 시점 이후 판례 제외 (v5)
+        if cutoff:
+            rec["asof"] = cutoff
         rec["search_queries"] = queries
 
         t = time.perf_counter()
@@ -318,7 +351,8 @@ class MCQSolver:
         rec["retrieval"] = {}
         try:
             for key in statements:
-                finals = [self.retriever.retrieve(qq, mode)["final"] for qq in queries[key]]
+                finals = [self.retriever.retrieve(qq, mode, cutoff)["final"] if cutoff else
+                          self.retriever.retrieve(qq, mode)["final"] for qq in queries[key]]
                 if len(finals) == 1:
                     per_statement[key] = finals[0]
                 else:  # 쟁점·예외 질의 결과를 순위로 결합 (RRF)
@@ -338,18 +372,60 @@ class MCQSolver:
         rec["context_chunk_ids"] = used
         rec["context_expansions"] = exp
         rec["prompt_version"] = c.prompt_version
-        system = {"v2": MCQ_SYSTEM_V2, "v3": MCQ_SYSTEM_V3, "v4": MCQ_SYSTEM_V4}.get(c.prompt_version, MCQ_SYSTEM)
-        rec = self._judge(q, rec, t0, system, MCQ_USER.format(
-            evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements)), used)
+        system = {"v2": MCQ_SYSTEM_V2, "v3": MCQ_SYSTEM_V3, "v4": MCQ_SYSTEM_V4,
+                  "v5": MCQ_SYSTEM_V5}.get(c.prompt_version, MCQ_SYSTEM)
+        user = MCQ_USER.format(evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements))
+        if c.out_of_corpus_warn:  # 색인에 없는 법령이 쟁점이면 판단 입력에 경고 (v5)
+            miss = out_of_corpus(q.stem + "\n" + listing, self.corpus_titles)
+            if miss:
+                rec["out_of_corpus"] = miss
+                user = f"[색인 밖 법령] 다음 법령은 근거 자료에 없습니다: {', '.join(miss)}\n\n" + user
+        rec = self._judge(q, rec, t0, system, user, used)
+        if c.quote_check and rec.get("judgments") is not None:
+            rec = self._check_quotes(q, rec)
         if c.fusion == "fill_unknown" and rec.get("judgments") is not None:
             rec = self._fuse(q, rec, t0)
         if c.tie_rejudge and rec.get("judgments") is not None:
             rec = self._tiebreak(q, rec, t0, system, evidence, used)
         return rec
 
+    @property
+    def corpus_titles(self) -> set[str]:
+        if getattr(self, "_titles", None) is None:
+            self._titles = {ch.title for ch in self.retriever.vector.chunks_by_id.values()
+                            if (ch.metadata or {}).get("doc_type") == "statute"}
+        return self._titles
+
+    @property
+    def calibrator(self) -> Calibrator | None:
+        if not hasattr(self, "_cal"):
+            self._cal = Calibrator.load(self.s.mcq.calibration and self.s.resolve(Path(self.s.mcq.calibration)))
+        return self._cal
+
+    def _check_quotes(self, q: ExamQuestion, rec: dict) -> dict:
+        """판단의 인용 문장이 인용한 청크에 실제로 있는지 대조. 없으면 확신도 × quote_penalty (v5)."""
+        c = self.s.mcq
+        by_id = self.retriever.vector.chunks_by_id
+        judgments = {k: StatementJudgment.model_validate(v) for k, v in rec["judgments"].items()}
+        check: dict = {}
+        for k, j in judgments.items():
+            if j.verdict == "unknown" or j.source == "knowledge":
+                continue
+            texts = [by_id[x].text for x in j.cited_chunk_ids if x in by_id]
+            ok = quote_supported(j.quote, texts)
+            check[k] = ok
+            if ok is False and c.quote_penalty < 1.0:
+                judgments[k] = j.model_copy(update={"confidence": round(j.confidence * c.quote_penalty, 3)})
+        rec["quote_check"] = check
+        if any(v is False for v in check.values()) and c.quote_penalty < 1.0:
+            predicted, scores, chk = self._choose(q, judgments)
+            rec.update(judgments={k: j.model_dump() for k, j in judgments.items()}, option_scores=scores,
+                       predicted=predicted, answer_check=chk)
+        return rec
+
     def _tiebreak(self, q: ExamQuestion, rec: dict, t0: float, system: str, evidence: str, used: list[str]) -> dict:
         """최고점 보기가 둘 이상이면(동점) 그 보기들 사이에서 요구가 갈리는 진술만 근거와 다시 판단한다 (LLM 1회)."""
-        tied = tied_options(rec.get("option_scores") or {})
+        tied = tied_options(rec.get("option_scores") or {}, ratio=self.s.mcq.rejudge_ratio)
         if len(tied) < 2:
             return rec
         keys = [k for k in q.statements() if len({_required(q, n).get(k) for n in tied}) > 1]
@@ -360,7 +436,8 @@ class MCQSolver:
             return rec
         statements = q.statements()
         listing = "\n".join(f"{k}. {statements[k]}" for k in keys)
-        note = "보기 " + ", ".join(CIRCLED_NUM[n - 1] for n in tied) + " 가 같은 점수"
+        same = self.s.mcq.rejudge_ratio >= 1.0
+        note = "보기 " + ", ".join(CIRCLED_NUM[n - 1] for n in tied) + (" 가 같은 점수" if same else " 의 점수 차이가 작음")
         t = time.perf_counter()
         try:
             raw, calls = call_llm(self.s.models.llm_provider, self.s.models.llm_model,
@@ -389,7 +466,7 @@ class MCQSolver:
                    predicted=predicted)
         rec["answer_check"] = chk
         info["after"] = predicted
-        still = len(tied_options(scores)) > 1
+        still = len(tied_options(scores)) > 1  # 재판단 후에도 완전 동점이면 tie
         rec["status"] = "tie" if still else ("inconsistent_judgments" if chk.get("inconsistent") else
                                              ("ok" if rec["status"] in ("ok", "tie") else rec["status"]))
         rec["timing_ms"]["total"] = round((time.perf_counter() - t0) * 1000, 1)
@@ -397,6 +474,16 @@ class MCQSolver:
 
     def _choose(self, q: ExamQuestion, judgments: dict[str, StatementJudgment]):
         c = self.s.mcq
+        cal = self.calibrator if c.calibration else None
+        if cal is not None:  # 보정 확률로 점수 계산 (v5): 0점·동점이 잘 생기지 않음
+            best, scores = choose_answer(q, judgments, support=cal.support())
+            if best is None:
+                return best, scores, {"inconsistent": False, "flipped": []}
+            req = _required(q, best)
+            flipped = [k for k, want in req.items() if (j := judgments.get(k)) is not None
+                       and j.verdict != "unknown" and (j.verdict == "true") != want]
+            return best, scores, {"inconsistent": not exact_match_exists(q, judgments), "flipped": flipped,
+                                  "calibrated": True}
         if c.answer_fallback:
             return choose_answer_robust(q, judgments, c.answer_fallback_cap)
         best, scores = choose_answer(q, judgments)

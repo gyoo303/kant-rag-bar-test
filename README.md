@@ -70,6 +70,7 @@ uv run kant-rag grade results/<run_id>/grading.csv                  # 사람 채
 uv run kant-rag eval data/exam/2026_civil_tune.json --preset c --label tune-c   # 개선안 v3 (단계: v2·a1·a2·a34·b·c, docs/analysis/improvement-plan.md)
 uv run kant-rag progress bar13-v3 --watch 60 --total 70             # 실행 중인 결과를 1분마다 표로 (다른 터미널에서)
 uv run kant-rag eval data/exam/2026_civil_tune.json --modes hybrid_rerank --preset d --label tune-d   # 개선안 v4 (docs/analysis/improvement-plan-v4.md)
+uv run kant-rag eval data/exam/<시험>.json --modes hybrid_rerank --preset v5 --label <라벨>   # 개선안 v5 (docs/analysis/improvement-plan-v5.md)
 uv run streamlit run app/streamlit_app.py
 uv run pytest
 ```

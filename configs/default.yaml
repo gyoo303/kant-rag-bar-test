@@ -61,6 +61,10 @@ optimization:
   rewrite:
     enabled: false
 
+# --preset 을 생략했을 때 쓰는 선택형 풀이 구성 (eval · solve · solve-text · 화면 공통)
+# 예전 결과(프리셋 없이 낸 v2)를 재현하려면 명령에 --preset v2 를 붙이거나 이 값을 v2 로
+default_preset: v5
+
 # 변호사시험 선택형 풀이 (src/kant_rag/mcq)
 mcq:
   per_statement_k: 4         # 진술(보기/ㄱㄴㄷ)마다 검색해 컨텍스트에 넣을 근거 수

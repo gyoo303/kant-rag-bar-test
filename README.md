@@ -59,6 +59,8 @@ uv run kant-rag check-eval
 이미 분리되어 있습니다 (dev 8 / test 17 / extra 45). 확정 정답은 `uv run kant-rag apply-answers <정답.csv>` 로 반영하고, 각 문항의 `type`(direct/paraphrase)·`evidence` 를 기입하고, 근거 없음 문항(dev 2 / test 3)을 작성한 뒤 `test.json` 을 `frozen: true` 로 고정합니다.
 
 ## 3) 풀이·평가
+> 선택형 풀이의 기본 구성은 **v5** (`configs/default.yaml` 의 `default_preset`). 다른 구성은 `--preset v2 | v3 | v4 | v5c` 로 지정한다.
+
 ```bash
 uv run kant-rag solve data/exam/2026_civil.json 12 --show-answer   # 문항 1개 (진술별 판단·근거 출력)
 uv run kant-rag ask "불법행위 손해배상청구권의 소멸시효는?"          # 자유 질의응답

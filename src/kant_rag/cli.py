@@ -91,12 +91,12 @@ def main(argv: list[str] | None = None) -> None:
     sv.add_argument("number", type=int)
     sv.add_argument("--mode", default="hybrid_rerank", choices=["vector", "hybrid", "hybrid_rerank", "closed_book"])
     sv.add_argument("--show-answer", action="store_true")
-    sv.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc")
+    sv.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc | v5 | v5c (생략 시 default_preset)")
     sv.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value")
 
     st_ = sub.add_parser("solve-text", help="붙여넣은 시험지 텍스트를 변환 없이 바로 풀이 (문항 여러 개 가능)")
     st_.add_argument("text_path", help="시험지 텍스트 파일 (- 이면 표준입력)")
-    st_.add_argument("--preset", default="v3", help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc, 기본 v3")
+    st_.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc | v5 | v5c (생략 시 default_preset)")
     st_.add_argument("--mode", default="hybrid_rerank", choices=["vector", "hybrid", "hybrid_rerank", "closed_book"])
     st_.add_argument("--answers", default=None, help="정답(선택): '3,5,5,…' 또는 number,answer CSV 파일")
     st_.add_argument("--label", default="text")
@@ -119,7 +119,7 @@ def main(argv: list[str] | None = None) -> None:
                     help="closed_book = 검색 없는 기준선 (선택형만, 본 60건과 별도 보고)")
     eb.add_argument("--label", default="")
     eb.add_argument("--rewrite", action="store_true", help="쿼리 리라이트 적용 (선택형 진술별 질의 + 근거 없음 문항)")
-    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc — mcq/presets.py")
+    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc | v5 | v5c — 생략 시 configs/default.yaml 의 default_preset")
     eb.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value (여러 번)")
     eb.add_argument("--repeat", type=int, default=1, help="같은 설정으로 N번 실행하고 평균·범위·흔들린 문항 집계")
 
@@ -143,6 +143,9 @@ def main(argv: list[str] | None = None) -> None:
 
     args = p.parse_args(argv)
     settings = get_settings(args.config)
+    if hasattr(args, "preset") and not args.preset:  # --preset 생략 → 설정의 기본 구성
+        args.preset = settings.default_preset
+        print(f"[info] --preset 생략 → 기본 구성 '{args.preset}' (configs/default.yaml default_preset)")
     if getattr(args, "snapshot", None):  # 법령 스냅숏: 그 날짜의 법령으로 수집·색인
         settings = settings.model_copy(deep=True)
         settings.corpus.statute_snapshot = str(args.snapshot)
@@ -467,6 +470,8 @@ def main(argv: list[str] | None = None) -> None:
 
         exam = Exam.model_validate_json(Path(args.exam_json).read_text(encoding="utf-8"))
         q = next(x for x in exam.items if x.number == args.number)
+        if args.preset not in PRESETS:
+            raise SystemExit(f"프리셋 이름: {', '.join(PRESETS)}")
         s = apply_overrides(settings, {**PRESETS.get(args.preset or "", {}), **parse_sets(args.sets)})
         rec = MCQSolver(s).solve(q, RetrievalMode(args.mode))
         print(f"[문 {q.number}] form={q.form} polarity={q.polarity} status={rec['status']}")

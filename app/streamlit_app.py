@@ -29,8 +29,9 @@ with tab_mcq:
     from kant_rag.mcq.solver import MCQSolver
     from kant_rag.mcq.textsolve import parse_pasted
 
-    preset = st.selectbox("풀이 구성", list(PRESETS), index=list(PRESETS).index("v3"),
-                          help="v2=기존, b=개선안(지식 채우기 제외), c=v3=개선안 전체")
+    default = settings.default_preset if settings.default_preset in PRESETS else "v3"
+    preset = st.selectbox("풀이 구성", list(PRESETS), index=list(PRESETS).index(default),
+                          help="v2=기존 · v3(=c) · v4(=d) · v5=레드팀 대응 (기본값은 configs/default.yaml 의 default_preset)")
     raw = st.text_area("시험지 붙여넣기 (문항 여러 개 가능: '문 1.' 또는 【문 1】, 보기 ①~⑤, 조합형 ㄱ.~ㅁ.)",
                        height=260)
     if st.button("풀이", type="primary", key="solve") and raw.strip():

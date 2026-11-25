@@ -146,6 +146,8 @@ class Settings(BaseModel):
     optimization: Optimization
     mcq: MCQ = MCQ()
     models: Models
+    # --preset 을 생략했을 때 쓰는 선택형 풀이 구성 (configs/default.yaml 의 default_preset). 예전 v2 기본으로 돌리려면 "v2"
+    default_preset: str = "v2"
 
     def resolve(self, p: Path) -> Path:
         return p if p.is_absolute() else ROOT / p

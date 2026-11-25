@@ -158,6 +158,8 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
             "statement_accuracy": f"{st_ok}/{st_n}" if st_n else None,
             "insufficient": sum(r["status"] == "insufficient_evidence" for r in rs),
             "invalid_citation": sum(r["status"] == "invalid_citation" for r in rs),
+            "inconsistent_judgments": _inconsistent(rs),
+            "rewrite_fallback": _rewrite_fallback(rs),
             "no_answer_insufficient_status(사람 검토 전)": f"{sum(r['answer']['status'] == 'insufficient_evidence' for r in na)}/{len(na)}",
             "latency_mcq": _latency(rs, lambda r: r["status"]),
             "llm_tokens": _tokens(rs),
@@ -176,6 +178,22 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
     print(json.dumps({"by_config": summary["by_config"], "accuracy_by_trap": trap_table},
                      ensure_ascii=False, indent=2))
     return out
+
+
+def _inconsistent(rs: list[dict]) -> dict:
+    """판단 조합이 어느 보기와도 맞지 않아 예비 규칙으로 고른 문항 (개선안 B-계산)."""
+    xs = [r for r in rs if (r.get("answer_check") or {}).get("inconsistent")]
+    return {"count": len(xs), "questions": [r.get("number") for r in xs],
+            "correct": sum(r["eval"]["correct"] for r in xs),
+            "flipped": {str(r.get("number")): r["answer_check"].get("flipped") for r in xs}}
+
+
+def _rewrite_fallback(rs: list[dict]) -> dict:
+    """쿼리 리라이트가 실패해 원래 질의(발문+진술)로 검색한 문항·진술."""
+    xs = [r for r in rs if (r.get("rewrite") or {}).get("fallback_keys")]
+    return {"questions": len(xs), "statements": sum(len(r["rewrite"]["fallback_keys"]) for r in xs),
+            "detail": {str(r.get("number")): {"keys": r["rewrite"]["fallback_keys"], "error": r["rewrite"].get("error")}
+                       for r in xs}}
 
 
 def aggregate_grading(grading_csv: Path) -> dict:

@@ -21,7 +21,9 @@ from kant_rag.mcq.prompts import (
     MCQ_REWRITE_SYSTEM_V2,
     MCQ_REWRITE_USER,
     MCQ_SYSTEM,
+    MCQ_REWRITE_SYSTEM_V3,
     MCQ_SYSTEM_V2,
+    MCQ_SYSTEM_V3,
     MCQ_USER,
 )
 from kant_rag.mcq.schemas import ExamQuestion, StatementJudgment
@@ -43,8 +45,10 @@ def _support(j: StatementJudgment | None, want: bool) -> float:
     return p if (j.verdict == "true") == want else 1 - p
 
 
-def choose_answer(q: ExamQuestion, judgments: dict[str, StatementJudgment]) -> tuple[int | None, dict[int, float]]:
+def choose_answer(q: ExamQuestion, judgments: dict[str, StatementJudgment],
+                  support=None) -> tuple[int | None, dict[int, float]]:
     """진술 판단 → 보기별 점수 → 최고점 보기. 모든 판단이 unknown 이면 None (근거 부족)."""
+    _support = support or globals()["_support"]
     if not judgments or all(j.verdict == "unknown" for j in judgments.values()):
         return None, {}
     target = q.polarity == "correct"  # '옳은 것' 을 찾는가
@@ -76,6 +80,49 @@ def choose_answer(q: ExamQuestion, judgments: dict[str, StatementJudgment]) -> t
     return best, scores
 
 
+def _capped_support(cap: float):
+    def f(j: StatementJudgment | None, want: bool) -> float:
+        if j is None or j.verdict == "unknown":
+            return 0.5
+        p = 0.5 + 0.5 * min(j.confidence, cap)
+        return p if (j.verdict == "true") == want else 1 - p
+    return f
+
+
+def _required(q: ExamQuestion, n: int) -> dict[str, bool]:
+    """보기 n 이 정답이려면 각 진술이 가져야 할 참/거짓."""
+    target = q.polarity == "correct"
+    text = q.options[n]
+    if q.form == "single":
+        return {str(n): target}
+    if q.form == "combination":
+        chosen = parse_combo(text)
+        return {k: (target if k in chosen else not target) for k in q.items}
+    if q.form == "ox":
+        return parse_ox(text)
+    return {}
+
+
+def choose_answer_robust(q: ExamQuestion, judgments: dict[str, StatementJudgment],
+                         cap: float = 0.95) -> tuple[int | None, dict[int, float], dict]:
+    """choose_answer + 예비 규칙(개선안 B-계산).
+
+    진술 판단 조합이 어느 보기와도 맞지 않아 모든 보기가 0점이면(확신도 1.0 판단끼리 충돌),
+    확신도 상한(cap)을 두고 다시 계산해 '가장 적게·가장 약하게 뒤집으면 맞는 보기'를 고른다.
+    이때 info.inconsistent=True 와 뒤집힌 진술(flipped)을 남긴다. 평소(최고점>0)에는 choose_answer 와 같다.
+    """
+    best, scores = choose_answer(q, judgments)
+    info: dict = {"inconsistent": False, "flipped": []}
+    if best is None or q.form == "count" or not scores or max(scores.values()) > 0:
+        return best, scores, info
+    best, scores = choose_answer(q, judgments, support=_capped_support(cap))
+    req = _required(q, best)
+    flipped = [k for k, want in req.items()
+               if (j := judgments.get(k)) is not None and j.verdict != "unknown" and (j.verdict == "true") != want]
+    info = {"inconsistent": True, "flipped": flipped, "cap": cap}
+    return best, scores, info
+
+
 def _text(msg) -> str:
     c = msg.content
     return c if isinstance(c, str) else "".join(
@@ -91,13 +138,16 @@ def rewrite_statement_queries(q: ExamQuestion, settings: Settings) -> tuple[dict
     multi = c.rewrite_queries >= 2
     statements = q.statements()
     original = {k: statement_query(q, v, c.stem_chars_in_query) for k, v in statements.items()}
+    v3 = multi and c.rewrite_version == "v3"
+    system = MCQ_REWRITE_SYSTEM_V3 if v3 else (MCQ_REWRITE_SYSTEM_V2 if multi else MCQ_REWRITE_SYSTEM)
+    stem_chars = c.rewrite_stem_chars if v3 else c.stem_chars_in_query
     info: dict = {"original": original, "rewritten": {}, "fallback_keys": [], "error": None,
-                  "prompt": "v2-multi" if multi else "v1"}
+                  "prompt": "v3-party" if v3 else ("v2-multi" if multi else "v1")}
     try:
         listing = "\n".join(f"{k}. {v}" for k, v in statements.items())
         raw, calls = call_llm(settings.models.llm_provider, settings.models.llm_model,
-                              [("system", MCQ_REWRITE_SYSTEM_V2 if multi else MCQ_REWRITE_SYSTEM),
-                               ("human", MCQ_REWRITE_USER.format(stem=q.stem[: c.stem_chars_in_query],
+                              [("system", system),
+                               ("human", MCQ_REWRITE_USER.format(stem=q.stem[:stem_chars],
                                                                  statements=listing))], c.rewrite_max_tokens)
         info["llm_calls"] = calls
         data = extract_json(raw)
@@ -108,7 +158,7 @@ def rewrite_statement_queries(q: ExamQuestion, settings: Settings) -> tuple[dict
     for k in statements:
         v = data.get(k)
         if isinstance(v, dict):
-            v = [v.get("issue"), v.get("exception")]
+            v = [v.get("issue"), v.get("exception"), v.get("party")]
         cand = [x.strip() for x in (v if isinstance(v, list) else [v]) if isinstance(x, str) and 2 <= len(x.strip()) <= 300]
         if cand:
             queries[k] = cand[: max(1, c.rewrite_queries)]
@@ -124,12 +174,39 @@ def _parse_judgments(raw: str, keys: list[str]) -> dict[str, StatementJudgment]:
     return {k: StatementJudgment.model_validate(data[k]) for k in keys if k in data}
 
 
-def _doc(cid: str, chunk, text: str, kind: str | None = None) -> str:
+FULL_COURT_MARKS = ("[다수의견]", "[대법관", "[별개의견]", "[반대의견]")
+
+
+def _case_attrs(chunk, full_court: set[str] | None) -> str:
+    """판례 근거의 선고일·전원합의체 여부 (개선안 v4 case_meta). 조문이면 빈 문자열."""
+    md = chunk.metadata or {}
+    if md.get("doc_type") != "case":
+        return ""
+    d = re.sub(r"\D", "", str(md.get("decided") or ""))
+    out = f' decided="{d[:4]}-{d[4:6]}-{d[6:8]}"' if len(d) == 8 else ""
+    if full_court is not None and md.get("case_no") in full_court:
+        out += ' full_court="true"'
+    return out
+
+
+def _doc(cid: str, chunk, text: str, kind: str | None = None, meta: set[str] | None | bool = False) -> str:
     k = f' kind="{kind}"' if kind else ""
-    return f'<doc id="{cid}" title="{chunk.title}" loc="{chunk.location()}"{k}>\n{text}\n</doc>'
+    extra = _case_attrs(chunk, meta if isinstance(meta, set) else None) if meta is not False else ""
+    return f'<doc id="{cid}" title="{chunk.title}" loc="{chunk.location()}"{k}{extra}>\n{text}\n</doc>'
 
 
-def build_context(per_statement: dict[str, list[RetrievedChunk]], c, graph: ChunkGraph | None) -> tuple[str, list[str], dict]:
+def full_court_cases(chunks_by_id: dict) -> set[str]:
+    """판결요지에 다수의견·반대의견 등이 있는 판례 = 전원합의체 (사건번호 집합)."""
+    out: set[str] = set()
+    for c in chunks_by_id.values():
+        md = c.metadata or {}
+        if md.get("doc_type") == "case" and any(m in c.text for m in FULL_COURT_MARKS):
+            out.add(md.get("case_no"))
+    return out
+
+
+def build_context(per_statement: dict[str, list[RetrievedChunk]], c, graph: ChunkGraph | None,
+                  full_court: set[str] | None = None) -> tuple[str, list[str], dict]:
     """진술당 상위 k 근거(중복 제거) + 개선안 A3(같은 판결 다른 항목)·A4(준용 조문) 확장."""
     seen: dict[str, RetrievedChunk] = {}
     for results in per_statement.values():  # 진술 순서대로, 진술당 상위 k 개
@@ -137,7 +214,8 @@ def build_context(per_statement: dict[str, list[RetrievedChunk]], c, graph: Chun
             seen.setdefault(r.chunk.chunk_id, r)
     parts, used, total = [], [], 0
     for cid, r in seen.items():
-        block = _doc(cid, r.chunk, r.chunk.text)
+        meta = (full_court if full_court is not None else None) if c.case_meta else False
+        block = _doc(cid, r.chunk, r.chunk.text, meta=meta)
         if total + len(block) > c.max_context_chars and used:
             break
         parts.append(block)
@@ -151,7 +229,8 @@ def build_context(per_statement: dict[str, list[RetrievedChunk]], c, graph: Chun
         if c.sibling_items:
             extra += [(x, t, "sibling") for x, t in graph.case_siblings(used, max_total=c.max_siblings)]
         for cid, text, kind in extra:
-            block = _doc(cid, graph.by_id[cid], text, kind)
+            block = _doc(cid, graph.by_id[cid], text, kind,
+                         meta=(full_court if full_court is not None else None) if c.case_meta else False)
             if total + len(block) > c.max_context_chars:
                 continue
             parts.append(block)
@@ -180,6 +259,14 @@ class MCQSolver:
         if getattr(self, "_graph", None) is None:
             self._graph = ChunkGraph(self.retriever.vector.chunks_by_id)
         return self._graph
+
+    @property
+    def full_court(self) -> set[str] | None:  # case_meta 를 켰을 때만 계산
+        if not self.s.mcq.case_meta:
+            return None
+        if getattr(self, "_full_court", None) is None:
+            self._full_court = full_court_cases(self.retriever.vector.chunks_by_id)
+        return self._full_court
 
     def solve(self, q: ExamQuestion, mode: RetrievalMode = RetrievalMode.C, run_id: str | None = None) -> dict:
         """정답(q.answer)은 입력에 쓰지 않습니다. 반환값은 실행 기록(record)."""
@@ -228,16 +315,23 @@ class MCQSolver:
             return rec
         rec["timing_ms"]["retrieval"] = round((time.perf_counter() - t) * 1000, 1)
 
-        evidence, used, exp = build_context(per_statement, c, self.graph)
+        evidence, used, exp = build_context(per_statement, c, self.graph, self.full_court)
         rec["context_chunk_ids"] = used
         rec["context_expansions"] = exp
         rec["prompt_version"] = c.prompt_version
-        system = MCQ_SYSTEM_V2 if c.prompt_version == "v2" else MCQ_SYSTEM
+        system = {"v2": MCQ_SYSTEM_V2, "v3": MCQ_SYSTEM_V3}.get(c.prompt_version, MCQ_SYSTEM)
         rec = self._judge(q, rec, t0, system, MCQ_USER.format(
             evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements)), used)
         if c.fusion == "fill_unknown" and rec.get("judgments") is not None:
             rec = self._fuse(q, rec, t0)
         return rec
+
+    def _choose(self, q: ExamQuestion, judgments: dict[str, StatementJudgment]):
+        c = self.s.mcq
+        if c.answer_fallback:
+            return choose_answer_robust(q, judgments, c.answer_fallback_cap)
+        best, scores = choose_answer(q, judgments)
+        return best, scores, {"inconsistent": False, "flipped": []}
 
     def _fuse(self, q: ExamQuestion, rec: dict, t0: float) -> dict:
         """개선안 C: 근거로 유보(unknown)한 진술만 같은 모델의 closed-book 판단으로 채움 (확신도 × fusion_weight)."""
@@ -269,12 +363,13 @@ class MCQSolver:
                                           "cited_chunk_ids": [], "source": "knowledge"})
             judgments[k] = filled
             rec["fusion"]["filled"][k] = {"verdict": j.verdict, "raw_confidence": j.confidence}
-        predicted, scores = choose_answer(q, judgments)
+        predicted, scores, chk = self._choose(q, judgments)
         rec["rag_predicted"] = rec.get("predicted")
+        rec["answer_check"] = chk
         rec.update(judgments={k: j.model_dump() for k, j in judgments.items()}, option_scores=scores,
                    predicted=predicted)
-        if rec["status"] == "insufficient_evidence" and predicted is not None:
-            rec["status"] = "ok"
+        if rec["status"] in ("insufficient_evidence", "inconsistent_judgments") and predicted is not None:
+            rec["status"] = "inconsistent_judgments" if chk["inconsistent"] else "ok"
         rec["knowledge_used"] = bool(rec["fusion"]["filled"])
         rec["timing_ms"]["total"] = round((time.perf_counter() - t0) * 1000, 1)
         return rec
@@ -295,7 +390,8 @@ class MCQSolver:
         rec["timing_ms"]["generation"] = round((time.perf_counter() - t) * 1000, 1)
 
         invalid = sorted({cid for j in judgments.values() for cid in j.cited_chunk_ids if cid not in used})
-        predicted, scores = choose_answer(q, judgments)
+        predicted, scores, chk = self._choose(q, judgments)
+        rec["answer_check"] = chk
         rec.update(
             judgments={k: j.model_dump() for k, j in judgments.items()},
             missing_judgments=[k for k in statements if k not in judgments],
@@ -307,5 +403,7 @@ class MCQSolver:
             rec["status"] = "insufficient_evidence"
         elif invalid:
             rec["status"] = "invalid_citation"
+        elif chk["inconsistent"]:
+            rec["status"] = "inconsistent_judgments"  # 판단 조합이 어느 보기와도 맞지 않아 예비 규칙으로 고름
         rec["timing_ms"]["total"] = round((time.perf_counter() - t0) * 1000, 1)
         return rec

@@ -6,6 +6,8 @@
   a34  : + 같은 판결 다른 항목(A3) + 준용 조문(A4)
   b    : + 판단 프롬프트 v2
   c    : + closed-book 판단 결합(유보 진술만, 확신도×0.5)  = v3 전체
+  d    : b + 번호 계산 예비 규칙 + 당사자 지위 리라이트(질의 3개) + 판례 선고일·전원합의체 표시 + 판단 프롬프트 v3
+  dc   : d + 판단 결합 (= v4 전체)
 """
 
 from __future__ import annotations
@@ -23,6 +25,10 @@ PRESETS["a34"] = {**PRESETS["a2"], "mcq.sibling_items": True, "mcq.expand_refere
 PRESETS["b"] = {**PRESETS["a34"], "mcq.prompt_version": "v2"}
 PRESETS["c"] = {**PRESETS["b"], "mcq.fusion": "fill_unknown"}
 PRESETS["v3"] = PRESETS["c"]
+# 개선안 v4 (bar13 오답 분석): b 기반 + 번호 계산 예비 규칙 + 당사자 지위 리라이트 + 판례 선고일·전원합의체 표시 + 판단 프롬프트 v3
+PRESETS["d"] = {**PRESETS["b"], "mcq.answer_fallback": True, "mcq.rewrite_version": "v3", "mcq.rewrite_queries": 3,
+                "mcq.rewrite_stem_chars": 800, "mcq.case_meta": True, "mcq.prompt_version": "v3"}
+PRESETS["dc"] = {**PRESETS["d"], "mcq.fusion": "fill_unknown"}  # d + 유보 진술 지식 결합
 
 
 def parse_sets(items: list[str] | None) -> dict[str, Any]:

@@ -1,0 +1,8 @@
+# 보강 수집 주제어 (v4). 시험 문장이 아니라 오답 분석에서 드러난 "색인에 없는 법리"를 제도명으로 적은 것.
+# 출처: 2026 extra 문 35·36, bar13 문 27 (2026 test 문항은 쓰지 않음)
+# 실행: uv run kant-rag fetch-cases --topics-file data/cases/topics_added.txt --date-from 19900101 --per-topic 5 --out data/raw/cases/cases_added.jsonl
+사해행위취소 가액배상 지연손해금
+사해행위취소 가액배상 판결 확정 이행지체
+합유재산 재산분할
+조합재산 재산분할 대상
+사물관할 소송목적의 값

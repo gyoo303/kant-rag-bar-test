@@ -8,6 +8,7 @@ C (hybrid_rerank) : B 의 후보 fused_k 개 → reranker → final_k
 from __future__ import annotations
 
 import json
+import re
 from enum import Enum
 
 from kant_rag.config import Settings
@@ -45,16 +46,31 @@ class Retriever:
         self.vector = VectorIndex.load(index_dir / "faiss", settings.models.embedding_model, chunks, e)
         self.reranker = Reranker(settings.models.reranker_model, e.max_tokens, e.batch_size, e.fp16)
 
+    def _date_filter(self, results: list[RetrievedChunk], k: int) -> list[RetrievedChunk]:
+        """retrieval.case_date_to 이후 선고된 판례 청크를 빼고 순위를 다시 매김 (조문은 그대로)."""
+        cutoff = self.s.retrieval.case_date_to
+        if not cutoff:
+            return results[:k]
+        cutoff = re.sub(r"\D", "", str(cutoff))
+        kept = []
+        for x in results:
+            decided = re.sub(r"\D", "", str(x.chunk.metadata.get("decided") or ""))
+            if x.chunk.metadata.get("doc_type") == "case" and decided and decided > cutoff:
+                continue
+            kept.append(x.model_copy(update={"rank": len(kept) + 1}))
+        return kept[:k]
+
     def retrieve(self, query: str, mode: RetrievalMode) -> dict[str, list[RetrievedChunk]]:
         """최종 결과(`final`)와 단계별 후보를 모두 반환합니다 (실행 기록용)."""
         if mode == RetrievalMode.NONE:
             raise ValueError("closed_book 은 검색을 하지 않는 기준선입니다 (선택형 풀이 전용)")
         r = self.s.retrieval
-        vec = self.vector.search(query, r.vector_k)
+        extra = 2 if r.case_date_to else 1  # 날짜 필터로 빠질 후보를 감안해 더 넉넉히 받음
+        vec = self._date_filter(self.vector.search(query, r.vector_k * extra), r.vector_k)
         if mode == RetrievalMode.A:
             return {"vector": vec, "final": vec[: r.final_k]}
 
-        bm = self.bm25.search(query, r.bm25_k)
+        bm = self._date_filter(self.bm25.search(query, r.bm25_k * extra), r.bm25_k)
         fused = rrf_fuse({"vector": vec, "bm25": bm}, rrf_k=r.rrf_k, top_k=r.fused_k)
         if mode == RetrievalMode.B:
             return {"vector": vec, "bm25": bm, "fused": fused, "final": fused[: r.final_k]}

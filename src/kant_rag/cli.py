@@ -35,6 +35,11 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("build-topics", help="수집한 법령 구조 → 판례 검색 주제어 (data/cases/topics.txt)")
     fc = sub.add_parser("fetch-cases", help="주제어별 대법원 판례 판결요지 수집 → data/raw/cases/cases.jsonl (재시작 가능)")
     fc.add_argument("--limit-topics", type=int, default=None, help="앞에서 N개 주제어만 (시험 실행용)")
+    fc.add_argument("--topics", nargs="*", default=None, help="주제어 직접 지정 (보강 수집). 예: --topics \"사해행위 가액배상 지연손해금\"")
+    fc.add_argument("--topics-file", default=None, help="주제어 파일 (한 줄에 하나, # 주석)")
+    fc.add_argument("--date-from", default=None, help="선고일 하한 YYYYMMDD (기본 corpus.case_date_from, 보강 수집은 19900101 등)")
+    fc.add_argument("--per-topic", type=int, default=None, help="주제어당 판례 수 (기본 corpus.cases_per_topic)")
+    fc.add_argument("--out", default=None, help="저장 파일 (기본 data/raw/cases/cases.jsonl, 보강은 cases_added.jsonl 권장)")
 
     ic = sub.add_parser("import-cases", help="외부 판례 파일(폴더/.json/.jsonl) → data/raw/cases/cases_<연도>.jsonl (민사·가사, 시험일 이전, 판결요지만)")
     ic.add_argument("inputs", nargs="+")
@@ -206,14 +211,18 @@ def main(argv: list[str] | None = None) -> None:
         from kant_rag.ingest.cases import collect_cases
         from kant_rag.ingest.lawapi import LawAPI
 
-        topics_path = ROOT / "data" / "cases" / "topics.txt"
-        topics = [t.strip() for t in topics_path.read_text(encoding="utf-8").splitlines()
-                  if t.strip() and not t.startswith("#")]
+        if args.topics:
+            topics = [t.strip() for t in args.topics if t.strip()]
+        else:
+            topics_path = Path(args.topics_file) if args.topics_file else ROOT / "data" / "cases" / "topics.txt"
+            topics = [t.strip() for t in topics_path.read_text(encoding="utf-8").splitlines()
+                      if t.strip() and not t.startswith("#")]
         if args.limit_topics:
             topics = topics[: args.limit_topics]
         c = settings.corpus
-        stats = collect_cases(LawAPI(), topics, settings.resolve(settings.paths.raw_dir) / "cases" / "cases.jsonl",
-                              c.case_date_from, c.case_date_to, c.cases_per_topic, kinds=c.case_kinds)
+        out = Path(args.out) if args.out else settings.resolve(settings.paths.raw_dir) / "cases" / "cases.jsonl"
+        stats = collect_cases(LawAPI(), topics, out, args.date_from or c.case_date_from, c.case_date_to,
+                              args.per_topic or c.cases_per_topic, kinds=c.case_kinds)
         print(json.dumps(stats, ensure_ascii=False))
 
     elif args.cmd == "build-index":

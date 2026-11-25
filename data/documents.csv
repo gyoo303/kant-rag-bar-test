@@ -12,4 +12,5 @@ LAW-CONDO,집합건물의 소유 및 관리에 관한 법률,https://www.law.go.
 LAW-REGIST,부동산등기법,https://www.law.go.kr (kant-rag fetch-laws),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,"시행 20250131 (공포 20240920, MST 265377)",2026-11-24,statutes/부동산등기법.txt,statute,
 LAW-FAMPRO,가사소송법,https://www.law.go.kr (kant-rag fetch-laws),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,"시행 20260101 (공포 20240920, MST 265309)",2026-11-24,statutes/가사소송법.txt,statute,
 LAW-REHAB,채무자 회생 및 파산에 관한 법률,https://www.law.go.kr (kant-rag fetch-laws),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,"시행 20250621 (공포 20241220, MST 267359)",2026-11-24,statutes/채무자 회생 및 파산에 관한 법률.txt,statute,
+RULE-JURIS,민사 및 가사소송의 사물관할에 관한 규칙,https://www.law.go.kr (kant-rag fetch-laws),법령 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,미수집 (v4 보강: kant-rag fetch-laws --only 사물관할),,statutes/민사 및 가사소송의 사물관할에 관한 규칙.txt,statute,
 CASES-SC,대법원 판례 (판결요지),"law.go.kr 판례 API (kant-rag fetch-cases) + 팀 수집분 (kant-rag import-cases)",판결 - 저작권법 제7조 비보호 저작물 · 외부 모델 전송 가능,~2025-12-31 선고 · 민사·가사,,cases,cases,

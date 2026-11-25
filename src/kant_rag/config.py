@@ -60,6 +60,8 @@ class Retrieval(BaseModel):
     fused_k: int = 20
     final_k: int = 5
     bm25_tokenizer: str = "simple"
+    # 판례 선고일 상한 (YYYYMMDD). 과거 시험을 그 시험 시점 법리로 풀 때 사용 — 이후 판례는 검색에서 제외
+    case_date_to: str | int | None = None
 
 
 class Rerank(BaseModel):
@@ -101,6 +103,12 @@ class MCQ(BaseModel):
     prompt_version: str = "v1"        # B: v2 = 사실관계·전 항목·예외 우선·유보 기준
     fusion: str = "none"              # C: fill_unknown = 유보 진술만 closed-book 판단으로 채움
     fusion_weight: float = 0.5        # C: 채운 판단의 확신도 배율
+    # ---- 개선안 v4 스위치 (기본값 = v3 이전 동작, 프리셋 d 에서 켬) ----
+    answer_fallback: bool = False     # 판단 조합이 어느 보기와도 안 맞아 전 보기 0점이면 확신도 상한으로 재계산
+    answer_fallback_cap: float = 0.95
+    rewrite_version: str = "v2"       # v3 = 쟁점·예외 + 사례 속 당사자 지위 질의 (rewrite_queries 3 까지)
+    rewrite_stem_chars: int = 300     # 리라이트에 보여 줄 발문 길이 (사례형은 당사자 관계가 뒤쪽에 있음)
+    case_meta: bool = False           # 근거 머리에 판례 선고일·전원합의체 여부 표시
 
 
 class Models(BaseModel):

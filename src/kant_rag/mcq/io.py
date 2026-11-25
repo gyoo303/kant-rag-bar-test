@@ -26,6 +26,8 @@ class BarEvalSet(BaseModel):
     version: str
     split: str
     frozen: bool = False
+    frozen_at: str | None = None      # freeze-test 가 기록 (고정 시각)
+    frozen_commit: str | None = None  # 고정 당시 코드 커밋
     items: list[ExamQuestion]
     no_answer: list[EvalItem] = Field(default_factory=list)
 

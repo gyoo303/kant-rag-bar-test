@@ -241,6 +241,8 @@ def build_context(per_statement: dict[str, list[RetrievedChunk]], c, graph: Chun
         extra: list[tuple[str, str, str]] = []  # (id, text, kind)
         if c.expand_references:
             extra += [(x, graph.by_id[x].text, "reference") for x in graph.expand_references(used, c.max_expansions)]
+        if getattr(c, "statute_parts", False):
+            extra += [(x, graph.by_id[x].text, "part") for x in graph.statute_parts(used, c.max_statute_parts)]
         if c.sibling_items:
             extra += [(x, t, "sibling") for x, t in graph.case_siblings(used, max_total=c.max_siblings)]
         for cid, text, kind in extra:
@@ -251,7 +253,7 @@ def build_context(per_statement: dict[str, list[RetrievedChunk]], c, graph: Chun
             parts.append(block)
             used.append(cid)
             total += len(block)
-            info["references" if kind == "reference" else "siblings"].append(cid)
+            info.setdefault({"reference": "references", "sibling": "siblings", "part": "statute_parts"}[kind], []).append(cid)
     return "\n\n".join(parts), used, info
 
 
@@ -269,7 +271,7 @@ class MCQSolver:
     @property
     def graph(self) -> ChunkGraph | None:  # A3·A4 를 켰을 때만 생성
         c = self.s.mcq
-        if not (c.sibling_items or c.expand_references):
+        if not (c.sibling_items or c.expand_references or c.statute_parts):
             return None
         if getattr(self, "_graph", None) is None:
             self._graph = ChunkGraph(self.retriever.vector.chunks_by_id)

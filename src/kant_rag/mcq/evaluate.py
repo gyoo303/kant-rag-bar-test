@@ -218,3 +218,65 @@ def aggregate_grading(grading_csv: Path) -> dict:
             "ungraded": sum(x["citation_grounded"] == "" for x in mcq) + sum(x["no_answer_handled"] == "" for x in na),
         }
     return out
+
+
+# ---------- 반복 실행 집계 (eval --repeat) ----------
+def aggregate_runs(run_dirs: list[Path], out: Path) -> dict:
+    """같은 설정을 여러 번 돌린 실행들 → 구성별 정답 수 평균·범위, 실행마다 결과가 갈린 문항."""
+    per_run: list[dict] = []
+    by_cfg: dict[str, list[dict[int, bool]]] = {}
+    for d in run_dirs:
+        recs = [json.loads(x) for x in (d / "records.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+        mcq = [r for r in recs if r.get("eval", {}).get("kind") == "mcq"]
+        row = {"run_id": d.name}
+        for cfg in sorted({r["config"] for r in mcq}):
+            res = {r["number"]: bool(r["eval"]["correct"]) for r in mcq if r["config"] == cfg}
+            by_cfg.setdefault(cfg, []).append(res)
+            row[cfg] = sum(res.values())
+        per_run.append(row)
+    summary: dict = {"runs": per_run, "by_config": {}}
+    for cfg, runs in by_cfg.items():
+        scores = [sum(r.values()) for r in runs]
+        qs = sorted(set().union(*runs))
+        unstable = [n for n in qs if len({r.get(n) for r in runs}) > 1]
+        summary["by_config"][cfg] = {
+            "n_runs": len(runs), "n_questions": len(qs), "scores": scores,
+            "mean": round(sum(scores) / len(scores), 2), "min": min(scores), "max": max(scores),
+            "always_wrong": [n for n in qs if not any(r.get(n) for r in runs)],
+            "unstable": {str(n): [int(r.get(n, False)) for r in runs] for n in unstable},
+        }
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "summary_repeat.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    return summary
+
+
+# ---------- 기존 기록 재채점 (rescore) ----------
+def rescore_run(run_dir: Path, items: dict[int, ExamQuestion] | None, cap: float = 0.95) -> dict:
+    """기존 실행의 진술 판단은 그대로 두고 정답 번호 계산만 예비 규칙(choose_answer_robust)으로 다시 한다.
+    LLM·검색을 다시 하지 않으므로 '계산 규칙'의 효과만 본다."""
+    from kant_rag.mcq.schemas import StatementJudgment
+    from kant_rag.mcq.solver import choose_answer_robust
+
+    recs = [json.loads(x) for x in (run_dir / "records.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+    before = after = n = 0
+    changed, inconsistent = [], []
+    for r in recs:
+        if r.get("eval", {}).get("kind", "mcq") != "mcq" or not r.get("judgments"):
+            continue
+        q = ExamQuestion(**r["question"]) if r.get("question") else (items or {}).get(r.get("number"))
+        if q is None or q.answer is None:
+            continue
+        js = {k: StatementJudgment.model_validate(v) for k, v in r["judgments"].items()}
+        new, _, info = choose_answer_robust(q, js, cap)
+        n += 1
+        before += r.get("predicted") == q.answer
+        after += new == q.answer
+        if info["inconsistent"]:
+            inconsistent.append({"number": q.number, "flipped": info["flipped"]})
+        if new != r.get("predicted"):
+            changed.append({"number": q.number, "config": r.get("config"), "from": r.get("predicted"), "to": new,
+                            "answer": q.answer})
+    out = {"run_id": run_dir.name, "graded": n, "before": before, "after": after,
+           "changed": changed, "inconsistent": inconsistent, "cap": cap}
+    (run_dir / "rescore_fallback.json").write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    return out

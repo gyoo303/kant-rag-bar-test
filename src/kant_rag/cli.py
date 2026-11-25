@@ -118,6 +118,15 @@ def main(argv: list[str] | None = None) -> None:
     eb.add_argument("--rewrite", action="store_true", help="쿼리 리라이트 적용 (선택형 진술별 질의 + 근거 없음 문항)")
     eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc — mcq/presets.py")
     eb.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value (여러 번)")
+    eb.add_argument("--repeat", type=int, default=1, help="같은 설정으로 N번 실행하고 평균·범위·흔들린 문항 집계")
+
+    rs = sub.add_parser("rescore", help="기존 실행의 진술 판단으로 정답 번호만 예비 규칙(v4)으로 다시 계산 (LLM·검색 없음)")
+    rs.add_argument("run_dirs", nargs="+", help="results/<실행> 폴더")
+    rs.add_argument("--exam", default=None, help="eval 실행이면 문항 파일 (solve-text 실행은 불필요)")
+    rs.add_argument("--cap", type=float, default=0.95)
+
+    fz = sub.add_parser("freeze-test", help="eval/test.json 을 최종 평가용으로 고정 (frozen=true, 시각·커밋 기록)")
+    fz.add_argument("--yes", action="store_true", help="실제로 고정 (없으면 점검만)")
 
     args = p.parse_args(argv)
     settings = get_settings(args.config)
@@ -473,8 +482,61 @@ def main(argv: list[str] | None = None) -> None:
         s = apply_overrides(s, overrides)
         meta = {"preset": args.preset, "overrides": overrides}
         print("설정:", meta)
-        print("saved:", run_bar_eval(s, Path(args.eval_path), [RetrievalMode(m) for m in args.modes], args.label,
-                                     meta=meta))
+        if args.repeat <= 1:
+            print("saved:", run_bar_eval(s, Path(args.eval_path), [RetrievalMode(m) for m in args.modes], args.label,
+                                         meta=meta))
+        else:
+            import time as _time
+
+            from kant_rag.mcq.evaluate import aggregate_runs
+
+            dirs = []
+            for i in range(1, args.repeat + 1):
+                print(f"===== 반복 {i}/{args.repeat} =====", flush=True)
+                dirs.append(run_bar_eval(s, Path(args.eval_path), [RetrievalMode(m) for m in args.modes],
+                                         f"{args.label}-r{i}", meta={**meta, "repeat": [i, args.repeat]}))
+            agg_dir = settings.resolve(settings.paths.results_dir) / (_time.strftime("%Y%m%d-%H%M%S") + f"-{args.label}-repeat")
+            agg = aggregate_runs(dirs, agg_dir)
+            print(json.dumps(agg["by_config"], ensure_ascii=False, indent=2))
+            print("saved:", agg_dir)
+
+    elif args.cmd == "rescore":
+        from kant_rag.mcq.evaluate import rescore_run
+        from kant_rag.mcq.io import load_bar_evalset
+
+        items = {q.number: q for q in load_bar_evalset(Path(args.exam)).items} if args.exam else None
+        for d in args.run_dirs:
+            r = rescore_run(Path(d), items, args.cap)
+            print(f"{r['run_id']}: {r['before']} → {r['after']} / {r['graded']}  바뀐 문항 {r['changed']}  "
+                  f"판단 불일치 {[x['number'] for x in r['inconsistent']]}")
+
+    elif args.cmd == "freeze-test":
+        import datetime as _dt
+        import subprocess as _sp
+
+        from kant_rag.mcq.io import BarEvalSet, check_bar_composition
+
+        path = ROOT / "eval" / "test.json"
+        es = BarEvalSet.model_validate_json(path.read_text(encoding="utf-8"))
+        warns = check_bar_composition(es)
+        missing = [q.number for q in es.items if q.answer is None]
+        print(f"test.json: 선택형 {len(es.items)} + 근거 없음 {len(es.no_answer)}, frozen={es.frozen}")
+        for w in warns:
+            print("  ⚠", w)
+        if missing:
+            print("  ⚠ 정답 미기입:", missing)
+        if es.frozen:
+            print(f"이미 고정됨 ({es.frozen_at}, {es.frozen_commit})")
+        elif not args.yes:
+            print("점검만 했습니다. 고정하려면 --yes 를 붙이세요. 고정 후에는 test 결과를 보고 설정을 바꾸지 않습니다.")
+        elif missing:
+            raise SystemExit("정답이 빠진 문항이 있어 고정하지 않았습니다.")
+        else:
+            commit = _sp.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, cwd=ROOT,
+                             check=False).stdout.strip() or None
+            es.frozen, es.frozen_at, es.frozen_commit = True, _dt.datetime.now().isoformat(timespec="seconds"), commit
+            path.write_text(es.model_dump_json(indent=2), encoding="utf-8")
+            print(f"고정했습니다: frozen=true, {es.frozen_at}, commit {commit}. eval/test.json 을 커밋하세요.")
 
 
 def PRESETS_NAMES() -> list[str]:

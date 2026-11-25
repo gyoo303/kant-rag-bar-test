@@ -31,7 +31,7 @@ PRESETS["v3"] = PRESETS["c"]
 PRESETS["d"] = {**PRESETS["b"], "mcq.answer_fallback": True, "mcq.rewrite_version": "v3", "mcq.rewrite_queries": 3,
                 "mcq.rewrite_stem_chars": 800, "mcq.case_meta": True, "mcq.prompt_version": "v4",
                 # 적대적 변형본 분석 (docs/analysis/report-2026-adv-v3.md): 진술 풀어 쓰기, 원문 질의, 동점 재판단
-                "mcq.original_query": True, "mcq.tie_rejudge": True}
+                "mcq.original_query": True, "mcq.tie_rejudge": True, "mcq.statute_parts": True}
 PRESETS["dc"] = {**PRESETS["d"], "mcq.fusion": "fill_unknown", "mcq.fusion_min_conf": 0.8}  # d + 지식 결합(원 확신도 0.8 이상만)
 PRESETS["v4"] = PRESETS["d"]  # 별칭: --preset v4 = d
 

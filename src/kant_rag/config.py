@@ -112,6 +112,8 @@ class MCQ(BaseModel):
     original_query: bool = False      # 리라이트 질의에 진술 원문(발문 제외) 질의도 더해 검색 (검색 안정성)
     tie_rejudge: bool = False         # 최고점 보기가 동점이면 동점을 만든 진술만 다시 판단 (LLM 1회)
     fusion_min_conf: float = 0.0      # C: 지식 판단의 원 확신도가 이 값 미만이면 채우지 않음 (0 = 제한 없음)
+    statute_parts: bool = False       # 항 단위로 나뉜 긴 조문의 다른 조각을 함께 제공 (본문·단서 분리 방지)
+    max_statute_parts: int = 6
 
 
 class Models(BaseModel):

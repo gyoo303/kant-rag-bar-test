@@ -1,0 +1,24 @@
+{
+  "run_id": "20261125-100118-bar13-v3",
+  "graded": 70,
+  "before": 65,
+  "after": 66,
+  "changed": [
+    {
+      "number": 23,
+      "config": "hybrid_rerank",
+      "from": 1,
+      "to": 4,
+      "answer": 4
+    }
+  ],
+  "inconsistent": [
+    {
+      "number": 23,
+      "flipped": [
+        "ㄹ"
+      ]
+    }
+  ],
+  "cap": 0.95
+}

@@ -104,6 +104,25 @@ class ChunkGraph:
                 break
         return list(out.items())[:max_total]
 
+    # ---------- 긴 조문의 다른 조각 (v4) ----------
+    def statute_parts(self, chunk_ids: list[str], max_total: int = 6) -> list[str]:
+        """항 단위로 나뉜 조문(LAW-COMM#제542조의12-1, -2 …)의 한 조각이 검색되면 같은 조문의 나머지 조각."""
+        have = set(chunk_ids)
+        out: list[str] = []
+        for cid in chunk_ids:
+            c = self.by_id.get(cid)
+            if c is None or c.metadata.get("doc_type") != "statute":
+                continue
+            parts = self.articles.get((c.doc_id, c.metadata.get("article")), [])
+            if len(parts) < 2:
+                continue
+            for x in parts:
+                if x not in have and x not in out:
+                    out.append(x)
+                    if len(out) >= max_total:
+                        return out
+        return out
+
     # ---------- A4 ----------
     def expand_references(self, chunk_ids: list[str], max_add: int = 8) -> list[str]:
         """검색된 조문의 준용 관계를 따라 추가할 조문 청크 ids (이미 있는 것 제외)."""

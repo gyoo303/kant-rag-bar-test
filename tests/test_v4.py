@@ -160,3 +160,36 @@ def test_variant_compare_flags():
     assert rows["1"]["number_changed"] and rows["5"]["double_negation"] and rows["5"]["negation_changed"]
 def test_v4_alias():
     assert PRESETS["v4"] == PRESETS["d"]
+
+
+def _law(cid, art, text="조문"):
+    return Chunk(chunk_id=cid, doc_id="LAW-COMM", title="상법", text=text, section="s", line_start=1, line_end=1,
+                 metadata={"doc_type": "statute", "article": art})
+
+
+def test_statute_parts():
+    from kant_rag.mcq.context import ChunkGraph
+    cs = [_law("LAW-COMM#제542조의12-1", "제542조의12"), _law("LAW-COMM#제542조의12-2", "제542조의12"),
+          _law("LAW-COMM#제542조의12-3", "제542조의12"), _law("LAW-COMM#제1조", "제1조")]
+    g = ChunkGraph({c.chunk_id: c for c in cs})
+    assert g.statute_parts(["LAW-COMM#제542조의12-2"]) == ["LAW-COMM#제542조의12-1", "LAW-COMM#제542조의12-3"]
+    assert g.statute_parts(["LAW-COMM#제1조"]) == []
+
+
+def test_aggregate_and_rescore(tmp_path):
+    from kant_rag.mcq.evaluate import aggregate_runs, rescore_run
+    q = _q23().model_copy(update={"answer": 4})
+    js = {"ㄱ": _j("false").model_dump(), "ㄴ": _j("true").model_dump(), "ㄷ": _j("true").model_dump(),
+          "ㄹ": _j("false").model_dump()}
+    dirs = []
+    for i, ok in enumerate([1, 0]):
+        d = tmp_path / f"r{i}"
+        d.mkdir()
+        rec = {"number": 23, "config": "hybrid_rerank", "predicted": 1, "judgments": js,
+               "eval": {"kind": "mcq", "correct": ok}, "question": q.model_dump()}
+        (d / "records.jsonl").write_text(json.dumps(rec, ensure_ascii=False) + "\n", encoding="utf-8")
+        dirs.append(d)
+    agg = aggregate_runs(dirs, tmp_path / "agg")["by_config"]["hybrid_rerank"]
+    assert agg["scores"] == [1, 0] and agg["unstable"] == {"23": [1, 0]}
+    r = rescore_run(dirs[0], None)
+    assert (r["before"], r["after"]) == (0, 1) and r["inconsistent"][0]["flipped"] == ["ㄹ"]

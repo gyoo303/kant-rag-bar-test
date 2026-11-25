@@ -22,6 +22,10 @@
 | 11 | **진술 원문 질의 추가** — 리라이트 질의에 진술 원문(발문 제외)도 더해 검색 | 변형본 문 9 (결정적 판례 검색 변동) | `mcq.original_query` (false) | `solver.py::solve` |
 | 12 | **지식 결합 확신도 하한** — 지식 판단 원 확신도가 하한 미만이면 채우지 않음(`fusion.skipped_low_conf` 기록) | 변형본 문 9 (지식 0.41 오판) | `mcq.fusion_min_conf` (0, `dc` 는 0.8) | `solver.py::_fuse` |
 | 13 | **변형본 검증 도구** `kant-rag diff-exam 원본 변형본 --out CSV` — 숫자·부정 개수·이중부정·큰 수정 진술을 사람이 확인하도록 표시 | 변형본 정답 유지 여부 | 명령 | `mcq/variant.py` |
+| 14 | **긴 조문의 다른 조각** — 항 단위로 나뉜 조문(`…#제542조의12-1`)의 한 조각이 검색되면 나머지 조각도 `kind="part"` 로 제공 | 변형본 문 55 (본문·단서 분리) | `mcq.statute_parts` (false) | `context.py::ChunkGraph.statute_parts` |
+| 15 | **반복 실행** `eval --repeat N` — N번 실행 후 `<시각>-<라벨>-repeat/summary_repeat.json`(평균·범위·항상 틀림·흔들린 문항) | 실행 간 변동 ±2~3 | 옵션 | `evaluate.py::aggregate_runs` |
+| 16 | **재채점** `rescore <실행 폴더…> [--exam]` — 기존 판단으로 번호 계산만 예비 규칙으로 다시 (LLM·검색 없음), `rescore_fallback.json` | 계산 규칙 효과 확인 | 명령 | `evaluate.py::rescore_run` |
+| 17 | **test 고정** `freeze-test [--yes]` — 구성·정답 점검 후 `frozen=true`, 시각·커밋 기록. `--yes` 없으면 점검만 | 최종 평가 절차 | 명령 | `cli.py freeze-test` |
 | 7 | **보강 수집 준비** — `fetch-cases --topics/--topics-file/--date-from/--per-topic/--out`, 문서 목록에 「민사 및 가사소송의 사물관할에 관한 규칙」 추가 | 근거 자체가 없음 (2026 문 35·36, bar13 문 27) | PC 에서 수집 후 `build-index` | `cli.py fetch-cases`, `data/cases/topics_added.txt`, `data/documents.csv` |
 
 ### 프리셋
@@ -30,14 +34,15 @@
 |---|---|
 | `b` | v3 의 근거 확장 + 판단 프롬프트 v2 (튜닝 세트 최고 51/53) |
 | `c` = `v3` | `b` + 유보 진술 지식 결합 |
-| **`d`** = **`v4`** | `b` + 1·4·5·8~11 (번호 계산 예비 규칙, 리라이트 v3 질의 3개 + 진술 원문 질의, 판례 메타, 판단 프롬프트 v4, 동점 재판단) |
+| **`d`** = **`v4`** | `b` + 1·4·5·8~11·14 (번호 계산 예비 규칙, 리라이트 v3 질의 3개 + 진술 원문 질의, 판례 메타, 판단 프롬프트 v4, 동점 재판단, 긴 조문 조각) |
 | **`dc`** | `d` + 유보 진술 지식 결합 (지식 원 확신도 0.8 이상만) |
 
 날짜 필터(3)는 프리셋에 넣지 않았다. 과거 시험을 풀 때만 `--set retrieval.case_date_to=YYYYMMDD` 로 켠다.
 
 ## 2. 미리 확인한 것 (PC 실행 없이)
 
-- 테스트 66개 통과 (`tests/test_v4.py` 13개: 예비 규칙, 판례 메타, 리라이트 v3 파싱, 날짜 필터, 프리셋에서 v3 불변, 동점 재판단, 지식 결합 하한, restated, 변형본 비교).
+- 테스트 68개 통과 (`tests/test_v4.py` 15개: 긴 조문 조각, 반복 집계·재채점 포함, 예비 규칙, 판례 메타, 리라이트 v3 파싱, 날짜 필터, 프리셋에서 v3 불변, 동점 재판단, 지식 결합 하한, restated, 변형본 비교).
+- **재채점(16) 결과**: 기존 실행 6개에 예비 규칙만 적용 → bar13 v3 65 → **66**(문 23), 나머지(2026 v2 58, tune-b 51, tune-c 48, bar13 closed-book 53, 변형본 66)는 변화 없음. 각 폴더의 `rescore_fallback.json`.
 - 적대적 변형본 검증 CSV: `results/20261125-124750-2026-adv-v3/variant_check.csv` — 바뀐 진술 233개 중 확인 필요 102개(숫자 49 · 부정 개수 56 · 이중부정 39 · 큰 수정 5). `human_ok` 칸에 사람이 1/0 기입.
 - **예비 규칙(1)을 기존 6개 실행 기록에 적용**한 결과: 바뀐 문항은 bar13 v3 문 23 하나(① → ④, 정답)뿐이다. 2026 v2·b·c·closed-book, bar13 closed-book 은 변화 0. 튜닝 세트에는 "모든 보기 0점" 문항이 없어 튜닝 점수는 그대로다. 성능 튜닝이 아니라 망가진 경우를 막는 안전장치다.
 - 확신도 상한을 **항상** 적용하는 방식은 기각했다. 2026 v2 58 → 57 처럼 정상 문항까지 바뀌었다.
@@ -77,6 +82,21 @@ bar13 을 시험 시점 법리로 다시 풀기 (선택, 날짜 필터):
 
 ```bash
 uv run kant-rag eval data/exam/bar13_civil.json --modes hybrid_rerank --preset d --set retrieval.case_date_to=20231231 --label bar13-d-asof
+```
+
+반복 실행으로 변동 범위 확인 (예: 튜닝 세트 3회):
+
+```bash
+uv run kant-rag eval data/exam/2026_civil_tune.json --modes hybrid_rerank --preset v4 --label tune-v4 --repeat 3
+```
+
+최종 평가 전 test 고정 (팀이 구성을 확정한 뒤, 먼저 점검만):
+
+```bash
+uv run kant-rag freeze-test
+```
+```bash
+uv run kant-rag freeze-test --yes
 ```
 
 ## 4. 판정 기준과 주의

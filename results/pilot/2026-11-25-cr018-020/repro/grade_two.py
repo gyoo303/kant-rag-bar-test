@@ -117,13 +117,13 @@ def main() -> int:
 
     if len(sys.argv) > 3 and Path(sys.argv[3]).is_file():
         before = {b["no"]: b for b in json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))}
-        b_ok = sum(1 for b in before.values() if b["ok"])
+        b_ok = sum(1 for b in before.values() if b.get("ok", b.get("answer_correct")))
         print()
         print("== 이전 실행과 비교 (둘 다 '번호만 맞으면 정답' 기준) ==")
         print(f"  이전  {b_ok}/{len(before)}  {pct(b_ok, len(before))}")
         print(f"  이후  {ac}/{n}  {pct(ac, n)}")
-        gained = [x["no"] for x in rows if x["answer_correct"] and not before.get(x["no"], {}).get("ok")]
-        lost = [x["no"] for x in rows if not x["answer_correct"] and before.get(x["no"], {}).get("ok")]
+        gained = [x["no"] for x in rows if x["answer_correct"] and not (lambda b: b.get("ok", b.get("answer_correct")))(before.get(x["no"], {}))]
+        lost = [x["no"] for x in rows if not x["answer_correct"] and (lambda b: b.get("ok", b.get("answer_correct")))(before.get(x["no"], {}))]
         print(f"  새로 맞힌 문항: {gained or '없음'}")
         print(f"  새로 틀린 문항: {lost or '없음'}")
 

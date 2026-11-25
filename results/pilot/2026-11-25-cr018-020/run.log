@@ -18,3 +18,60 @@ W1125 09:59:29.339000 17348 Lib\site-packages\torch\distributed\elastic\multipro
 [15/70] 문 15: ANSWERED answer_no=4 76.5s
 [16/70] 문 16: ANSWERED answer_no=3 73.5s
 문항 70개 중 54개 실행 (이미 완료 16개), 구성 C+R
+W1125 10:26:38.927000 31016 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]Loading weights:   9%|▊         | 34/393 [00:00<00:01, 315.75it/s]Loading weights:  17%|█▋        | 66/393 [00:00<00:01, 306.42it/s]Loading weights:  25%|██▍       | 97/393 [00:00<00:01, 276.16it/s]Loading weights:  32%|███▏      | 125/393 [00:00<00:01, 246.93it/s]Loading weights:  43%|████▎     | 168/393 [00:00<00:00, 299.70it/s]Loading weights:  51%|█████     | 199/393 [00:00<00:00, 253.35it/s]Loading weights:  58%|█████▊    | 226/393 [00:00<00:00, 242.38it/s]Loading weights: 100%|██████████| 393/393 [00:00<00:00, 437.04it/s]
+[1/54] 문 17: ANSWERED answer_no=1 144.2s
+[2/54] 문 18: ANSWERED answer_no=2 22.9s
+[3/54] 문 19: ANSWERED answer_no=1 46.6s
+[4/54] 문 20: ANSWERED answer_no=3 29.3s
+[5/54] 문 21: ANSWERED answer_no=5 18.7s
+[6/54] 문 22: ANSWERED answer_no=2 26.7s
+[7/54] 문 23: ANSWERED answer_no=2 56.4s
+[8/54] 문 24: ANSWERED answer_no=4 25.7s
+[9/54] 문 25: ANSWERED answer_no=1 26.9s
+[10/54] 문 26: ANSWERED answer_no=2 65.6s
+[11/54] 문 27: ANSWERED answer_no=3 26.7s
+[12/54] 문 28: ANSWERED answer_no=5 25.8s
+[13/54] 문 29: ANSWERED answer_no=5 19.4s
+[14/54] 문 30: ANSWERED answer_no=3 42.5s
+[15/54] 문 31: ANSWERED answer_no=2 23.2s
+[16/54] 문 32: ANSWERED answer_no=1 19.1s
+[17/54] 문 33: ANSWERED answer_no=3 26.1s
+[18/54] 문 34: ANSWERED answer_no=4 26.0s
+[19/54] 문 35: ANSWERED answer_no=4 44.6s
+[20/54] 문 36: ANSWERED answer_no=5 90.4s
+[21/54] 문 37: ANSWERED answer_no=2 47.0s
+[22/54] 문 38: ANSWERED answer_no=4 33.1s
+[23/54] 문 39: ANSWERED answer_no=3 53.9s
+[24/54] 문 40: ANSWERED answer_no=1 48.6s
+[25/54] 문 41: ANSWERED answer_no=5 18.9s
+[26/54] 문 42: ANSWERED answer_no=5 46.2s
+[27/54] 문 43: ANSWERED answer_no=4 59.9s
+[28/54] 문 44: ANSWERED answer_no=4 20.6s
+[29/54] 문 45: ANSWERED answer_no=2 28.1s
+[30/54] 문 46: ANSWERED answer_no=2 26.1s
+[31/54] 문 47: ANSWERED answer_no=5 24.9s
+[32/54] 문 48: ANSWERED answer_no=3 20.6s
+[33/54] 문 49: ANSWERED answer_no=1 21.3s
+[34/54] 문 50: ANSWERED answer_no=1 23.8s
+[35/54] 문 51: ANSWERED answer_no=3 20.6s
+[36/54] 문 52: ANSWERED answer_no=3 62.4s
+[37/54] 문 53: ANSWERED answer_no=4 48.9s
+[38/54] 문 54: ANSWERED answer_no=3 20.6s
+[39/54] 문 55: ANSWERED answer_no=5 34.9s
+[40/54] 문 56: ANSWERED answer_no=3 43.0s
+[41/54] 문 57: ANSWERED answer_no=4 41.8s
+[42/54] 문 58: ANSWERED answer_no=2 19.8s
+[43/54] 문 59: ANSWERED answer_no=2 55.7s
+[44/54] 문 60: ANSWERED answer_no=1 27.2s
+[45/54] 문 61: ANSWERED answer_no=1 41.3s
+[46/54] 문 62: ANSWERED answer_no=5 23.9s
+[47/54] 문 63: ANSWERED answer_no=2 60.4s
+[48/54] 문 64: ANSWERED answer_no=2 22.6s
+[49/54] 문 65: ANSWERED answer_no=1 30.5s
+[50/54] 문 66: ANSWERED answer_no=3 62.7s
+[51/54] 문 67: ANSWERED answer_no=4 59.4s
+[52/54] 문 68: ANSWERED answer_no=5 22.3s
+[53/54] 문 69: ANSWERED answer_no=3 20.0s
+[54/54] 문 70: ANSWERED answer_no=4 23.5s
+끝. 총 2021초, 기록 results\pilot\2026-11-25-cr018-020\run.jsonl

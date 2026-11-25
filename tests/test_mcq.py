@@ -167,3 +167,25 @@ def test_derive_statement_labels():
     q1, q2 = exam().items  # q1: 단일 '옳지 않은 것' 정답 3 / q2: 조합 '옳은 것' 정답 ③ ㄱ,ㄷ
     assert derive_statement_labels(q1) == {"1": True, "2": True, "3": False, "4": True, "5": True}
     assert derive_statement_labels(q2) == {"ㄱ": True, "ㄴ": False, "ㄷ": True}
+
+
+def test_parse_circled_numbers_inside_stem():
+    from kant_rag.mcq.parse import parse_exam_text
+
+    text = """문  17.
+ 다음 계약 조항이 있다.
+제△△조(계약의 해제) ① 중도금 미지급 시 자동 해제된다.
+  ② 매도인 귀책으로 해제 시 연 10% 이자를 가산한다.
+ 이에 관한 설명 중 옳은 것을 모두 고른 것은?
+ㄱ.가 진술
+ㄴ.나 진술
+ㄷ.다 진술
+ ① ㄱ
+ ② ㄴ
+ ③ ㄱ, ㄴ
+ ④ ㄴ, ㄷ
+ ⑤ ㄱ, ㄴ, ㄷ
+"""
+    q = parse_exam_text(text, "T")[0]
+    assert q.form == "combination" and set(q.items) == {"ㄱ", "ㄴ", "ㄷ"}
+    assert "① 중도금 미지급" in q.stem and q.options[5] == "ㄱ, ㄴ, ㄷ"

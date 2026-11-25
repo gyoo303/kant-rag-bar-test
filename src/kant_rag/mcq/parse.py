@@ -28,6 +28,28 @@ OX_PAIR = re.compile(r"([ㄱㄴㄷㄹㅁㅂ])\s*\(\s*([○×Ｏ✕xXoO])\s*\)")
 OX_ONLY = re.compile(r"^(?:\s*[ㄱㄴㄷㄹㅁㅂ]\s*\(\s*[○×Ｏ✕xXoO]\s*\)\s*[,，]?)+\s*$")
 
 
+def _split_options(block: str) -> tuple[str, dict[int, str]]:
+    """보기 ①~⑤ 분리. 발문 안의 ①② (계약서 조항·법조문 항 번호 등)를 보기로 오인하지 않도록
+    ①②③④⑤ 가 차례로 이어지는 마지막 묶음만 보기로 본다."""
+    marks = list(OPTION.finditer(block))
+    start = None
+    for i in range(len(marks) - 4, -1, -1):
+        if [m.group(1) for m in marks[i:i + 5]] == list(CIRCLED[:5]):
+            start = i
+            break
+    if start is None:  # 보기 5개가 온전하지 않음 → 기존 방식 (검증에서 걸러짐)
+        pieces = OPTION.split(block)
+        head, opts = pieces[0], pieces[1:]
+        return head, {CIRCLED.index(opts[j]) + 1: _norm(opts[j + 1]) for j in range(0, len(opts) - 1, 2)}
+    sel = marks[start:start + 5]
+    head = block[: sel[0].start()]
+    options = {}
+    for k, m in enumerate(sel):
+        end = sel[k + 1].start() if k + 1 < len(sel) else len(block)
+        options[k + 1] = _norm(block[m.end(): end])
+    return head, options
+
+
 def parse_exam_text(text: str, id_prefix: str, subject: str | None = None) -> list[ExamQuestion]:
     text = NOISE.sub("", text)
     starts = list(Q_START.finditer(text))
@@ -35,9 +57,7 @@ def parse_exam_text(text: str, id_prefix: str, subject: str | None = None) -> li
     for i, m in enumerate(starts):
         number = int(m.group(1) or m.group(2))
         block = text[m.end(): starts[i + 1].start() if i + 1 < len(starts) else len(text)]
-        pieces = OPTION.split(block)
-        head, opts = pieces[0], pieces[1:]
-        options = {CIRCLED.index(opts[j]) + 1: _norm(opts[j + 1]) for j in range(0, len(opts) - 1, 2)}
+        head, options = _split_options(block)
 
         items: dict[str, str] = {}
         stem = head

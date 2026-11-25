@@ -12,3 +12,9 @@
 4. 평가셋 분리: `uv run kant-rag split-exam data/exam/2026_civil.json` → `eval/dev.json`(선택형 8) / `eval/test.json`(선택형 17)
    - 근거 없음 문항(dev 2 / test 3)은 팀이 직접 작성해 `no_answer` 에 추가
    - 나머지 45문항은 `data/exam/2026_civil_extra.json` — 최종 결과 확인 뒤 추가 실험으로만 사용 (본 평가와 분리 보고)
+
+## 다른 시험지: `bar13_civil` (사용자 제공 hwpx, 70문항)
+- 원본 `.hwpx` 는 커밋하지 않고, 본문 XML 에서 추출한 텍스트(수정 추적의 삭제분 제외)를 `bar13_civil.txt` 로 저장 → `bar13_civil.json`
+- 과목: 민법 35 · 상법 19 · 민사소송법 16 (문항 내용으로 분류, 통합형 문항 32·34~36·65·69 는 상법으로 표기)
+- 정답 미입력: 정답을 받으면 `bar13_civil_answers.csv` 로 저장 후 import-exam 을 `--answers` 와 함께 다시 실행
+- 2026 시험의 dev/test 분리와 무관한 외부 시험 (split=external) — 설정 튜닝에 쓰지 않고 일반화 확인용

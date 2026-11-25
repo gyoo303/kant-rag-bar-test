@@ -77,7 +77,14 @@ def load_bar_evalset(path: Path) -> BarEvalSet:
         exam = Exam.model_validate(data)
         for q in exam.items:
             q.traps = q.traps or auto_traps(q)
-        split = "extra" if path.stem.endswith("_extra") else ("tune" if path.stem.endswith("_tune") else "all")
+        if path.stem.endswith("_extra"):
+            split = "extra"
+        elif path.stem.endswith("_tune"):
+            split = "tune"
+        elif path.stem.startswith("2026_civil"):
+            split = "all"  # dev·test 를 포함한 본 시험 전체
+        else:
+            split = "external"  # 다른 시험지 (평가셋 분리와 무관)
         return BarEvalSet(version=f"exam:{path.name}", split=split, items=exam.items)
     return BarEvalSet.model_validate(data)
 

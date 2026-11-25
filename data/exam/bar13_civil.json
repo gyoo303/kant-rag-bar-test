@@ -16,7 +16,13 @@
         "5": "채권자가 채무자의 제3채무자에 대한 채권을 압류 또는 가압류한 경우, 채무자의 제3채무자에 대한 채권에 확정적 시효중단의 효력이 생긴다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": false,
+        "3": false,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -37,7 +43,13 @@
         "5": "1억 4,200만 원"
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": false,
+        "3": true,
+        "4": false,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -58,7 +70,13 @@
         "5": "甲의 사망 후, 乙이 丙과 丁의 법정대리인으로서 상속재산 전부를 丁의 단독소유로 하기로 협의분할 하더라도 이는 적법하다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": false,
+        "3": true,
+        "4": false,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -85,7 +103,13 @@
         "5": "ㄴ, ㄷ, ㄹ, ㅁ"
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": true,
+        "ㄹ": true,
+        "ㅁ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -106,7 +130,13 @@
         "5": "甲이 乙에게 대리권을 수여한 후 甲에 대하여 성년후견이 개시되더라도 乙의 대리권은 소멸하지 않는다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -132,7 +162,12 @@
         "5": "ㄴ, ㄷ, ㄹ"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -153,7 +188,13 @@
         "5": "당사자가 불확정한 사실이 발생한 때를 이행기한으로 정한 경우에는 그 사실이 발생한 때는 물론 그 사실의 발생이 불가능하게 된 때에도 이행기한이 도래한 것으로 보아야 한다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -179,7 +220,12 @@
         "5": "ㄷ, ㄹ"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": true,
+        "ㄹ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -200,7 +246,13 @@
         "5": "반환소송을 당하게 된다면 아무런 보상도 받지 못한 채 부동산을 반환하여야 할 것으로 착각하고 이를 매도하는 매매계약을 체결한 경우 이는 동기의 착오에 불과하므로, 그 동기를 의사표시의 내용으로 삼기로 하는 합의가 있어야만 매도인은 착오를 이유로 위 매매계약을 취소할 수 있다."
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": true,
+        "3": false,
+        "4": false,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -225,7 +277,11 @@
         "5": "ㄱ, ㄴ, ㄷ"
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -246,7 +302,13 @@
         "5": "상가건물임대차에서 임차인의 임차목적물 반환의무와 임대인의 권리금 회수 방해로 인한 손해배상의무는 임대차계약의 종료라는 동일한 원인에 기하여 발생한 것일 뿐만 아니라 공평의 관점에서 보더라도 이행상의 견련관계를 인정할 수 있다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": false,
+        "3": false,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -267,7 +329,13 @@
         "5": "만약 甲에게 오래전부터 별거 상태인 법률상 배우자 戊가 있었고 甲 사망 후 丙이 가정법원에 적법한 요건을 갖춘 상속포기 신고를 하였다면, 戊가 단독상속인이 된다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -288,7 +356,13 @@
         "5": "甲이 X 건물의 보수를 위하여 戊와 보수공사계약을 체결한 경우에 甲이 공사대금을 지급하지 않는다면 戊는 乙에게 지분 범위 내에서 공사대금을 부당이득으로 반환청구할 수 있다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -309,7 +383,13 @@
         "5": "丙이 임의로 자신의 채권자 D를 위하여 X 부동산에 관하여 D 명의의 근저당권을 설정해 준 경우 丙은 근저당권의 피담보채무액 상당의 이익을 얻었고 그로 인하여 乙은 소유권을 침해당한 손실을 입었으므로, 丙은 乙에 대하여 부당이득반환의무를 부담한다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -330,7 +410,13 @@
         "5": "피상속인이 생전행위 또는 유언으로 자신의 유체·유골을 처분하거나 매장 장소를 지정한 경우 제사주재자는 피상속인의 그러한 의사에 무조건 구속되어야 하는 법률적 의무까지 부담한다고 볼 수는 없다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -355,7 +441,11 @@
         "5": "ㄱ(×), ㄴ(○), ㄷ(×)"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": true,
+        "ㄷ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -381,7 +471,12 @@
         "5": "ㄴ, ㄷ, ㄹ"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -402,7 +497,13 @@
         "5": "피보증인의 불법행위로 인하여 손해가 발생하게 되면, 신원보증인은 피보증인의 불법행위 시부터 신원보증채무에 대한 지체책임을 진다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": false,
+        "3": false,
+        "4": false,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -428,7 +529,12 @@
         "5": "ㄱ, ㄷ, ㄹ"
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": true,
+        "ㄹ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -449,7 +555,13 @@
         "5": "| 9억 원 | 0원 | 0원"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": false,
+        "3": false,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -475,7 +587,12 @@
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -501,7 +618,12 @@
         "5": "ㄱ(×), ㄴ(○), ㄷ(○), ㄹ(×)"
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": false,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -527,7 +649,12 @@
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -554,7 +681,13 @@
         "5": "ㄱ, ㄷ, ㄹ, ㅁ"
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": false,
+        "ㄷ": false,
+        "ㄹ": true,
+        "ㅁ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -575,7 +708,13 @@
         "5": "甲이 A 채권을 피보전채권으로 하여 제척기간 내에 丁을 상대로 사해행위취소의 소를 제기하였다가 제척기간이 경과한 후에 피보전채권을 乙에 대한 부당이득반환채권으로 변경하였다면, 이는 소의 교환적 변경에 해당하지 않으므로 위 사해행위취소의 소는 적법하다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -601,7 +740,12 @@
         "5": "ㄱ, ㄴ, ㄹ"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": false,
+        "ㄷ": true,
+        "ㄹ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -628,7 +772,13 @@
         "5": "ㄴ, ㄹ, ㅁ"
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": false,
+        "ㄹ": true,
+        "ㅁ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -654,7 +804,12 @@
         "5": "ㄱ(×), ㄴ(○), ㄷ(○), ㄹ(×)"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -680,7 +835,12 @@
         "5": "ㄱ(×), ㄴ(×), ㄷ(○), ㄹ(×)"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": false,
+        "ㄷ": true,
+        "ㄹ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -701,7 +861,13 @@
         "5": "乙이 2023. 7.경 친구인 甲과 체결한 명의신탁약정에 따라 명의신탁 사실을 알지 못하는 X 부동산의 소유자 丙과 X 부동산에 대한 매매계약을 체결하고 乙 명의로 소유권이전등기가 경료된 후 채무초과 상태에 있는 甲이 실질적인 당사자가 되어 X 부동산을 제3자에게 매도하였다면, 甲의 매도행위는 甲의 일반채권자에 대한 사해행위가 된다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -722,7 +888,13 @@
         "5": "성전환자의 기본권 보호와 미성년 자녀의 보호 및 복리와의 조화를 이룰 수 있도록 법익의 균형을 위한 여러 사정들을 고려하여 실질적으로 판단하지 아니한 채 단지 성전환자에게 미성년 자녀가 있다는 사정만을 이유로 성별 정정을 불허하여서는 아니 된다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -743,7 +915,13 @@
         "5": "丙이 가구대금의 지급을 위하여 甲에게 위 어음을 발행하였는데 그 후 가구매매계약이 해제되었다면, 丙은 이를 이유로 乙의 어음금 청구에 대항할 수 있다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -768,7 +946,11 @@
         "5": "ㄱ(×), ㄴ(×), ㄷ(×)"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": false,
+        "ㄷ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -795,7 +977,13 @@
         "5": "ㄱ, ㄴ, ㄷ, ㄹ"
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": false,
+        "ㅁ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -816,7 +1004,13 @@
         "5": "만약 甲의 청구에 의하여 A회사가 화물상환증을 발행하였고 그 화물상환증의 운송물란에 ‘컴퓨터 100대’라고 기재되어 있다면, 甲과 A회사 사이에는 컴퓨터 100대를 운송물로 하는 운송계약이 체결되고 컴퓨터 100대를 수령한 것으로 추정한다."
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": false,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -837,7 +1031,13 @@
         "5": "A회사의 채권자가 영업양도 무렵 채무인수 사실이 없음을 알지 못한 경우에는 특별한 사정이 없는 한 상법 제42조 제1항에 따른 B회사의 변제책임이 발생하고, 이후 채권자가 채무인수 사실이 없음을 알게 되었다고 하더라도 이미 발생한 B회사의 변제책임이 소멸하는 것은 아니다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -858,7 +1058,13 @@
         "5": "가등기담보권의 사적 실행에서 채권자가 청산금 지급 이전에 본등기와 담보목적물의 인도를 받을 수 있다거나 청산기간이나 동시이행관계를 인정하지 아니하는 방식의 담보권실행은 가등기담보법상 허용되지 아니한다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -883,7 +1089,11 @@
         "5": "ㄱ, ㄴ, ㄷ"
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -910,7 +1120,13 @@
         "5": "ㄷ, ㄹ, ㅁ"
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": true,
+        "ㅁ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -937,7 +1153,13 @@
         "5": "ㄱ, ㄴ, ㄹ, ㅁ"
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": false,
+        "ㅁ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -958,7 +1180,13 @@
         "5": "甲이 고의 또는 중과실로 인하여 화재 발생 사실이 없다고 기재한 경우 A회사는 그 사실을 안 날로부터 1개월 내에, 화재보험계약을 체결한 날로부터 3년 내에 한하여 계약을 해지할 수 있다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": false,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -985,7 +1213,13 @@
         "5": "ㄴ, ㄹ, ㅁ"
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": true,
+        "ㅁ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1006,7 +1240,13 @@
         "5": "유한책임회사는 그 지분의 전부 또는 일부를 양수할 수 없고, 그 지분을 취득하는 경우에 그 지분은 취득한 때에 소멸한다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1027,7 +1267,13 @@
         "5": "만약 乙이 丙에게 교부한 어음의 만기가 대금채무의 변제기보다 후의 일자인 때에는 특별한 사정이 없는 한 丙은 乙에게 기존채무의 지급을 유예하는 의사가 있었다고 보아야 한다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": false,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1048,7 +1294,13 @@
         "5": "戊가 주식매수청구권을 행사하여 A회사로부터 주식매수대금을 지급받은 경우에도 매수청구기간 종료일부터 2개월 이내이면 A회사를 상대로 회계장부열람권을 행사할 수 있다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1069,7 +1321,13 @@
         "5": "A회사의 주주총회에서 집중투표의 방식으로 2인의 이사를 선임하는 경우에도 정관에 규정한 의사정족수는 충족되어야 한다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1096,7 +1354,13 @@
         "5": "ㄱ(×), ㄴ(×), ㄷ(○), ㄹ(×), ㅁ(○)"
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": false,
+        "ㄹ": true,
+        "ㅁ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1117,7 +1381,13 @@
         "5": "취소되는 주주총회 결의에 의하여 이사로 선임된 대표이사 甲이 마친 ‘이사 甲 선임 등기’는 상법 제39조의 부실등기에 해당한다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1138,7 +1408,13 @@
         "5": "연 1회의 결산기를 정한 회사는 영업년도 중 1회에 한하여 이사회 결의로 일정한 날을 정하여 그날의 주주에 대하여 이익을 배당할 수 있음을 정관으로 정할 수 있다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": false,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1159,7 +1435,13 @@
         "5": "乙이 해당 연대보증계약이 상법상 금지된 신용공여임을 알지 못한 데에 중과실이 있더라도 A회사의 이사회가 이 거래를 추인한다면 A회사는 乙에 대하여 해당 연대보증계약의 무효를 주장할 수 없다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": false,
+        "3": false,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1180,7 +1462,13 @@
         "5": "주식교환으로 B회사 주주에게 제공하는 재산이 A회사의 모회사 주식을 포함하는 경우에 A회사는 그 지급을 위하여 그 모회사의 주식을 취득할 수 있다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1201,7 +1489,13 @@
         "5": "乙은 2023. 12. 1. 신주인수권 행사나 그에 따른 신주 발행에 고유한 무효 사유에 준하여 신주발행무효의 소를 제기할 수 있다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": false,
+        "3": false,
+        "4": false,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1222,7 +1516,13 @@
         "5": "甲이 약정 사항 제1항의 이행을 구하는 소를 관할권이 없는 법원에 제기하더라도 乙이 관할권 없음을 주장하지 않고 본안에 관하여 변론한 때에는 그 법원에 관할권이 발생한다."
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": false,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1248,7 +1548,12 @@
         "5": "ㄱ (×), ㄴ (×), ㄷ (×), ㄹ (○)"
       },
       "answer": 3,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": true,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1269,7 +1574,13 @@
         "5": "원고가 소권(항소권을 포함한다)을 남용하여 청구가 이유 없음이 명백한 소를 반복적으로 제기한 것에 대하여 법원이 변론 없이 판결로 소를 각하하는 경우에는 재판장은 직권으로 피고에 대하여 공시송달을 명할 수 있다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1290,7 +1601,13 @@
         "5": "소각하 판결의 기판력은 그 판결에서 확정한 소송요건의 흠결에 관하여 미친다."
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": false,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1311,7 +1628,13 @@
         "5": "본인과 그의 사무원, 피용자 또는 동거인으로서 사리를 분별할 지능이 있는 사람, 즉 수령대행인 사이에 당해 소송에 관하여 이해의 대립 내지 상반된 이해관계가 있는 경우 수령대행인이 본인을 대신하여 소송서류를 송달받는 것은 쌍방대리금지의 원칙에 반하므로 그 수령대행인에 대하여는 보충송달을 할 수 없다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1332,7 +1655,13 @@
         "5": "중복된 소제기임에도 불구하고 이를 간과하여 진행된 소송절차에서 성립된 화해는 당연무효이다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1353,7 +1682,13 @@
         "5": "적법한 대표자 자격이 없는 종중의 대표자가 한 소송행위는 그 후에 대표자 자격을 적법하게 취득한 대표자가 그 소송행위를 추인하면 행위 시에 소급하여 효력을 갖게 되고, 이러한 추인은 상고심에서도 할 수 있다."
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": false,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1374,7 +1709,13 @@
         "5": "먼저 제기된 소송의 제1심에서 상계항변을 제출하여 제1심 판결로 본안에 대한 판단을 받았다가 항소심에서 상계항변을 철회한 피고는 재소금지원칙에 따라 그 자동채권과 동일한 채권에 기한 소를 별도로 제기하는 것이 허용되지 않는다."
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1400,7 +1741,12 @@
         "5": "ㄱ, ㄷ, ㄹ"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1421,7 +1767,13 @@
         "5": "편취된 확정판결에 기한 강제집행이 권리남용에 해당한다면, 그 판결의 피고(집행채무자)는 청구이의의 소로써 그 집행의 배제를 구할 수 있다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": false,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1447,7 +1799,12 @@
         "5": "ㄱ, ㄷ, ㄹ"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": false,
+        "ㄷ": true,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1474,7 +1831,13 @@
         "5": "ㄱ, ㄴ, ㄹ, ㅁ"
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": true,
+        "ㅁ": false
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1500,7 +1863,12 @@
         "5": "ㄴ, ㄷ, ㄹ"
       },
       "answer": 5,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": false,
+        "ㄴ": true,
+        "ㄷ": true,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1521,7 +1889,13 @@
         "5": "소송에서 다투어지는 법률관계의 존부에 관하여 동일한 당사자 사이의 전소에서 확정된 화해권고결정이 있었던 경우 당사자의 이에 반하는 주장은 인정되지 아니한다."
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": true,
+        "3": true,
+        "4": false,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1542,7 +1916,13 @@
         "5": "제3자가 피고로부터 토지를 매수한 후 등기를 마치지 않고 있는 동안 피고 소유 명의의 부동산을 가압류한 원고가 피고를 상대로 대여금청구의 소를 제기한 경우, 위 제3자가 원고의 소구채권이 허위채권임에도 피고가 원고의 주장사실을 자백하여 원고를 승소시키려 한다는 것을 이유로 위 대여금청구소송에서 피고 측에 공동소송적 보조참가를 하는 것은 허용되지 않는다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1563,7 +1943,13 @@
         "5": "｢민사소송법｣에 따라 선정된 여러 당사자 가운데 죽거나 그 자격을 잃은 사람이 있는 경우에는 나머지 선정당사자가 모두를 위하여 소송행위를 한다."
       },
       "answer": 2,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": true,
+        "2": false,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1589,7 +1975,12 @@
         "5": "ㄴ, ㄷ, ㄹ"
       },
       "answer": 4,
-      "statement_labels": {},
+      "statement_labels": {
+        "ㄱ": true,
+        "ㄴ": true,
+        "ㄷ": false,
+        "ㄹ": true
+      },
       "evidence": [],
       "split": null,
       "type": null,
@@ -1610,7 +2001,13 @@
         "5": "법원은 문서제출명령의 대상이 되는지 판단하기 위하여 소지인에게 문서의 제시를 명할 수 있다."
       },
       "answer": 1,
-      "statement_labels": {},
+      "statement_labels": {
+        "1": false,
+        "2": true,
+        "3": true,
+        "4": true,
+        "5": true
+      },
       "evidence": [],
       "split": null,
       "type": null,

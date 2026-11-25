@@ -35,8 +35,12 @@ def import_exam(text_path: Path, answers_csv: Path | None, exam: str, source: st
     if answers_csv:
         with answers_csv.open(encoding="utf-8-sig") as f:
             key = {int(r["number"]): int(r["answer"]) for r in csv.DictReader(f)}
+        from kant_rag.mcq.schemas import derive_statement_labels
+
         for q in items:
             q.answer = key.get(q.number)
+            if q.answer is not None:
+                q.statement_labels = derive_statement_labels(q)  # 진술 단위 지표용 (apply-answers 와 동일)
     return Exam(exam=exam, source=source, items=items)
 
 

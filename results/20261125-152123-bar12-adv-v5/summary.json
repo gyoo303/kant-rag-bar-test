@@ -1,0 +1,337 @@
+{
+  "run_id": "20261125-152123-bar12-adv-v5",
+  "git_commit": "d5c7f41",
+  "run_meta": {
+    "preset": "v5",
+    "overrides": {
+      "mcq.per_statement_k": 5,
+      "optimization.rewrite.enabled": true,
+      "mcq.rewrite_queries": 3,
+      "mcq.sibling_items": true,
+      "mcq.expand_references": true,
+      "mcq.max_context_chars": 24000,
+      "mcq.prompt_version": "v5",
+      "mcq.answer_fallback": true,
+      "mcq.rewrite_version": "v4",
+      "mcq.rewrite_stem_chars": 0,
+      "mcq.case_meta": true,
+      "mcq.original_query": true,
+      "mcq.tie_rejudge": true,
+      "mcq.statute_parts": true,
+      "mcq.asof_from_stem": true,
+      "mcq.out_of_corpus_warn": true,
+      "mcq.cross_ref_queries": true,
+      "mcq.quote_check": true,
+      "mcq.quote_penalty": 0.85,
+      "mcq.rejudge_ratio": 0.5
+    }
+  },
+  "mcq_settings": {
+    "per_statement_k": 5,
+    "stem_chars_in_query": 300,
+    "max_context_chars": 24000,
+    "max_tokens": 16000,
+    "rewrite_max_tokens": 4000,
+    "rewrite_queries": 3,
+    "sibling_items": true,
+    "expand_references": true,
+    "max_expansions": 8,
+    "max_siblings": 6,
+    "prompt_version": "v5",
+    "fusion": "none",
+    "fusion_weight": 0.5,
+    "answer_fallback": true,
+    "answer_fallback_cap": 0.95,
+    "rewrite_version": "v4",
+    "rewrite_stem_chars": 0,
+    "case_meta": true,
+    "original_query": true,
+    "tie_rejudge": true,
+    "fusion_min_conf": 0.0,
+    "statute_parts": true,
+    "max_statute_parts": 6,
+    "asof_from_stem": true,
+    "out_of_corpus_warn": true,
+    "cross_ref_queries": true,
+    "quote_check": true,
+    "quote_penalty": 0.85,
+    "calibration": null,
+    "rejudge_ratio": 0.5
+  },
+  "eval": {
+    "path": "data\\exam\\bar12_adv.json",
+    "version": "exam:bar12_adv.json",
+    "split": "external"
+  },
+  "composition_warnings": [
+    "정답 미기입: ['BAR12-ADV-001', 'BAR12-ADV-002', 'BAR12-ADV-003', 'BAR12-ADV-004', 'BAR12-ADV-005', 'BAR12-ADV-006', 'BAR12-ADV-007', 'BAR12-ADV-008', 'BAR12-ADV-009', 'BAR12-ADV-010', 'BAR12-ADV-011', 'BAR12-ADV-012', 'BAR12-ADV-013', 'BAR12-ADV-014', 'BAR12-ADV-015', 'BAR12-ADV-016', 'BAR12-ADV-017', 'BAR12-ADV-018', 'BAR12-ADV-019', 'BAR12-ADV-020', 'BAR12-ADV-021', 'BAR12-ADV-022', 'BAR12-ADV-023', 'BAR12-ADV-024', 'BAR12-ADV-025', 'BAR12-ADV-026', 'BAR12-ADV-027', 'BAR12-ADV-028', 'BAR12-ADV-029', 'BAR12-ADV-030', 'BAR12-ADV-031', 'BAR12-ADV-032', 'BAR12-ADV-033', 'BAR12-ADV-034', 'BAR12-ADV-035', 'BAR12-ADV-036', 'BAR12-ADV-037', 'BAR12-ADV-038', 'BAR12-ADV-039', 'BAR12-ADV-040', 'BAR12-ADV-041', 'BAR12-ADV-042', 'BAR12-ADV-043', 'BAR12-ADV-044', 'BAR12-ADV-045', 'BAR12-ADV-046', 'BAR12-ADV-047', 'BAR12-ADV-048', 'BAR12-ADV-049', 'BAR12-ADV-050', 'BAR12-ADV-051', 'BAR12-ADV-052', 'BAR12-ADV-053', 'BAR12-ADV-054', 'BAR12-ADV-055', 'BAR12-ADV-056', 'BAR12-ADV-057', 'BAR12-ADV-058', 'BAR12-ADV-059', 'BAR12-ADV-060', 'BAR12-ADV-061', 'BAR12-ADV-062', 'BAR12-ADV-063', 'BAR12-ADV-064', 'BAR12-ADV-065', 'BAR12-ADV-066', 'BAR12-ADV-067', 'BAR12-ADV-068', 'BAR12-ADV-069', 'BAR12-ADV-070']"
+  ],
+  "versions": {
+    "docs": "docs-v0.1",
+    "index": "index-v0.4",
+    "prompt": "prompt-v0.1",
+    "eval": "eval-v0.1"
+  },
+  "models": {
+    "llm_provider": "openai",
+    "llm_model": "gpt-6-luna",
+    "embedding_model": "BAAI/bge-m3",
+    "reranker_model": "BAAI/bge-reranker-v2-m3"
+  },
+  "settings_fingerprint": "b10dc5917ec0",
+  "optimization": {
+    "cache": {
+      "enabled": false,
+      "ttl_seconds": 86400
+    },
+    "rewrite": {
+      "enabled": true
+    }
+  },
+  "by_config": {
+    "hybrid_rerank": {
+      "accuracy": "0/70",
+      "hit@5": "0/0 (근거 미표기 70문항 제외)",
+      "statement_accuracy": null,
+      "insufficient": 0,
+      "invalid_citation": 0,
+      "inconsistent_judgments": {
+        "count": 0,
+        "questions": [],
+        "correct": 0,
+        "flipped": {}
+      },
+      "rewrite_fallback": {
+        "questions": 1,
+        "statements": 5,
+        "detail": {
+          "45": {
+            "keys": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "error": null
+          }
+        }
+      },
+      "v5": {
+        "asof": {
+          "1": "20230101",
+          "5": "20230101",
+          "7": "20230101",
+          "15": "20230101",
+          "18": "20230101",
+          "24": "20230101",
+          "31": "20230101",
+          "33": "20230101",
+          "40": "20230101",
+          "43": "20230101",
+          "52": "20230101",
+          "55": "20230101",
+          "61": "20230101",
+          "67": "20230101"
+        },
+        "out_of_corpus": {
+          "1": [
+            "부동산 거래신고 등에 관한 법률"
+          ],
+          "3": [
+            "부동산 거래신고 등에 관한 법률"
+          ]
+        },
+        "cross_refs": {
+          "2": {
+            "ㄴ": [
+              "ㄱ"
+            ]
+          },
+          "5": {
+            "ㄷ": [
+              "ㄴ"
+            ],
+            "ㅁ": [
+              "ㄹ"
+            ]
+          },
+          "9": {
+            "ㄹ": [
+              "ㄷ"
+            ]
+          },
+          "12": {
+            "ㄴ": [
+              "ㄱ"
+            ]
+          },
+          "14": {
+            "ㄷ": [
+              "ㄴ"
+            ]
+          },
+          "18": {
+            "ㄴ": [
+              "ㄱ"
+            ]
+          },
+          "21": {
+            "ㄷ": [
+              "ㄱ"
+            ]
+          },
+          "22": {
+            "ㄴ": [
+              "ㄱ"
+            ]
+          },
+          "23": {
+            "ㄷ": [
+              "ㄱ"
+            ]
+          },
+          "25": {
+            "ㄹ": [
+              "ㄷ"
+            ]
+          },
+          "36": {
+            "ㄷ": [
+              "ㄱ"
+            ]
+          },
+          "37": {
+            "ㅁ": [
+              "ㄹ"
+            ]
+          },
+          "39": {
+            "ㄹ": [
+              "ㄱ"
+            ]
+          },
+          "40": {
+            "ㄷ": [
+              "ㄴ"
+            ]
+          },
+          "41": {
+            "ㄴ": [
+              "ㄱ"
+            ]
+          },
+          "43": {
+            "ㄷ": [
+              "ㄱ"
+            ]
+          },
+          "47": {
+            "ㄹ": [
+              "ㄷ"
+            ]
+          },
+          "50": {
+            "ㄹ": [
+              "ㄷ"
+            ]
+          },
+          "51": {
+            "ㄴ": [
+              "ㄱ"
+            ]
+          },
+          "60": {
+            "ㄷ": [
+              "ㄱ"
+            ]
+          },
+          "64": {
+            "ㄹ": [
+              "ㄷ"
+            ]
+          }
+        },
+        "quote_check": {
+          "verified": 305,
+          "failed": 19,
+          "no_quote": 0
+        },
+        "calibrated": false
+      },
+      "tiebreak": {
+        "rejudged": [
+          3,
+          10,
+          13,
+          33,
+          39,
+          53,
+          55,
+          63,
+          69,
+          70
+        ],
+        "still_tied": [
+          69
+        ],
+        "correct_after": 0
+      },
+      "no_answer_insufficient_status(사람 검토 전)": "0/0",
+      "latency_mcq": {
+        "n_success": 70,
+        "n_total": 70,
+        "n_error": 0,
+        "mean_ms": 39815.8,
+        "median_ms": 36280.9
+      },
+      "llm_tokens": {
+        "calls": 150,
+        "input": 999913,
+        "output": 248654,
+        "reasoning": 164987,
+        "retries": 0,
+        "empty_responses": 0
+      },
+      "statements": {
+        "correct": 0,
+        "unknown": 0,
+        "wrong": 0,
+        "knowledge_correct": 0,
+        "knowledge_wrong": 0
+      },
+      "latency_no_answer": {
+        "n_success": 0,
+        "n_total": 0,
+        "n_error": 0,
+        "mean_ms": null,
+        "median_ms": null
+      }
+    }
+  },
+  "accuracy_by_trap": {
+    "복수 법령": {
+      "hybrid_rerank": "0/5"
+    },
+    "부정 극성": {
+      "hybrid_rerank": "0/31"
+    },
+    "숫자·기간": {
+      "hybrid_rerank": "0/15"
+    },
+    "예외·단서": {
+      "hybrid_rerank": "0/29"
+    },
+    "전 진술 판단": {
+      "hybrid_rerank": "0/22"
+    }
+  },
+  "index": {
+    "n_chunks": 45053,
+    "chunk_ids_sha256": "5e15cc08bbb98158",
+    "built_at": "2026-11-25T15:03:12",
+    "statute_snapshot": null,
+    "case_date_to": "20251231"
+  },
+  "complete": true
+}

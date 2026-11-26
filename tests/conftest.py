@@ -14,6 +14,8 @@ def _neutral_config() -> str:
     data = yaml.safe_load((ROOT / "configs" / "default.yaml").read_text(encoding="utf-8"))
     data["paths"]["index_dir"] = "index"
     data["corpus"]["case_date_to"] = "20251231"
+    data["corpus"]["law_date"] = "20260101"
+    data["corpus"].pop("statute_snapshot", None)
     data.get("retrieval", {}).pop("case_date_to", None)
     for k in ("asof_default", "hide_future"):
         data.get("mcq", {}).pop(k, None)

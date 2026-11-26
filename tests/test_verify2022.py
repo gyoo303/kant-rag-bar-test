@@ -8,7 +8,9 @@ from kant_rag.mcq.solver import MCQSolver
 
 def test_branch_config():
     s = get_settings(str(ROOT / "configs" / "default.yaml"))
-    assert s.index_path().name == "index-2022"  # 현재 색인(index/)과 분리
+    assert s.index_path().name == "index-2022@20220101"  # 현재 색인(index/)과 분리, 2022. 1. 1. 법령
+    assert s.raw_path("statutes/민법.txt") == ROOT / "data" / "raw" / "statutes@20220101" / "민법.txt"
+    assert s.raw_path("statutes/민법.txt").exists() and s.raw_path("statutes/제조물 책임법.txt").exists()
     assert str(s.corpus.case_date_to) == "20220110" and str(s.retrieval.case_date_to) == "20220110"
     assert s.mcq.asof_default == "20220110" and s.mcq.hide_future
 

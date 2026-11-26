@@ -15,7 +15,8 @@ paths:
 
 # 법령·판례 수집 (kant-rag fetch-laws / build-topics / fetch-cases)
 corpus:
-  law_date: "20260101"        # 이 날짜에 시행 중인 법령 버전 (시험일 기준)
+  law_date: "20220101"        # verify-2022: 2022. 1. 1. 시행 법령
+  statute_snapshot: "20220101"  # verify-2022: 법령을 data/raw/statutes@20220101/ 에서 읽고 색인은 index-2022@20220101/
   case_date_from: "20110101"  # 판례 선고일 범위 (최근 15년)
   case_date_to: "20220110"    # verify-2022: 2022년 시험 전날까지 선고된 판례만 색인
   topic_level: article        # section(편/장/절 제목만) | article(+조문 제목)

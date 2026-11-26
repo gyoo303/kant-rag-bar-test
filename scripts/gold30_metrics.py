@@ -52,8 +52,11 @@ def chunk_key(cid: str) -> str:
     return f"S:{title}|{m.group(0)}" if m else f"?:{cid}"
 
 
-def load_gold() -> dict[int, dict]:
-    g = json.loads((ROOT / "eval" / "2022-validation" / "gold30_refs.json").read_text(encoding="utf-8"))
+GOLD = ROOT / "eval" / "2022-validation" / "gold30_refs.json"
+
+
+def load_gold(path: Path | None = None) -> dict[int, dict]:
+    g = json.loads(Path(path or GOLD).read_text(encoding="utf-8"))
     return {q["number"]: q for q in g}
 
 
@@ -95,6 +98,7 @@ def analyze(run: Path, gold: dict[int, dict], closed: dict[int, dict] | None = N
             in_ctx = bool(G & ctx_set)
             cited_gold = bool(G & set(cited))
             correct = verdict == want
+            traps = {ref_key(x["ref"]) for x in s.get("traps", []) if ref_key(x["ref"]).startswith("C:")}
             if verdict == "unknown":
                 cls = "E"
             elif correct:
@@ -107,7 +111,8 @@ def analyze(run: Path, gold: dict[int, dict], closed: dict[int, dict] | None = N
                    "gold": sorted(G), "first_rank": first, "in_context": in_ctx, "cited_gold": cited_gold,
                    "cited": len(cited), "cited_gold_n": sum(c in G for c in cited),
                    "quote_check": (r.get("quote_check") or {}).get(k),
-                   "researched": k in ((r.get("research") or {}).get("changed") or {})}
+                   "researched": k in ((r.get("research") or {}).get("changed") or {}),
+                   "trap": sorted(traps), "trap_in_context": bool(traps & ctx_set), "trap_cited": bool(traps & set(cited))}
             for kk in KS:
                 top = ret[:kk]
                 row[f"recall@{kk}"] = len(G & set(top)) / len(G) if G else 0
@@ -118,7 +123,7 @@ def analyze(run: Path, gold: dict[int, dict], closed: dict[int, dict] | None = N
                 row["closed_correct"] = cj.get("verdict") == want
             rows.append(row)
             qcls.append(cls)
-        qrows.append({"number": n, "form": gq["form"], "predicted": r.get("predicted"), "answer": gq["answer"],
+        qrows.append({"number": n, "form": gq.get("form"), "axes": gq.get("axes", []), "predicted": r.get("predicted"), "answer": gq["answer"],
                       "correct": r.get("predicted") == gq["answer"], "classes": qcls,
                       "ctx_n": len(ctx), "ctx_gold_n": sum(x in q_gold for x in ctx),
                       "time_s": (r.get("timing_ms") or {}).get("total", 0) / 1000,
@@ -157,6 +162,11 @@ def summarize(a: dict) -> dict:
         "uncited_judged_correct": sum(1 for r in rows if r["verdict"] != "unknown" and r["cited"] == 0 and r["correct"]),
         "quote": Counter(str(r["quote_check"]) for r in rows if r["verdict"] != "unknown"),
         "researched": sum(r["researched"] for r in rows),
+        "trap_statements": sum(bool(r["trap"]) for r in rows),
+        "trap_in_context": sum(r["trap_in_context"] for r in rows),
+        "trap_cited": sum(r["trap_cited"] for r in rows),
+        "axes": {ax: [sum(x["correct"] for x in q if ax in x["axes"]), sum(ax in x["axes"] for x in q)]
+                 for ax in sorted({a for x in q for a in x["axes"]})},
         "time_mean": statistics.mean(x["time_s"] for x in q) if q else 0,
         "time_median": statistics.median(x["time_s"] for x in q) if q else 0,
     }
@@ -221,6 +231,16 @@ def render(analyses: list[dict], labels: list[str]) -> str:
                    lambda s: (lambda c: f"{c.get((True, False), 0)} / {c.get((False, True), 0)} / {c.get((True, True), 0)} / {c.get((False, False), 0)}")(s["cross"]) if "cross" in s else "—")]
     else:
         L.append("\n(closed-book 실행을 `--closed` 로 주면 RAG × closed-book 교차표가 추가됩니다.)")
+    if any(s["trap_statements"] for s in S):
+        L += ["", "### 함정 판례 (변형본 답안의 '함정' 판례: 기준일 뒤 변경·옛 법리 미끼)\n", head,
+              line("함정이 걸린 지문", lambda s: str(s["trap_statements"])),
+              line("함정 판례가 판단 입력에 들어감", lambda s: str(s["trap_in_context"])),
+              line("함정 판례를 인용", lambda s: str(s["trap_cited"]))]
+    if any(s["axes"] for s in S):
+        axes = sorted({a for s in S for a in s["axes"]})
+        L += ["", "### 공략 축별 문항 정답\n", head]
+        for ax in axes:
+            L.append(line(ax, lambda s, ax=ax: "{}/{}".format(*s["axes"].get(ax, [0, 0]))))
     L.append("")
     for lb, a in zip(labels, analyses):
         L += [f"## 5. 문항별 — {lb}\n", "| 문 | 예측 | 정답 | 결과 | 지문 분류 | 판단 입력 중 정답 근거 | 시간(초) |\n|---|---|---|---|---|---|---|"]
@@ -244,8 +264,9 @@ def main():
     ap.add_argument("--labels", nargs="*")
     ap.add_argument("--closed", default=None)
     ap.add_argument("--out", default="docs/analysis/bar11-gold30-metrics.md")
+    ap.add_argument("--gold", default=None, help="정답 근거 JSON (기본 eval/2022-validation/gold30_refs.json)")
     a = ap.parse_args()
-    gold = load_gold()
+    gold = load_gold(a.gold)
     closed = load_records(Path(a.closed)) if a.closed else None
     analyses = [analyze(Path(r), gold, closed) for r in a.runs]
     labels = a.labels or [Path(r).name for r in a.runs]

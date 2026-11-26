@@ -99,6 +99,7 @@ class StatementJudgment(BaseModel):
     restated: str | None = None  # 판단 프롬프트 v4: 이중부정·우회 표현을 단순한 평서문으로 풀어 쓴 문장
     quote: str | None = None     # 판단 프롬프트 v5: 결정적 근거 문장 (인용 청크와 대조)
     missing: str | None = None   # 판단 프롬프트 v6: 더 찾아야 할 근거 (2차 검색 질의)
+    stance: str | None = None    # 판단 프롬프트 v7: 인용 문장이 진술을 지지(supports)·반박(contradicts)·무관(none)
 
     @field_validator("quote", "missing", mode="before")
     @classmethod

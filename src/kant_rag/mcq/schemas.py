@@ -53,7 +53,8 @@ class ExamQuestion(BaseModel):
         if any(k in self.stem for k in neg):
             return "incorrect"
         # '판례의 태도와 다른 것은?', '판례의 입장에 부합하지 않는 것은?' — 물음 문장에서만 본다 (사례 본문 오인 방지)
-        ask = self.stem[max(0, self.stem.rfind("?", 0, len(self.stem)) - 120):] if "?" in self.stem else self.stem[-120:]
+        head = self.stem[: self.stem.rfind("?")] if "?" in self.stem else self.stem
+        ask = head[max(head.rfind("다."), head.rfind("\n")) + 1:]  # 마지막 물음 문장
         neg_ask = ("다른 것", "부합하지 않는", "맞지 않는", "옳지 아니한", "어긋나는")
         return "incorrect" if any(k in ask for k in neg_ask) else "correct"
 

@@ -38,6 +38,7 @@ from kant_rag.mcq.prompts import (
     MCQ_SYSTEM_V4,
     MCQ_SYSTEM_V5,
     MCQ_SYSTEM_V6,
+    MCQ_SYSTEM_V7,
     MCQ_RESEARCH_USER,
     MCQ_REWRITE_SYSTEM_V4,
     MCQ_TIEBREAK_USER,
@@ -347,6 +348,31 @@ def build_context(per_statement: dict[str, list[RetrievedChunk]], c, graph: Chun
     return "\n\n".join(parts), used, info
 
 
+def _stance_conflict(j: StatementJudgment) -> bool:
+    """③ 인용이 진술을 지지하는데 거짓, 반박하는데 참으로 판단."""
+    st = (j.stance or "").strip().lower()
+    return (st == "supports" and j.verdict == "false") or (st == "contradicts" and j.verdict == "true")
+
+
+def _keep_in_top(results: list[RetrievedChunk], must: list[RetrievedChunk], k: int):
+    """② must 청크가 results 상위 k 안에 없으면 상위 k 의 뒤쪽(must 가 아닌 것)과 바꿔 넣는다."""
+    must_ids = [r.chunk.chunk_id for r in must]
+    top, rest = list(results[:k]), list(results[k:])
+    kept = []
+    for m in must:
+        cid = m.chunk.chunk_id
+        if any(r.chunk.chunk_id == cid for r in top):
+            continue
+        rest = [r for r in rest if r.chunk.chunk_id != cid]
+        idx = next((i for i in range(len(top) - 1, -1, -1) if top[i].chunk.chunk_id not in must_ids), None)
+        if idx is None:
+            break
+        rest.insert(0, top[idx])
+        top[idx] = m
+        kept.append(cid)
+    return top + rest, kept
+
+
 def _type_balance(per_statement: dict[str, list[RetrievedChunk]], k: int):
     """3-3 진술 상위 k 근거가 모두 판례이면 순위 밖에서 가장 높은 조문을 k 번째 자리로 올린다."""
     out, moved = {}, {}
@@ -478,6 +504,11 @@ class MCQSolver:
                 else:  # 쟁점·예외 질의 결과를 순위로 결합 (RRF)
                     per_statement[key] = rrf_fuse({f"q{i}": f for i, f in enumerate(finals)},
                                                   rrf_k=self.s.retrieval.rrf_k, top_k=self.s.retrieval.final_k)
+                    if c.original_keep and statements[key] in queries[key]:  # ② 원문 질의 상위 결과 보장
+                        orig = finals[queries[key].index(statements[key])][: c.original_keep]
+                        per_statement[key], kept = _keep_in_top(per_statement[key], orig, c.per_statement_k)
+                        if kept:
+                            rec.setdefault("original_kept", {})[key] = kept
                 rec["retrieval"][key] = [
                     {"rank": r.rank, "chunk_id": r.chunk.chunk_id, "score": r.score, **r.trace}
                     for r in per_statement[key]
@@ -504,7 +535,7 @@ class MCQSolver:
         rec["context_expansions"] = exp
         rec["prompt_version"] = c.prompt_version
         system = {"v2": MCQ_SYSTEM_V2, "v3": MCQ_SYSTEM_V3, "v4": MCQ_SYSTEM_V4,
-                  "v5": MCQ_SYSTEM_V5, "v6": MCQ_SYSTEM_V6}.get(c.prompt_version, MCQ_SYSTEM)
+                  "v5": MCQ_SYSTEM_V5, "v6": MCQ_SYSTEM_V6, "v7": MCQ_SYSTEM_V7}.get(c.prompt_version, MCQ_SYSTEM)
         user = MCQ_USER.format(evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements))
         if c.out_of_corpus_warn:  # 색인에 없는 법령이 쟁점이면 판단 입력에 경고 (v5)
             miss = out_of_corpus(q.stem + "\n" + listing, self.corpus_titles)
@@ -516,6 +547,8 @@ class MCQSolver:
             rec = self._flag_no_evidence(q, rec, used)
         if c.quote_check and rec.get("judgments") is not None:
             rec = self._check_quotes(q, rec)
+        if c.cite_relevance and rec.get("judgments") is not None:
+            rec = self._cite_check(q, rec)
         if c.research and rec.get("judgments") is not None:
             rec = self._research(q, rec, t0, system, evidence, used, mode, cutoff, annotate)
         if c.fusion == "fill_unknown" and rec.get("judgments") is not None:
@@ -543,6 +576,7 @@ class MCQSolver:
         """2-1 판례 근거 머리에 변경 관계 표시: overruled_by="사건(선고일)", overrules="사건"."""
         lg = self.link_graph
         chapters = self.s.mcq.chapter_check
+        hide = self.s.mcq.hide_future
         if lg is None and not chapters:
             return None
 
@@ -554,6 +588,9 @@ class MCQSolver:
             if md.get("doc_type") != "case" or lg is None:
                 return ""
             info = lg.overruled_info(norm_case_no(md.get("case_no")))
+            if cutoff and hide:  # 과거 시험 검증: 기준 시점 뒤의 판례는 이름도 보여주지 않음
+                info = {k: [(n, d) for n, d in v if d <= cutoff] for k, v in info.items()}
+                info = {k: v for k, v in info.items() if v}
             out = ""
             if info.get("overruled_by"):
                 xs = info["overruled_by"]
@@ -621,6 +658,31 @@ class MCQSolver:
         rec["links"] = {"chosen": chosen, "candidates": detail}
         return list(chosen.items())
 
+    def _cite_check(self, q: ExamQuestion, rec: dict) -> dict:
+        """① 판단이 인용한 청크가 그 진술에 맞는 근거인지: (진술, 인용 청크) 리랭커 최고 점수 + 그 진술 검색 결과에 있는지."""
+        c = self.s.mcq
+        by_id = self.retriever.vector.chunks_by_id
+        statements = q.statements()
+        reranker = getattr(self.retriever, "reranker", None)
+        out: dict = {}
+        for k, jd in (rec.get("judgments") or {}).items():
+            if jd.get("verdict") == "unknown" or k not in statements:
+                continue
+            cited = [x for x in jd.get("cited_chunk_ids") or [] if x in by_id]
+            own = {x["chunk_id"] for x in (rec.get("retrieval") or {}).get(k, [])}
+            in_own = any(x in own for x in cited)
+            score = None
+            if cited and reranker is not None:
+                cands = [RetrievedChunk(chunk=by_id[x], score=0.0, rank=i + 1, source="rerank")
+                         for i, x in enumerate(cited)]
+                with self._lock:
+                    score = max(r.score for r in reranker.rerank(statements[k], cands, len(cands)))
+            # 인용이 없거나, 진술과의 관련도가 낮거나, 이 진술 검색 결과 밖 문서인데 관련도도 중간 이하면 약함
+            weak = not cited or (score is not None and (score < c.cite_min_score or (not in_own and score < 0.5)))
+            out[k] = {"score": None if score is None else round(score, 4), "in_own": in_own, "weak": weak}
+        rec["cite_check"] = out
+        return rec
+
     def _cited_texts(self, ids: list[str]) -> list[str]:
         """인용 청크 본문 (조각을 합쳐 전달했으면 항목 전체)."""
         by_id = self.retriever.vector.chunks_by_id
@@ -681,6 +743,10 @@ class MCQSolver:
                 reasons[k] = "유보"
             elif qc.get(k) is False:
                 reasons[k] = "인용 불일치"
+            elif c.stance_check and _stance_conflict(j):
+                reasons[k] = "인용-결론 불일치"
+            elif (rec.get("cite_check") or {}).get(k, {}).get("weak"):
+                reasons[k] = "근거 약함"
             elif j.confidence < c.research_conf:
                 reasons[k] = "낮은 확신도"
         tied = tied_options(rec.get("option_scores") or {}, ratio=c.rejudge_ratio)
@@ -688,10 +754,16 @@ class MCQSolver:
             for k in statements:
                 if k not in reasons and len({_required(q, n).get(k) for n in tied}) > 1:
                     reasons[k] = "근소 차"
+        if c.mismatch_check and rec.get("predicted") is not None:  # ④ 고른 보기와 어긋난 고확신 진술
+            req = _required(q, rec["predicted"])
+            for k, j in judgments.items():
+                if j.verdict != "unknown" and k in req and (j.verdict == "true") != req[k] and j.confidence >= 0.9:
+                    reasons.setdefault(k, "답과 불일치")
         if c.counter_check and rec.get("predicted") is not None:
             for k in self._decisive(q, judgments, rec["predicted"]):
                 reasons.setdefault(k, "반대 근거 확인")
-        rank = ["유보", "인용 불일치", "낮은 확신도", "근소 차", "반대 근거 확인"]
+        rank = ["유보", "인용 불일치", "인용-결론 불일치", "근거 약함", "답과 불일치", "낮은 확신도", "근소 차",
+                "반대 근거 확인"]
         keys = sorted(reasons, key=lambda k: (rank.index(reasons[k]), order.index(k)))[: c.research_max_keys]
         if not keys:
             return rec
@@ -714,6 +786,8 @@ class MCQSolver:
                     qs.append(base + " 예외 다만 반대")
                 if not qs or reasons[k] in ("인용 불일치", "근소 차"):
                     qs.append(base)
+                if reasons[k] in ("인용-결론 불일치", "근거 약함", "답과 불일치"):  # 리라이트에 흔들리지 않게 원문도
+                    qs += [x for x in (base, statements[k]) if x not in qs]
                 info["queries"][k] = qs
                 finals = [self._retrieve(x, mode, cutoff)["final"] for x in qs]
                 fused = finals[0] if len(finals) == 1 else rrf_fuse(
@@ -738,7 +812,7 @@ class MCQSolver:
         info["timing_retrieval_ms"] = round((time.perf_counter() - t) * 1000, 1)
         if not blocks:  # 새 근거가 없어도 유보·인용 불일치는 같은 근거로 한 번 더 대조 (연결 근거를 놓쳤을 수 있음)
             info["no_new_evidence"] = True
-            if not any(info["reasons"][k] in ("유보", "인용 불일치") for k in keys):
+            if not any(info["reasons"][k] in ("유보", "인용 불일치", "인용-결론 불일치", "답과 불일치") for k in keys):
                 return rec
             blocks = ["(추가로 찾은 새 근거 없음 — <evidence> 를 다시 대조하세요)"]
         previous = "\n".join(
@@ -760,7 +834,7 @@ class MCQSolver:
                 continue
             ok = self._quote_ok(nj) if nj.source == "evidence" else None
             if old is None or old.verdict == "unknown":
-                accept = ok is not False
+                accept = ok is not False and nj.confidence >= c.rejudge_min_conf
             else:
                 accept = ok is True and nj.confidence >= old.confidence
             if accept:
@@ -802,6 +876,8 @@ class MCQSolver:
             if len(cnt) > 1 and cnt[0][1] == cnt[1][1]:
                 continue
             v, m = cnt[0]
+            if self.s.mcq.vote_strict and m * 2 <= len(runs):  # ⑤ 유보 표도 세어 전체 과반이 아니면 바꾸지 않음
+                continue
             maj = [j for j in js if j.verdict == v]
             conf = sum(j.confidence for j in maj) / len(maj) * m / len(runs)
             out[k] = max(maj, key=lambda j: j.confidence).model_copy(update={"confidence": round(conf, 3)})
@@ -887,6 +963,9 @@ class MCQSolver:
             if j.verdict == "unknown":
                 continue
             old = judgments.get(k)
+            if (old is None or old.verdict == "unknown") and j.confidence < c.rejudge_min_conf:  # ⑥ 약한 표로 유보 대체 금지
+                info.setdefault("rejected", {})[k] = [j.verdict, j.confidence]
+                continue
             if old is None or (old.verdict, old.confidence) != (j.verdict, j.confidence):
                 info["changed"][k] = {"from": [old.verdict, old.confidence] if old else None,
                                       "to": [j.verdict, j.confidence]}
@@ -998,5 +1077,8 @@ class MCQSolver:
             rec["status"] = "invalid_citation"
         elif chk["inconsistent"]:
             rec["status"] = "inconsistent_judgments"  # 판단 조합이 어느 보기와도 맞지 않아 예비 규칙으로 고름
+        elif len(tied_options(scores)) > 1:  # 동점 (재판단이 꺼진 구성에서도 드러나게; 예측 번호는 그대로)
+            rec["status"] = "tie"
+            rec["tied"] = tied_options(scores)
         rec["timing_ms"]["total"] = round((time.perf_counter() - t0) * 1000, 1)
         return rec

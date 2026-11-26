@@ -81,8 +81,13 @@ def _parse_blanks(stem: str, items: dict[str, str], raw_options: dict[int, str])
     return blank_items, blanks
 
 
+# 한글 문서 변환 때 섞이는 다른 원문자(➀~➄ 딩뱃, ❶~❺ 검은 원문자)를 보기 번호 ①~⑤ 로
+ALT_CIRCLED = str.maketrans({**{chr(0x2780 + i): "①②③④⑤"[i] for i in range(5)},
+                             **{chr(0x2776 + i): "①②③④⑤"[i] for i in range(5)}})
+
+
 def parse_exam_text(text: str, id_prefix: str, subject: str | None = None) -> list[ExamQuestion]:
-    text = NOISE.sub("", text)
+    text = NOISE.sub("", text.translate(ALT_CIRCLED))
     starts = list(Q_START.finditer(text))
     out: list[ExamQuestion] = []
     for i, m in enumerate(starts):

@@ -119,7 +119,7 @@ def main(argv: list[str] | None = None) -> None:
                     help="closed_book = 검색 없는 기준선 (선택형만, 본 60건과 별도 보고)")
     eb.add_argument("--label", default="")
     eb.add_argument("--rewrite", action="store_true", help="쿼리 리라이트 적용 (선택형 진술별 질의 + 근거 없음 문항)")
-    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc | v5 | v5c | v6 | v6r — 생략 시 configs/default.yaml 의 default_preset")
+    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc | v5 | v5c | v6 | v6r | v6r2 | v6r2-lite — 생략 시 configs/default.yaml 의 default_preset")
     eb.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value (여러 번)")
     eb.add_argument("--repeat", type=int, default=1, help="같은 설정으로 N번 실행하고 평균·범위·흔들린 문항 집계")
     eb.add_argument("--workers", type=int, default=1, help="문항 병렬 수 (LLM 호출만 겹침, 검색은 잠금). 3~4 권장")

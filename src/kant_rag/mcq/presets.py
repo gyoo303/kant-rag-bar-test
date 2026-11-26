@@ -17,6 +17,9 @@
          + 인용 대조 완화·리라이트 키 정규화·판단 프롬프트 v6(missing)
          + 조문 위치(편·장) 표시·회사 종류가 다른 장이면 준용 조문 연결(M1)·조문 제목 일치 조문 연결(M2)   (docs/analysis/improvement-plan-v6.md A-1·A-2)
   v6r  : v6 + 반대 근거 확인·근소 차 다수결(3회)·근거 없는 판단 감점·전원합의체/최근 판례 가산   (A-3)
+  v6r2 : v6r + 근거 적합성 검사·원문 질의 결과 보장·인용-결론 일치(판단 v7 stance)·답과 어긋난 진술 재검토
+         + 다수결 엄격(유보 표 포함 과반)·재판단 확신도 하한 0.6   (docs/analysis/v6r2-design.md, 2022 검증 세트 오답)
+  v6r2-lite : v6r2 + 판단 입력 축소 (같은 판결 항목 3·준용 4·연결 1·28000→20000자)
 """
 
 from __future__ import annotations
@@ -86,3 +89,10 @@ def apply_overrides(settings, overrides: dict[str, Any]):
             raise SystemExit(f"설정 경로가 없습니다: {path}")
         node[parts[-1]] = val
     return type(settings).model_validate(data)
+
+# v6r2 (2022 검증 세트 오답: 문 11 ㄹ 검색 변동·근거 없이 단정, 문 24 ㄷ 근거 인용하고 반대 판단, 다수결이 유보를 약한 표로 대체)
+PRESETS["v6r2"] = {**PRESETS["v6r"], "mcq.cite_relevance": True, "mcq.cite_min_score": 0.3, "mcq.original_keep": 2,
+                   "mcq.stance_check": True, "mcq.prompt_version": "v7", "mcq.mismatch_check": True,
+                   "mcq.vote_strict": True, "mcq.rejudge_min_conf": 0.6, "mcq.research_max_keys": 6}
+PRESETS["v6r2-lite"] = {**PRESETS["v6r2"], "mcq.max_siblings": 3, "mcq.max_expansions": 4, "mcq.link_k": 1,
+                        "mcq.max_context_chars": 20000}

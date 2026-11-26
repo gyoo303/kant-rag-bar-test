@@ -249,3 +249,20 @@ MCQ_RESEARCH_USER = """<evidence>
 - 앞선 판단을 그대로 따르지 말고 근거와 다시 대조합니다. 앞선 판단의 근거와 반대되는 조문·판례(예외·단서·변경 판례)가 있는지 확인합니다.
 - quote 에는 결정적 근거 문장을 그대로 옮겨 적습니다. 근거가 여전히 없으면 unknown.
 정답 번호를 고르지 말고 진술별 정오만 판단합니다."""
+
+
+# ---------- v7 (v6r2: 인용-결론 일치 검사) ----------
+# 판단 v7: v6 + stance (인용 문장이 진술 내용을 지지하는지·반박하는지)
+MCQ_SYSTEM_V7 = MCQ_SYSTEM_V6.replace(
+    "확신도 기준:",
+    """17. stance 에는 quote 로 옮긴 근거 문장이 (풀어 쓴) 진술의 내용을 지지하면 "supports", 진술과 반대되는 내용이면
+    "contradicts", 어느 쪽도 아니면 "none" 을 적습니다. supports 인데 false, contradicts 인데 true 로 판단했다면
+    그 이유(예외·요건 차이)를 reason 에 분명히 적습니다.
+
+확신도 기준:""",
+    1,
+).replace(
+    '"quote": "...", "missing": "...",',
+    '"quote": "...", "stance": "supports|contradicts|none", "missing": "...",',
+    1,
+)

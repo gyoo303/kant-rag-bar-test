@@ -25,3 +25,4 @@ data/raw/**/*.pdf
 .idea/
 .vscode/
 .DS_Store
+.cache/

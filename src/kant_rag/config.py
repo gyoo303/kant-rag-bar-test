@@ -126,6 +126,7 @@ class MCQ(BaseModel):
     calibration: str | None = None    # 확신도 보정표 경로 (kant-rag calibrate 로 생성). 있으면 보기 점수에 보정 확률 사용
     rejudge_ratio: float = 1.0        # 동점 재판단 범위: 2등 점수가 1등 × 이 값 이상이면 재판단 (1.0 = 완전 동점만)
     asof_default: str | None = None   # 발문에 기준 시점이 없을 때 쓸 시험 기준일 YYYYMMDD (과거 시험 재현용)
+    hide_future: bool = False         # 기준 시점 뒤 판례를 근거 표시(변경 관계)에서도 숨김 (과거 시험 검증용)
     # ---- v6 스위치 (개선안 v6, 프리셋 v6 에서 켬) ----
     rewrite_key_normalize: bool = False  # 0-1 리라이트 출력 키 정규화 (①·"1."·"보기 1" → "1")
     quote_match: str = "strict"       # 0-2 인용 대조: strict = 원문 그대로, relaxed = "…" 분할·70% 이상 일치
@@ -149,6 +150,14 @@ class MCQ(BaseModel):
     vote_n: int = 1                   # 4-1 근소 차 문항: 재판단을 N번 해서 다수결
     no_evidence_penalty: float = 1.0  # 4-3 근거 인용 없는 근거 판단의 확신도 배율 (1.0 = 표시만)
     recency_boost: float = 0.0        # 3-6 전원합의체·최근 판례 순위 가산 (0 = 끔)
+    # ---- v6r2 (2022 검증 세트 오답 분석, 프리셋 v6r2 에서 켬) ----
+    cite_relevance: bool = False      # ① 인용 청크가 진술과 맞는지 리랭커로 검사 → 약하면 2차 검색 ("근거 약함")
+    cite_min_score: float = 0.3       # ① 인용 청크 중 최고 리랭커 점수가 이 값 미만이면 근거 약함
+    original_keep: int = 0            # ② 진술 원문 질의 결과 상위 N개는 결합 순위와 관계없이 판단 입력에 남김
+    stance_check: bool = False        # ③ 판단의 stance(인용이 진술을 지지/반박)와 결론이 어긋나면 2차 검색 ("인용-결론 불일치")
+    mismatch_check: bool = False      # ④ 고른 보기와 어긋난 고확신 진술(정확히 맞는 보기가 없을 때)도 2차 검색 ("답과 불일치")
+    vote_strict: bool = False         # ⑤ 다수결은 전체 표의 과반일 때만 채택 (유보 표 = 바꾸지 않음)
+    rejudge_min_conf: float = 0.0     # ⑥ 재판단·2차 판단이 유보를 대신하려면 확신도가 이 값 이상
 
 
 class Models(BaseModel):

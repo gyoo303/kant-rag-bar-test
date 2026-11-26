@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -48,7 +50,13 @@ class ExamQuestion(BaseModel):
     @property
     def polarity(self) -> Polarity:
         neg = ("옳지 않은", "옳지않은", "틀린", "잘못된", "부적절한", "인정되지 않는", "해당하지 않는")
-        return "incorrect" if any(k in self.stem for k in neg) else "correct"
+        if any(k in self.stem for k in neg):
+            return "incorrect"
+        # '판례의 태도와 다른 것은?', '판례의 입장에 부합하지 않는 것은?' — 물음 문장에서만 본다 (사례 본문 오인 방지)
+        head = self.stem[: self.stem.rfind("?")] if "?" in self.stem else self.stem
+        ask = head[max(head.rfind("다."), head.rfind("\n")) + 1:]  # 마지막 물음 문장
+        neg_ask = ("다른 것", "부합하지 않는", "맞지 않는", "옳지 아니한", "어긋나는")
+        return "incorrect" if any(k in ask for k in neg_ask) else "correct"
 
     @property
     def form(self) -> Form:
@@ -56,7 +64,8 @@ class ExamQuestion(BaseModel):
             return "blank"
         if self.items and all("(○)" in o or "(×)" in o for o in self.options.values()):
             return "ox"
-        if self.items and ("몇 개" in self.stem or "개수" in self.stem):
+        count_opts = all(re.fullmatch(r"\s*\d+\s*개\s*", o or "") for o in self.options.values())
+        if self.items and ("몇 개" in self.stem or "개수" in self.stem or "것의 수" in self.stem or count_opts):
             return "count"
         return "combination" if self.items else "single"
 
@@ -99,6 +108,7 @@ class StatementJudgment(BaseModel):
     restated: str | None = None  # 판단 프롬프트 v4: 이중부정·우회 표현을 단순한 평서문으로 풀어 쓴 문장
     quote: str | None = None     # 판단 프롬프트 v5: 결정적 근거 문장 (인용 청크와 대조)
     missing: str | None = None   # 판단 프롬프트 v6: 더 찾아야 할 근거 (2차 검색 질의)
+    stance: str | None = None    # 판단 프롬프트 v7: 인용 문장이 진술을 지지(supports)·반박(contradicts)·무관(none)
 
     @field_validator("quote", "missing", mode="before")
     @classmethod

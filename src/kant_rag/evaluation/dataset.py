@@ -15,6 +15,9 @@ class EvidenceRef(BaseModel):
     doc_id: str
     chunk_id: str
     location: str  # 원문 위치 (예: "§ 2. 개봉 후 반품 / L8-9")
+    statement: str | None = None  # 어느 지문의 근거인지 (선택형: "1"~"5", "ㄱ"~"ㅁ"). None 이면 문항 전체
+    grade: Literal["decisive", "supporting"] = "decisive"  # 결정적(단독으로 판단 가능) / 보조
+    note: str | None = None  # 라벨 근거 메모 (검색 누락, 라벨 확신도 등)
 
 
 class EvalItem(BaseModel):

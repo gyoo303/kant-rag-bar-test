@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import time
 
 from kant_rag.config import Settings
@@ -18,8 +19,22 @@ def build_chunks(settings: Settings) -> list[Chunk]:
     docs = read_manifest(settings.resolve(settings.paths.manifest))
     chunks: list[Chunk] = []
     missing: list[str] = []
+    fallback: list[str] = []
+    snap = settings.corpus.statute_snapshot
     for meta in docs:
         path = settings.raw_path(meta.path)
+        if snap and meta.doc_type == "statute":
+            if path.exists():  # 스냅숏 파일 머리줄 "민법 (시행 20210126, 공포번호 17905)" → 문서 버전
+                head = path.read_text(encoding="utf-8").split("\n", 1)[0]
+                m = re.search(r"시행\s*(\d{8})", head)
+                if m:
+                    meta = meta.model_copy(update={"version": f"시행 {m.group(1)} (스냅숏 {snap})"})
+            else:  # 스냅숏에 없는 법령은 현재 버전으로 (index_info 의 snapshot_fallback 에 기록)
+                cur = settings.resolve(settings.paths.raw_dir) / meta.path
+                if cur.exists():
+                    print(f"[warn] {meta.doc_id}: 스냅숏 {snap} 에 없음 → 현재 버전 사용 ({cur})")
+                    fallback.append(meta.doc_id)
+                    path = cur
         if not path.exists():
             # 아직 수집하지 않은 문서(예: kant-rag fetch-laws 미실행)는 건너뛰고 index_info 에 기록
             missing.append(meta.doc_id)
@@ -51,6 +66,7 @@ def build_chunks(settings: Settings) -> list[Chunk]:
     if len(ids) != len(set(ids)):
         raise ValueError("청크 ID 충돌")
     build_chunks.missing = missing  # type: ignore[attr-defined]
+    build_chunks.snapshot_fallback = fallback  # type: ignore[attr-defined]
     return chunks
 
 
@@ -91,6 +107,7 @@ def build_index(settings: Settings) -> dict:
         "missing_docs": getattr(build_chunks, "missing", []),
         "chunk_ids_sha256": hashlib.sha256("\n".join(sorted(c.chunk_id for c in chunks)).encode()).hexdigest()[:16],
         "statute_snapshot": settings.corpus.statute_snapshot,
+        "snapshot_fallback": getattr(build_chunks, "snapshot_fallback", []),
         "case_date_to": settings.corpus.case_date_to,
         "built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "elapsed_s": round(time.perf_counter() - t0, 2),

@@ -23,3 +23,10 @@ def test_hide_future_annotation(tmp_path):
                      retriever=_FakeRetriever(_corpus()))
     assert hide._annotator("20220110")(chunk) == ""  # 2025년 변경 판례의 존재를 드러내지 않음
     assert 'overruled_by="2021다252977' in hide._annotator("20251231")(chunk)
+
+
+def test_alt_circled_options():
+    from kant_rag.mcq.parse import parse_exam_text
+    text = "문 21.\n\t옳은 것을 모두 고른 것은?\nㄱ.\t가\nㄴ.\t나\n\t①\tㄱ\n\t②\tㄴ\n\t➂\tㄱ, ㄴ\n\t➃\tㄱ\n\t⑤\tㄴ\n"
+    q = parse_exam_text(text, "T")[0]
+    assert q.options[3] == "ㄱ, ㄴ" and q.options[4] == "ㄱ"

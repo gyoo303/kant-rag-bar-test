@@ -543,6 +543,7 @@ class MCQSolver:
         """2-1 판례 근거 머리에 변경 관계 표시: overruled_by="사건(선고일)", overrules="사건"."""
         lg = self.link_graph
         chapters = self.s.mcq.chapter_check
+        hide = self.s.mcq.hide_future
         if lg is None and not chapters:
             return None
 
@@ -554,6 +555,9 @@ class MCQSolver:
             if md.get("doc_type") != "case" or lg is None:
                 return ""
             info = lg.overruled_info(norm_case_no(md.get("case_no")))
+            if cutoff and hide:  # 과거 시험 검증: 기준 시점 뒤의 판례는 이름도 보여주지 않음
+                info = {k: [(n, d) for n, d in v if d <= cutoff] for k, v in info.items()}
+                info = {k: v for k, v in info.items() if v}
             out = ""
             if info.get("overruled_by"):
                 xs = info["overruled_by"]

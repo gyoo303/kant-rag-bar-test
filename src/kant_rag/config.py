@@ -126,6 +126,7 @@ class MCQ(BaseModel):
     calibration: str | None = None    # 확신도 보정표 경로 (kant-rag calibrate 로 생성). 있으면 보기 점수에 보정 확률 사용
     rejudge_ratio: float = 1.0        # 동점 재판단 범위: 2등 점수가 1등 × 이 값 이상이면 재판단 (1.0 = 완전 동점만)
     asof_default: str | None = None   # 발문에 기준 시점이 없을 때 쓸 시험 기준일 YYYYMMDD (과거 시험 재현용)
+    hide_future: bool = False         # 기준 시점 뒤 판례를 근거 표시(변경 관계)에서도 숨김 (과거 시험 검증용)
     # ---- v6 스위치 (개선안 v6, 프리셋 v6 에서 켬) ----
     rewrite_key_normalize: bool = False  # 0-1 리라이트 출력 키 정규화 (①·"1."·"보기 1" → "1")
     quote_match: str = "strict"       # 0-2 인용 대조: strict = 원문 그대로, relaxed = "…" 분할·70% 이상 일치

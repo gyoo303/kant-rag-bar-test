@@ -1,0 +1,5164 @@
+[
+ {
+  "number": 1,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다225268#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2015다19827#1",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제666조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "제666조 저당권설정청구권 행사에 따른 저당권설정은 원칙적으로 사해행위 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 1,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2014다11574, 11581#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2002다68362#3",
+    "grade": "supporting"
+   }
+  ],
+  "note": "선급금은 별도 상계 의사표시 없이 기성공사대금에 당연 충당",
+  "label_doubt": false
+ },
+ {
+  "number": 1,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2007다4356#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "근저당 말소시까지 제588조로 대금지급 거절 가능(판례는 채권최고액 상당액 표현)",
+  "label_doubt": false
+ },
+ {
+  "number": 1,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다6386#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제643조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "지상물매수청구권은 지상물 소유자만 행사 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 2,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2008다15438#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#94다18522#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "비법인사단 대표자의 포괄위임 및 포괄수임인 대행행위는 사단에 효력 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 2,
+  "statement": "2",
+  "label": true,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 2014. 9. 25. 2014다211336(대위행사시 총회결의 불요) 색인 없음; 2018다210539는 관련만",
+  "label_doubt": false
+ },
+ {
+  "number": 2,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2002다27088#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2003다15280#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "외관상 객관적 직무행위면 사리도모·법령위반이어도 직무관련성 인정",
+  "label_doubt": false
+ },
+ {
+  "number": 2,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2009다64383#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "시효중단 승인은 총유물 관리·처분행위 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 2,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2004다60072, 60089#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "보증계약은 총유물 관리처분 아님, 총회결의 없어도 원칙적 유효",
+  "label_doubt": false
+ },
+ {
+  "number": 3,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다10113#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2008다58367#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "의사능력 유무는 구체적 법률행위와 관련 개별 판단",
+  "label_doubt": false
+ },
+ {
+  "number": 3,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2005다71659, 71666, 71673#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "행위능력제도는 거래안전 희생하더라도 제한능력자 보호가 근본 취지",
+  "label_doubt": false
+ },
+ {
+  "number": 3,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제10조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제10조 ①④",
+  "label_doubt": false
+ },
+ {
+  "number": 3,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제959조의19",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제959조의19",
+  "label_doubt": false
+ },
+ {
+  "number": 3,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제930조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제930조 ①②③",
+  "label_doubt": false
+ },
+ {
+  "number": 4,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다13532#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "피보전채권 변경은 공격방법 변경일 뿐 소변경 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 4,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2003다6200#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2010다90708#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "배당금 수령시 수익자에게 배당금 반환(가액배상) 명함",
+  "label_doubt": false
+ },
+ {
+  "number": 4,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2007다54849#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "수익자는 취소채권자 채권의 시효소멸 원용 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 4,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2007다63102#4",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#97다57320#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "사해의사는 일반채권자에 대한 인식으로 족함",
+  "label_doubt": false
+ },
+ {
+  "number": 4,
+  "statement": "ㅁ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2007다63102#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2007다54849#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "자력회복시 채권자취소권 소멸(각하 아닌 기각 사유)",
+  "label_doubt": false
+ },
+ {
+  "number": 5,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2003다59259#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#91다21640#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "경매절차 무효시 부당이득반환만, 제578조 담보책임 불인정",
+  "label_doubt": false
+ },
+ {
+  "number": 5,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#98다18506#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "건축불가 법률적 제한은 하자, 계약성립시 기준",
+  "label_doubt": false
+ },
+ {
+  "number": 5,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다255648#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제495조 유추, 제척기간 경과 손배채권으로 상계 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 5,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다202050#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "하자담보책임과 채무불이행책임 경합, 폐기물처리비용",
+  "label_doubt": false
+ },
+ {
+  "number": 5,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다10266#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "하자담보 손배청구권 소멸시효 적용, 인도시부터 진행",
+  "label_doubt": false
+ },
+ {
+  "number": 6,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다213038#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제135조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "무권대리인 책임은 무과실책임, 제3자 기망으로 야기돼도 부정 안됨",
+  "label_doubt": false
+ },
+ {
+  "number": 6,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다210775#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "이행 선택시 무권대리인은 예정된 손해액 지급의무",
+  "label_doubt": false
+ },
+ {
+  "number": 6,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#80다2314#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#81다151#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "추인은 명시·묵시, 무권대리인·상대방·승계인에게 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 6,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다213838#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제134조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "상대방 악의 증명책임은 철회효과 다투는 본인",
+  "label_doubt": false
+ },
+ {
+  "number": 7,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2005다35554, 35561#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제440조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "주채무자 압류로 인한 시효중단은 보증인 통지 없이 효력",
+  "label_doubt": false
+ },
+ {
+  "number": 7,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2015다239744#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "이행인수인 승인은 원칙적으로 시효중단 효력 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 7,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다52568#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "승인은 시효진행 개시 후에만 가능, 장래채권 미리 승인 불허",
+  "label_doubt": false
+ },
+ {
+  "number": 7,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다226629#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "임차권등기에 압류·가압류 준하는 시효중단 효력 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 8,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다6342#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "담보지상권은 피담보채권 소멸시 부종하여 소멸",
+  "label_doubt": false
+ },
+ {
+  "number": 8,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2004다29279#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "후순위 근저당권자는 대항요건 흠결 주장할 제3자 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 8,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다73022#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "경매신청 취하되어도 채무확정 효과 번복 안됨",
+  "label_doubt": false
+ },
+ {
+  "number": 8,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다26085#1~2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#99다26085#1~1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "후순위 경매신청시 선순위 피담보채권은 경락대금 완납시 확정",
+  "label_doubt": false
+ },
+ {
+  "number": 8,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94다54108#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제746조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "도박채무 담보 근저당등기는 종국적 이익 아님, 말소청구 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 9,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다34143#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "해제 원상회복 매매대금 반환에 과실상계 적용 안됨",
+  "label_doubt": false
+ },
+ {
+  "number": 9,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제548조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2013다34143#1",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "CASE#2000다9123#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "해제시 반환금전엔 받은 날부터 이자, 선의·악의 불문",
+  "label_doubt": false
+ },
+ {
+  "number": 9,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2000다9123#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#95다28892#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "동시이행 여부 관계없이 받은 날부터 법정이자 가산",
+  "label_doubt": false
+ },
+ {
+  "number": 9,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다14569#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "매매예약 가등기권자도 제548조① 단서 제3자",
+  "label_doubt": false
+ },
+ {
+  "number": 10,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제326조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제326조",
+  "label_doubt": false
+ },
+ {
+  "number": 10,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2010마1059#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "유치권 경매에서 유치권자는 일반채권자와 동순위 배당",
+  "label_doubt": false
+ },
+ {
+  "number": 10,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2010다57350#1~2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2008다70763#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "민사유치권은 압류 전 취득시 대항가능, 상사유치권은 선행저당권 매수인에 대항불가",
+  "label_doubt": false
+ },
+ {
+  "number": 10,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2005다22688#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2008다70763#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "압류 후 점유이전으로 취득한 유치권은 매수인에 대항불가",
+  "label_doubt": false
+ },
+ {
+  "number": 10,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다55214#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "압류 후 공사완공으로 유치권 성립시 매수인에 대항불가",
+  "label_doubt": false
+ },
+ {
+  "number": 11,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다16338#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "종전 소유자인 근저당권설정자도 말소청구 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 11,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#80다2968#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "합의해제 원상회복청구권은 물권적 청구권, 소멸시효 대상 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 11,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다52602#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제366조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "경매 전 건물 양수인도 법정지상권 취득 → 철거청구 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 11,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#87다카1682#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "매수인이 건축한 건물 취득자도 점유사용권 취득, 매도인 철거청구 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 12,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다25194, 25200#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "근로계약 취소는 장래효, 소급효 부정",
+  "label_doubt": false
+ },
+ {
+  "number": 12,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2009다50308#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "불공정 매매에도 무효행위 전환(제138조) 적용",
+  "label_doubt": false
+ },
+ {
+  "number": 12,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다13162#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "취소 전제 이행청구에 취소 의사표시 포함",
+  "label_doubt": false
+ },
+ {
+  "number": 12,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#95다38240#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "취소된 법률행위는 취소할 수 있는 행위의 추인 불가, 무효행위 추인만",
+  "label_doubt": false
+ },
+ {
+  "number": 12,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2012다49292#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2012다49292#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "악의 제3자로부터 이해관계 맺은 선의 전득자에게 대항 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 13,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다296878#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "압류·가압류는 취득시효 중단사유 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 13,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2004다31463#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "시효취득 등기 시 가등기 매매예약상 매수인 지위 소멸",
+  "label_doubt": false
+ },
+ {
+  "number": 13,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다64573#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "무효등기 명의인은 시효취득 이전등기청구 상대방 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 13,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다77352, 77369#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#97다56495#3",
+    "grade": "supporting"
+   }
+  ],
+  "note": "시효완성 알고 처분하여 이행불능 → 불법행위",
+  "label_doubt": false
+ },
+ {
+  "number": 13,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다64573#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "소유자 대위하여 무효등기 말소 + 소유자 상대 이전등기",
+  "label_doubt": false
+ },
+ {
+  "number": 14,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제207조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제207조 제2항",
+  "label_doubt": false
+ },
+ {
+  "number": 14,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다61869#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제748조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "악의 수익자: 이자 + 이자 지연손해금",
+  "label_doubt": false
+ },
+ {
+  "number": 14,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#74다1150#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "지상권 설정 소유자: 물권적청구 가능, 손해배상 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 14,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#74다2136#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제193조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "상속 점유는 피상속인 점유 성질 승계",
+  "label_doubt": false
+ },
+ {
+  "number": 15,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제204조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "점유회수청구권 1년 내 행사, 점유자 본권 불문",
+  "label_doubt": false
+ },
+ {
+  "number": 15,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제192조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제192조 제2항 단서",
+  "label_doubt": false
+ },
+ {
+  "number": 15,
+  "statement": "ㄷ",
+  "label": false,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 2016.12.29. 2016다242273('소가 제기된 때'=소장 송달시) 색인 없음; 제197조 제2항만 있음",
+  "label_doubt": false
+ },
+ {
+  "number": 15,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#97다48906#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제249조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "반환청구권 양도+대항요건 → 선의취득 점유요건 충족",
+  "label_doubt": false
+ },
+ {
+  "number": 16,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2010다52140#2~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "기준시기는 압류(가압류) 효력발생시",
+  "label_doubt": false
+ },
+ {
+  "number": 16,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#84다카1578, 1579#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2012다73158#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "경매 건물 매수인은 법정지상권 당연취득",
+  "label_doubt": false
+ },
+ {
+  "number": 16,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2010다67159#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "건물공유자 1인 토지 저당 → 법정지상권 성립",
+  "label_doubt": false
+ },
+ {
+  "number": 16,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2002다9660#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "미등기건물+대지 매도, 대지만 이전 → 관습상 법정지상권 부정",
+  "label_doubt": false
+ },
+ {
+  "number": 16,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94다5458#1~2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "담보가등기 후 신축 건물, 본등기 시 관습상 법정지상권 부정",
+  "label_doubt": false
+ },
+ {
+  "number": 17,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다84171#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "구분소유적 공유: 명의신탁해지 지분이전등기만, 공유물분할 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 17,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2009다54294#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2005다1827#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "특약은 특정승계인에 승계, 본질적 침해 시 예외",
+  "label_doubt": false
+ },
+ {
+  "number": 17,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다42986#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "외부관계는 공유, 전체토지 방해배제 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 17,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2002다9738#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "과반수 지분권자 허락받은 제3자는 부당이득 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 18,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#86다카315#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "동산양도담보권자는 대외적 소유권으로 제3자에 인도청구",
+  "label_doubt": false
+ },
+ {
+  "number": 18,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#79다1545#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "양도담보권자는 사용수익권 없어 차임 상당 손해배상 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 18,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2004다37430#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "점유개정 이중양도담보 후순위자 양도담보권 불취득",
+  "label_doubt": false
+ },
+ {
+  "number": 18,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다37106#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "양도담보 목적물 화재보험금청구권에 물상대위 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 18,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2012다19659#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제261조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "보상청구 상대방은 양도담보권설정자(甲)",
+  "label_doubt": false
+ },
+ {
+  "number": 19,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다42800, 42817, 42824, 42831#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "악의=법률상 원인 없음 인식, 요건사실 인식만으론 부족",
+  "label_doubt": false
+ },
+ {
+  "number": 19,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2003다8862#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2011다74246#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "채권자 악의·중과실이면 부당이득",
+  "label_doubt": false
+ },
+ {
+  "number": 19,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2008다98655, 98662#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "쌍방 귀책 없는 이행불능 → 계약 소멸, 부당이득 반환청구",
+  "label_doubt": false
+ },
+ {
+  "number": 19,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다17106#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "사무관리자는 제3자에게 직접 부당이득반환 청구 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 20,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94다18508#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "전세금 현실 수수 불요",
+  "label_doubt": false
+ },
+ {
+  "number": 20,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다69122#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "존속 중 장래 조건부 전세금반환채권 양도 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 20,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다15122#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "신 소유자가 전세금반환의무 부담",
+  "label_doubt": false
+ },
+ {
+  "number": 20,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다91672#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "전세권저당권자 압류·추심/전부 또는 배당요구로 우선변제",
+  "label_doubt": false
+ },
+ {
+  "number": 20,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001마212#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "건물 일부 전세권자는 나머지 부분 경매신청권 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 21,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#98다21366#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "98다21366: 가처분 부당집행 점용이익 초과 않는 한 손해 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 21,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#97다54604, 54611#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제536조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "97다54604: 항변권 행사 없이도 지체책임 면함(존재효과)",
+  "label_doubt": false
+ },
+ {
+  "number": 21,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2015다59115#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제551조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2015다59115: 약정해제권 유보한 경우에도 귀책사유 필요",
+  "label_doubt": false
+ },
+ {
+  "number": 21,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다248909#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2018다248909 전합: 육체노동 가동연한 만65세",
+  "label_doubt": false
+ },
+ {
+  "number": 22,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다108095#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2011다108095: 피보전채권 부존재 소각하 기판력 후소에 미치지 않음",
+  "label_doubt": false
+ },
+ {
+  "number": 22,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다85921#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#95다54167#2",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제405조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "대위 통지 후 합의해제로 제3채무자도 대항 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 22,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다82700, 82717#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2006다82700: 물권적 청구권도 피보전권리 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 22,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다25217#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2013다25217: 공동상속인 지분 범위 내 대위",
+  "label_doubt": false
+ },
+ {
+  "number": 22,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다879#3~1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2018다879#3~2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2018다879 전합: 그 경우에도 공유물분할청구권 대위 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 23,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2012다952#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2012다952: 부기등기 후에도 수익자 상대로 취소 청구 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 23,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다287891#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2017다287891: 피담보채권액·최고액 모두 초과시 사해행위 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 23,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다84995#1~2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2013다84995#1~1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2013다84995: 다른 채권자는 대위하여 말소등기 신청 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 23,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2010다87672#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2010다87672: 전득자 악의 판단에 수익자 인식 불문",
+  "label_doubt": false
+ },
+ {
+  "number": 23,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다204783#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2016다204783#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2016다204783: 확정판결 효력에 반하지 않음",
+  "label_doubt": false
+ },
+ {
+  "number": 24,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2012다29557#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제450조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2012다29557: 양도통지 도달 다음날부터 지체책임",
+  "label_doubt": false
+ },
+ {
+  "number": 24,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다204787#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2018다204787: 불법행위 채무 성립과 동시 지연손해금",
+  "label_doubt": false
+ },
+ {
+  "number": 24,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다275402#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제398조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2016다275402: 지연손해금 약정은 손해배상액 예정, 감액 대상",
+  "label_doubt": false
+ },
+ {
+  "number": 24,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2019다215272#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2019다215272: 변경 이율 적용해 다른 금액 인정 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 25,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#92다34582#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "92다34582: 사립교사 영리업무 소득은 위법소득",
+  "label_doubt": false
+ },
+ {
+  "number": 25,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#92다44312#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#93다35797#1",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "CASE#96다38971#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "불법등기 매수인 통상손해=매매대금 상당액",
+  "label_doubt": false
+ },
+ {
+  "number": 25,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2020다230239#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2020다230239: 이자제한법 위반 초과이자 수령 불법행위",
+  "label_doubt": false
+ },
+ {
+  "number": 25,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#98다22048#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "98다22048: 수리비가 교환가치 초과시 교환가치로 제한",
+  "label_doubt": false
+ },
+ {
+  "number": 25,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2003다24147#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2003다24147: 구상권자 과실 없으면 부진정연대",
+  "label_doubt": false
+ },
+ {
+  "number": 26,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#95다24982, 24999#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "95다24982: 해제 후에도 착오 취소 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 26,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2015다78703#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2015다78703: 하자담보책임과 무관하게 착오취소 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 26,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2019다288232#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2019다288232: 현황·경계 착오 중요부분 판단기준",
+  "label_doubt": false
+ },
+ {
+  "number": 26,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다2629, 2636(병합)#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "93다2629: 오표시무해, Y토지에 관해 계약 성립",
+  "label_doubt": false
+ },
+ {
+  "number": 27,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제416조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제616조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제654조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "공동임차인 연대(616·654), 이행청구 절대효(416)",
+  "label_doubt": false
+ },
+ {
+  "number": 27,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제415조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제616조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제654조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "제415조: 무효원인은 다른 연대채무자에 영향 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 27,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제418조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제418조①: 상계는 모든 연대채무자 이익 위해 소멸",
+  "label_doubt": false
+ },
+ {
+  "number": 27,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제418조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제424조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "제418조②: 부담부분(균등 500만원) 한도 상계",
+  "label_doubt": false
+ },
+ {
+  "number": 27,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다46023#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제425조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "연대채무자는 부담부분 초과 없이도 일부 출재 구상 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 28,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다24284#2~1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제449조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2016다24284 전합: 악의·중과실 양수인에 채권 이전 효과 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 28,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다265689#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-HOUSE#제3조-2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2016다265689: 양수인 면책적 인수, 양도인 탈퇴",
+  "label_doubt": false
+ },
+ {
+  "number": 28,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2012다97420,97437#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2012다97420: 중첩적 인수 원칙 연대채무, 부탁 없으면 부진정",
+  "label_doubt": false
+ },
+ {
+  "number": 28,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다56033#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2011다56033: 수익의 의사표시는 성립·효력발생요건 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 29,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2015다36167#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2015다36167: 시효취득 등기청구권 양도는 통지로 대항력",
+  "label_doubt": false
+ },
+ {
+  "number": 29,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다3771#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2001다3771: 전부채권자로부터 양수인 악의라도 무효 주장 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 29,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2015다46119#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2015다46119: 합의해지로 복귀해도 제2양수인 당연 취득 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 29,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다23093#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "99다23093: 피담보채무 변제 이유로 양수금 청구 거절 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 29,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2005다41818#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2005다41818: 대항요건 없는 양수인 청구도 재판상 청구",
+  "label_doubt": false
+ },
+ {
+  "number": 30,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제493조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제492조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "제493조②: 상계적상시(2021.9.25)로 소급 소멸",
+  "label_doubt": false
+ },
+ {
+  "number": 30,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제492조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제492조② 단서: 상계금지특약 선의 제3자 대항 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 30,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2014다19776, 19783#5~1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2014다19776, 19783#5~2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제496조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2014다19776: 경합시 496조 유추, 상계 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 30,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2008다97218#2~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2008다97218 전합: 부진정연대채무자 상계 절대효",
+  "label_doubt": false
+ },
+ {
+  "number": 30,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2012다107662#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2012다107662: 소송상 상계 재항변 원칙적 불허",
+  "label_doubt": false
+ },
+ {
+  "number": 31,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013므568#1~1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2013므568#1~3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제840조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "유책배우자 이혼청구 원칙적 불허·예외 허용(전합)",
+  "label_doubt": false
+ },
+ {
+  "number": 31,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다7936#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "구체화 안 된 재산분할청구권 포기는 사해행위 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 31,
+  "statement": "3",
+  "label": true,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 2012.4.13. 2011므4719 (양육자·친권자 분리 지정 가능) 색인 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 31,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#62다812#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제840조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "각 이혼사유는 독립 청구원인, 주장한 사유만 심판",
+  "label_doubt": false
+ },
+ {
+  "number": 31,
+  "statement": "5",
+  "label": true,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 2018.6.22. 2018스18 (추가 재산분할도 제척기간 준수) 색인 없음; 제839조의2③ 관련",
+  "label_doubt": false
+ },
+ {
+  "number": 32,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#97다38510#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1066조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "명백한 오기 정정은 날인 없어도 유언 유효",
+  "label_doubt": false
+ },
+ {
+  "number": 32,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제1078조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2000다73445#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "비율에 의한 포괄유증 가능, 포괄수증자는 상속인과 동일",
+  "label_doubt": false
+ },
+ {
+  "number": 32,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제1066조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "자필증서 유언은 증인 불요",
+  "label_doubt": false
+ },
+ {
+  "number": 32,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#97다38510#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1066조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "날인은 무인도 유효(호 사용도 동일성 인정되면 무방)",
+  "label_doubt": false
+ },
+ {
+  "number": 32,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2012다71688#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1066조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "주소 자서 없는 자필유언 무효",
+  "label_doubt": false
+ },
+ {
+  "number": 33,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다48852#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1009조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1043조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "자녀 전원 포기시 배우자와 손자녀 공동상속, 배우자 1.5 가산",
+  "label_doubt": false
+ },
+ {
+  "number": 33,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다48852#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1009조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1043조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "자녀 전원 포기시 배우자와 손자녀 공동상속, 배우자 1.5 가산",
+  "label_doubt": false
+ },
+ {
+  "number": 33,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다48852#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1009조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1043조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "자녀 전원 포기시 배우자와 손자녀 공동상속, 배우자 1.5 가산",
+  "label_doubt": false
+ },
+ {
+  "number": 33,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다48852#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1009조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1043조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "자녀 전원 포기시 배우자와 손자녀 공동상속, 배우자 1.5 가산",
+  "label_doubt": false
+ },
+ {
+  "number": 33,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다48852#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1009조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제1043조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "자녀 전원 포기시 배우자와 손자녀 공동상속, 배우자 1.5 가산",
+  "label_doubt": false
+ },
+ {
+  "number": 34,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제479조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제477조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#99다26481#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "이자 먼저(479), 원본은 변제이익(고이율) 순; 보증유무 무관",
+  "label_doubt": false
+ },
+ {
+  "number": 34,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제479조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제477조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#99다26481#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "이자 먼저(479), 원본은 변제이익(고이율) 순; 보증유무 무관",
+  "label_doubt": false
+ },
+ {
+  "number": 34,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제479조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제477조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#99다26481#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "이자 먼저(479), 원본은 변제이익(고이율) 순; 보증유무 무관",
+  "label_doubt": false
+ },
+ {
+  "number": 34,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제479조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제477조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#99다26481#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "이자 먼저(479), 원본은 변제이익(고이율) 순; 보증유무 무관",
+  "label_doubt": false
+ },
+ {
+  "number": 34,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제479조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제477조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#99다26481#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "이자 먼저(479), 원본은 변제이익(고이율) 순; 보증유무 무관",
+  "label_doubt": false
+ },
+ {
+  "number": 35,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다248803, 248810#5~1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제64조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "가맹계약 Administration Fee 부당이득 5년",
+  "label_doubt": false
+ },
+ {
+  "number": 35,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2002다64957, 64964#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "이사회결의 부존재로 매매 무효시 부당이득 10년",
+  "label_doubt": false
+ },
+ {
+  "number": 35,
+  "statement": "ㄷ",
+  "label": true,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 2014.7.24. 2013다214871 (근저당권설정비용 부당이득 5년) 색인 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 35,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2020다208621#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2020다208621#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "위법배당 부당이득반환청구권 10년",
+  "label_doubt": false
+ },
+ {
+  "number": 35,
+  "statement": "ㅁ",
+  "label": false,
+  "found": false,
+  "evidence": [],
+  "note": "분양전환가격 차액 부당이득 5년 상사시효 판례 검색 실패(일반법리 2020다208621#1만 존재)",
+  "label_doubt": false
+ },
+ {
+  "number": 36,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제975조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2011다96932#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2차 부양의무는 자력 없는 경우에 한함",
+  "label_doubt": false
+ },
+ {
+  "number": 36,
+  "statement": "2",
+  "label": false,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 2013.8.30. 2013스96 (직계혈족 사망 후 배우자는 생계같이할 때만 부양) 색인 없음; 제974조 관련",
+  "label_doubt": false
+ },
+ {
+  "number": 36,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016므2510#1~1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제844조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "동의 인공수정 자녀 친생추정",
+  "label_doubt": false
+ },
+ {
+  "number": 36,
+  "statement": "4",
+  "label": true,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 1994.5.13. 92스21 전합 (과거 양육비 청구) 색인 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 36,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다96932#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVIL#제826조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2차 부양의무자는 1차 부양의무자에게 상환청구 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 37,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-BILL#제75조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "본문 중 약속어음 문구 요건",
+  "label_doubt": false
+ },
+ {
+  "number": 37,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-BILL#제76조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "발행지 미기재시 발행인 명칭 부기지를 발행지로 봄",
+  "label_doubt": false
+ },
+ {
+  "number": 37,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-BILL#제5조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-BILL#제77조-2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "이자는 특정일 없으면 발행일부터 계산",
+  "label_doubt": false
+ },
+ {
+  "number": 37,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-BILL#제17조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-BILL#제20조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-BILL#제77조-1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "만기후배서도 거절증서작성기간 전이면 인적항변 절단",
+  "label_doubt": false
+ },
+ {
+  "number": 37,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-BILL#제31조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-BILL#제77조-2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "앞면 단순 기명날인은 보증, 발행인 위해 보증",
+  "label_doubt": false
+ },
+ {
+  "number": 38,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94다20884#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "현장소장은 부분적 포괄대리권 사용인",
+  "label_doubt": false
+ },
+ {
+  "number": 38,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다13117#1~2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "전산장비 구매 사용인은 지급보증 권한 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 38,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다43767#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "권한남용시 민법 107조 유추, 상대방 악의·과실시 무효",
+  "label_doubt": false
+ },
+ {
+  "number": 38,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제17조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "개입권 행사는 손해배상청구에 영향 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 38,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제13조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제15조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "등기의무는 지배인만, 부분적 포괄대리권 사용인 등기 불요",
+  "label_doubt": false
+ },
+ {
+  "number": 39,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제542조의12-1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "분리선임은 감사위원 중 1명(정관으로 2명 이상)",
+  "label_doubt": false
+ },
+ {
+  "number": 39,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제542조의7-2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "집중투표 배제 정관변경 의안 별도 상정",
+  "label_doubt": false
+ },
+ {
+  "number": 39,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다217741#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2016다217741#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "집중투표시에도 정관 의사정족수 충족 필요",
+  "label_doubt": false
+ },
+ {
+  "number": 39,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다17436#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제388조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "중간정산은 정관·주총결의 필요",
+  "label_doubt": false
+ },
+ {
+  "number": 40,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다46338, 46345#7",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2019다205206, 205213#2~2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "2인 조합 손해배상채권액 중 출자비율 청구 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 40,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제81조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "사용 이후의 채무에 대해서만 연대책임",
+  "label_doubt": false
+ },
+ {
+  "number": 40,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제86조의5",
+    "grade": "decisive"
+   }
+  ],
+  "note": "이의시 중지, 업무집행조합원 과반수 결의",
+  "label_doubt": false
+ },
+ {
+  "number": 40,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#62다660#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제78조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "이익 불문 정기 일정액 지급은 익명조합 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 40,
+  "statement": "ㅁ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다246180#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2000다30622#4",
+    "grade": "supporting"
+   }
+  ],
+  "note": "조합 명의신탁, 실명법상 무효(공유등기 사안 무효 판시)",
+  "label_doubt": false
+ },
+ {
+  "number": 41,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제218조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "정관에 정한 사유 발생 시 퇴사(총사원 동의 불요)",
+  "label_doubt": false
+ },
+ {
+  "number": 41,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제556조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "유한회사 지분양도 자유, 정관으로 제한 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 41,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제333조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "공유자는 권리행사자 1인 정해야 함",
+  "label_doubt": false
+ },
+ {
+  "number": 41,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제287조의12",
+    "grade": "decisive"
+   }
+  ],
+  "note": "사원 아닌 자도 업무집행자 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 41,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제272조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제287조의4",
+    "grade": "decisive"
+   }
+  ],
+  "note": "합자 유한책임사원·LLC 사원은 신용·노무출자 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 42,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제320조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제321조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "회사성립 후 착오 이유 인수취소 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 42,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제328조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-COMM#제320조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "주식회사는 주관적 하자가 설립무효사유 아님(통설); 직접 판례 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 42,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#97다20649#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "가장납입도 주금납입 효력 인정",
+  "label_doubt": false
+ },
+ {
+  "number": 42,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제324조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제403조-1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "발기인에 대표소송 준용, 1% 주주 제소청구",
+  "label_doubt": false
+ },
+ {
+  "number": 43,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-BILL#제16조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "최후 배서 백지식이어도 적법소지인 추정",
+  "label_doubt": false
+ },
+ {
+  "number": 43,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다44250#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-BILL#제20조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "지급거절 명백해도 거절증서 없으면 만기전배서 효력",
+  "label_doubt": false
+ },
+ {
+  "number": 43,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-BILL#제18조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-BILL#제11조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "추심위임배서는 권리이전 아님(통설); 직접 판례 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 43,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2000다42915#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "환배서로 재취득해도 인적항변 대항받음",
+  "label_doubt": false
+ },
+ {
+  "number": 43,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-BILL#제15조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-BILL#제11조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "배서인의 배서금지는 담보책임 배제만, 배서금지어음 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 44,
+  "statement": "ㄱ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제343조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "자기주식은 이사회결의로 소각 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 44,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제329조의2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제442조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "주식분할에 442조 준용",
+  "label_doubt": false
+ },
+ {
+  "number": 44,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제440조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "주식병합 공고·통지 절차",
+  "label_doubt": false
+ },
+ {
+  "number": 44,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제343조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제441조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "소각 효력은 주권제출기간 만료 시",
+  "label_doubt": false
+ },
+ {
+  "number": 45,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제651조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "고지의무자는 보험계약자·피보험자, 수익자 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 45,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제733조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "보험계약자는 수익자 변경권 있음(동의 불요)",
+  "label_doubt": false
+ },
+ {
+  "number": 45,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제736조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "해지 시 적립금 보험계약자에게 지급",
+  "label_doubt": false
+ },
+ {
+  "number": 45,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제732조의2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "수익자 일부 고의 시 다른 수익자에 책임",
+  "label_doubt": false
+ },
+ {
+  "number": 45,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다215728#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "상속인 1인 포기분 다른 상속인에 당연귀속 안 됨",
+  "label_doubt": false
+ },
+ {
+  "number": 46,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94다24985#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "표현대리에 과실상계 유추적용 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 46,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2008다79340#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제48조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "조합대리 상행위 비현명도 조합원 전원에 효력",
+  "label_doubt": false
+ },
+ {
+  "number": 46,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVIL#제827조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "가사대리권 제한은 선의 제3자에 대항 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 46,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다12932#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제15조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "정당한 이유 있으면 표현대리로 영업주 책임",
+  "label_doubt": false
+ },
+ {
+  "number": 46,
+  "statement": "5",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2005다22701, 22718#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "특별한 사정 있으면 회사가 대리행사 거절 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 47,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2010다49380#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "실권주 제3자 발행에 정관 근거 불요",
+  "label_doubt": false
+ },
+ {
+  "number": 47,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2008다50776#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "경영권 방어 목적 제3자배정은 신주인수권 침해",
+  "label_doubt": false
+ },
+ {
+  "number": 47,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94다36421#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "정관·이사회 미결정이라도 회사 승낙 시 양도 유효",
+  "label_doubt": false
+ },
+ {
+  "number": 47,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94다36421#1~2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "신주인수권 양도 대항요건=확정일자 통지·승낙",
+  "label_doubt": false
+ },
+ {
+  "number": 47,
+  "statement": "5",
+  "label": true,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 1989.3.14. 88누889(현물출자 신주에 신주인수권 불미침) 코퍼스 검색 실패",
+  "label_doubt": false
+ },
+ {
+  "number": 48,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제462조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "이익배당 결정기관",
+  "label_doubt": false
+ },
+ {
+  "number": 48,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제462조의2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "주식배당은 주주총회 결의로",
+  "label_doubt": false
+ },
+ {
+  "number": 48,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제82조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "익명조합 손실전보 후 이익배당",
+  "label_doubt": false
+ },
+ {
+  "number": 48,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제580조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "유한회사 출자좌수 기준 배당",
+  "label_doubt": false
+ },
+ {
+  "number": 48,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제86조의6",
+    "grade": "decisive"
+   }
+  ],
+  "note": "유한책임조합원 책임 한도",
+  "label_doubt": false
+ },
+ {
+  "number": 49,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제361조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "주주총회 권한 법정",
+  "label_doubt": false
+ },
+ {
+  "number": 49,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2015다45451#1~2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "선의·무중과실이면 보호, 무과실 불요",
+  "label_doubt": false
+ },
+ {
+  "number": 49,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다237714#1~2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "주총결의는 의사결정절차, 구체 내용은 계약",
+  "label_doubt": false
+ },
+ {
+  "number": 49,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다251215#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "선임결의+승낙으로 지위 취득, 별도 계약 불요",
+  "label_doubt": false
+ },
+ {
+  "number": 49,
+  "statement": "ㅁ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#96다48282#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제393조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "일상업무 아닌 중요업무는 이사회 결의",
+  "label_doubt": false
+ },
+ {
+  "number": 50,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제527조의5",
+    "grade": "decisive"
+   }
+  ],
+  "note": "합병 채권자보호절차",
+  "label_doubt": false
+ },
+ {
+  "number": 50,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제523조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "합병대가 일부 금전 제공 가능(4호), 최대주주 제한 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 50,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2007다64136#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "현저히 불공정한 합병비율은 합병무효사유",
+  "label_doubt": false
+ },
+ {
+  "number": 50,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제190조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제530조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-COMM#제240조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "무효판결 소급효 없음(530→240→190 단서)",
+  "label_doubt": false
+ },
+ {
+  "number": 51,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제369조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제371조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "A가 B주식 10% 이하 보유→369③ 상호주 아님, 의결권 있어 발행주식총수 산입",
+  "label_doubt": false
+ },
+ {
+  "number": 51,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제371조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "371①: 344조의3① 의결권 없는 주식은 발행주식총수에 불산입",
+  "label_doubt": false
+ },
+ {
+  "number": 51,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제371조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제369조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-COMM#제341조의2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "합병으로 취득한 자기주식은 369② 의결권 없음→371① 발행주식총수 불산입",
+  "label_doubt": false
+ },
+ {
+  "number": 51,
+  "statement": "ㄹ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제368조",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "LAW-COMM#제371조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "이사 선임 당사자 주주는 368③ 특별이해관계인 아님(통설)→출석의결권 산입",
+  "label_doubt": false
+ },
+ {
+  "number": 52,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2019다202795, 202801#2~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "2019다202795: 본소 집행 후 비로소 반소 확정판결 집행",
+  "label_doubt": false
+ },
+ {
+  "number": 52,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#84다카298#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVPRO#제271조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "본소 부적법 각하 시 반소취하에 원고 동의 필요",
+  "label_doubt": false
+ },
+ {
+  "number": 52,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다25145#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "가지급물 반환신청=본안판결 취소·변경 조건 예비적 반소",
+  "label_doubt": false
+ },
+ {
+  "number": 52,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2006다19061, 19078#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "원고만 항소, 항소심 본소 인용 시 예비적 반소 심판대상",
+  "label_doubt": false
+ },
+ {
+  "number": 52,
+  "statement": "5",
+  "label": true,
+  "found": false,
+  "evidence": [],
+  "note": "대법원 2001.6.15. 2001므626,633 (코퍼스 검색 실패)",
+  "label_doubt": false
+ },
+ {
+  "number": 53,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#91다6009#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "채무 불발생 전제 말소청구엔 변제조건 장래이행 취지 불포함",
+  "label_doubt": false
+ },
+ {
+  "number": 53,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다31191#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "기망 취소 시 근저당말소의무와 부당이득반환의무 동시이행",
+  "label_doubt": false
+ },
+ {
+  "number": 53,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2000다5640#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#95다7550#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "전부명령 이전 부기등기 시 말소청구 상대방은 양수인, 양도인 피고적격 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 53,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2000다5640#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#95다7550#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "부기등기 말소청구는 소의 이익 없음, 주등기 말소만 구하면 됨",
+  "label_doubt": false
+ },
+ {
+  "number": 54,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제396조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "396②: 회사채권자도 주주명부 열람·등사 청구 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 54,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제466조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "회계장부열람권은 3% 이상 주주; 甲 2%",
+  "label_doubt": false
+ },
+ {
+  "number": 54,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제391조의3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "이사회의사록 열람은 주주만(391조의3③), 채권자 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 54,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제462조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "462③: 위법배당 시 회사채권자가 반환청구",
+  "label_doubt": false
+ },
+ {
+  "number": 54,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-COMM#제360조의25",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제360조의24-1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "乙 98% 지배주주; 소수주주 매수청구 시 2개월 내 매수",
+  "label_doubt": false
+ },
+ {
+  "number": 55,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#97다22843#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "감축 오인 시 나머지는 재판누락, 원심 계속→상소 부적법",
+  "label_doubt": false
+ },
+ {
+  "number": 55,
+  "statement": "ㄴ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2004다24083#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2004다24083#1",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "CASE#2007다69834, 69841#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "주문 누락은 재판누락→그 부분 상소 부적법",
+  "label_doubt": false
+ },
+ {
+  "number": 55,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2007다69834, 69841#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2007다69834, 69841#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "중간확인의 소 주문 누락은 재판누락, 상소 부적법",
+  "label_doubt": false
+ },
+ {
+  "number": 55,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2015다242429#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2009다43355#3",
+    "grade": "supporting"
+   }
+  ],
+  "note": "예비적 공동소송 일부판결 불허, 이심·심판대상(정확한 판시 2006두17765 미발견)",
+  "label_doubt": false
+ },
+ {
+  "number": 56,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#86다카2289#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#95다42133#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "피참가인 패소 시 참가인은 판결 부당 주장 불가(참가적 효력)",
+  "label_doubt": false
+ },
+ {
+  "number": 56,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#95다42133#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2019다268252#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "참가적 효력은 결론의 기초 판단, 공동이익 주장 사항에 미침",
+  "label_doubt": false
+ },
+ {
+  "number": 56,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다5727#1~2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "보조참가인이 독립당사자참가 시 보조참가 종료",
+  "label_doubt": false
+ },
+ {
+  "number": 56,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2014다13044#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "공동소송적 보조참가인 동의 없는 재심의 소 취하는 무효",
+  "label_doubt": false
+ },
+ {
+  "number": 56,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#73다1030#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#65다101#1",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "CASE#86다카2289#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "참가적 효력은 참가인-피참가인 사이에만",
+  "label_doubt": false
+ },
+ {
+  "number": 57,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다18725#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "제척기간 도과는 직권조사사항, 기간 후 주장도 판단",
+  "label_doubt": false
+ },
+ {
+  "number": 57,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다20955#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#94다47483#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "후순위등기 말소 패소확정돼도 전순위등기 말소 소의 이익 있음",
+  "label_doubt": false
+ },
+ {
+  "number": 57,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#91다35175#1~3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "피담보채무액 다툴 때 변제조건 가등기말소 장래이행 허용",
+  "label_doubt": false
+ },
+ {
+  "number": 57,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2012다17585#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "근저당 말소 후 피담보채무 부존재확인은 과거 법률관계",
+  "label_doubt": false
+ },
+ {
+  "number": 57,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#92다34414#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "토지거래허가 협력의무 이행 소구 가능",
+  "label_doubt": false
+ },
+ {
+  "number": 58,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2005다60239#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2016다240338#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "인도청구(이행의 소) 가능하면 유치권 부존재확인은 확인이익 없음(일반법리)",
+  "label_doubt": false
+ },
+ {
+  "number": 58,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2009다60336#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "체납처분압류 후 경매개시 전 유치권자는 매수인에 대항",
+  "label_doubt": false
+ },
+ {
+  "number": 58,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2019다247385#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "유치권 미주장 시 근저당 소멸 후에도 근저당권자 확인이익 있음",
+  "label_doubt": false
+ },
+ {
+  "number": 58,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다99409#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "대항 범위 초과 부분 유치권 일부 부존재확인 이익 있음",
+  "label_doubt": false
+ },
+ {
+  "number": 58,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2009다19246#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "가압류 후 점유이전은 처분행위 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 59,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다37894#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "말소청구 확정판결 기판력이 진정명의회복 이전등기청구에 미침",
+  "label_doubt": false
+ },
+ {
+  "number": 59,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다45457#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "과실상계로 제한된 부분 부당이득반환청구 허용",
+  "label_doubt": false
+ },
+ {
+  "number": 59,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2002다11847#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "말소청구 기각 확정 후에도 소유권확인 이익 있음",
+  "label_doubt": false
+ },
+ {
+  "number": 59,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#93다52488#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "가등기 본등기 이행판결 기판력은 가등기 말소 후소에 불미침",
+  "label_doubt": false
+ },
+ {
+  "number": 59,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#96다32706#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "저촉 후소판결 확정돼도 재심 취소 전까지 양 판결 기판력",
+  "label_doubt": false
+ },
+ {
+  "number": 60,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2014다32458#3~1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2013다12464#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "시효완성 후 일부변제=전체 묵시 승인, 포기 추정",
+  "label_doubt": false
+ },
+ {
+  "number": 60,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다865#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2010다91886#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "부진정연대채무 1인 시효중단·포기는 타 채무자에 효력 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 60,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2015다232316#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "새로운 방식의 확인소송 허용(전합)",
+  "label_doubt": false
+ },
+ {
+  "number": 60,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2003다16238#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "피압류채권에는 확정적 시효중단 효력 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 60,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013다18622, 18639#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "가압류등기 말소 시 중단사유 종료, 새로 진행",
+  "label_doubt": false
+ },
+ {
+  "number": 61,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94다61649#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#91마342#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "소송대리인 있으면 중단X, 판결 상속인 전원에 효력",
+  "label_doubt": false
+ },
+ {
+  "number": 61,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2014다210449#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "소송위임 후 소제기 전 사망, 소제기 적법·효력 상속인 귀속",
+  "label_doubt": false
+ },
+ {
+  "number": 61,
+  "statement": "ㄷ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99마6205#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#93다52105#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "소송대리권은 당해 심급 판결 송달시까지",
+  "label_doubt": false
+ },
+ {
+  "number": 61,
+  "statement": "ㄹ",
+  "label": false,
+  "found": false,
+  "evidence": [],
+  "note": "대판 2010.5.13. 2009다105246(선정당사자 보수약정 선정자 수권 필요) 코퍼스에 없음; 2001다10748#4는 일반론",
+  "label_doubt": false
+ },
+ {
+  "number": 62,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다3329#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2013다95964#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "상계항변은 수동채권 존재 확정 전제 예비적 항변",
+  "label_doubt": false
+ },
+ {
+  "number": 62,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2011다3329#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "조정 성립시 상계항변 사법상 효과 발생 안함",
+  "label_doubt": false
+ },
+ {
+  "number": 62,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVPRO#제149조",
+    "grade": "decisive"
+   }
+  ],
+  "note": "상계항변도 방어방법이므로 제149조로 각하 가능(대판2003다44387 코퍼스 없음)",
+  "label_doubt": false
+ },
+ {
+  "number": 62,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다46338, 46345#3",
+    "grade": "decisive"
+   }
+  ],
+  "note": "상계항변 인용 청구기각 판결에 피고도 상소이익",
+  "label_doubt": false
+ },
+ {
+  "number": 62,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2000다4050#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "별소 계속중 채권을 자동채권으로 한 상계항변 허용",
+  "label_doubt": false
+ },
+ {
+  "number": 63,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#92다4680#1~2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#98다42615#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "가압류 있어도 이행소송 제기 가능, 배척 불가 원칙",
+  "label_doubt": false
+ },
+ {
+  "number": 63,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#96다11648#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#92다4680#1~1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "채무자 명의 등기 경료시 부동산 자체 가압류, 말소 불요",
+  "label_doubt": false
+ },
+ {
+  "number": 63,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#92다4680#1~2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#98다42615#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "가압류 해제 조건으로 하지 않는 한 인용 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 63,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#92다4680#1~1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#98다22963#1~2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "대물적 효력 없어 제3자 등기 원인무효 말소청구 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 63,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#98다22963#1~2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#98다22963#1~1",
+    "grade": "supporting"
+   },
+   {
+    "chunk_id": "CASE#98다35327#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "제3채무자 응소 안해 손해 발생시 불법행위책임",
+  "label_doubt": false
+ },
+ {
+  "number": 64,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2000다66133#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2009마2050#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "원본 존재·성립 다툼+이의 있으면 사본으로 원본 대신 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 64,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다37009#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#97다38190#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "백지문서 타인 보충시 진정성립 추정 안됨, 제출자 권원 증명",
+  "label_doubt": false
+ },
+ {
+  "number": 64,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다72029#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#96재다462#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "인영 진정→문서 전체 추정, 위조 주장자가 적극 입증",
+  "label_doubt": false
+ },
+ {
+  "number": 64,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2009다37831#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2002다69686#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "타인 날인 밝혀지면 제출자가 정당 권원 증명책임",
+  "label_doubt": false
+ },
+ {
+  "number": 64,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다5654#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#88다카3083#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "인영 진정 인정 철회는 주요사실 자백취소와 동일 요건",
+  "label_doubt": false
+ },
+ {
+  "number": 65,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2000다9086#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제394조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "전 이사 상대 대표소송 회사 참가시 대표는 대표이사",
+  "label_doubt": false
+ },
+ {
+  "number": 65,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다298744#3",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제403조-1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "제소청구 없이 제기한 대표소송은 제4항 사유 없으면 부적법",
+  "label_doubt": false
+ },
+ {
+  "number": 65,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2001다2617#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "파산 중 회사 주주는 관재인 거부해도 대표소송 불가",
+  "label_doubt": false
+ },
+ {
+  "number": 65,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2013마2316#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "대표소송 주주는 집행채권자가 될 수 있음",
+  "label_doubt": false
+ },
+ {
+  "number": 66,
+  "statement": "1",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#98다6763#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "법정변제충당 순서 자체는 법률효과로 자백대상 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 66,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다229564#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "표현상 잘못 분명하면 원용해도 자백 불성립",
+  "label_doubt": false
+ },
+ {
+  "number": 66,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2018다229564#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2014다64752#3",
+    "grade": "supporting"
+   }
+  ],
+  "note": "선행자백은 상대방 원용으로 일치해야 성립",
+  "label_doubt": false
+ },
+ {
+  "number": 66,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2000다42908#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2000다42908#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "종중 대표권은 직권조사사항, 자백 대상 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 66,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#95다10204#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "자백 후 교환적 변경으로 원 주장 철회시 자백 효력 소멸",
+  "label_doubt": false
+ },
+ {
+  "number": 67,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#92다2066#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#70다743#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "심급관할은 전속관할, 항소심 중 합의부 사건 추가돼도 영향 없음(반소 판례 2011그65 없음)",
+  "label_doubt": false
+ },
+ {
+  "number": 67,
+  "statement": "2",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#80마403#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVPRO#제30조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "답변서 진술간주는 변론관할 사유 아님",
+  "label_doubt": false
+ },
+ {
+  "number": 67,
+  "statement": "3",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVPRO#제30조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVPRO#제31조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "전속관할만 변론관할 배제, 전속적 합의관할은 임의관할",
+  "label_doubt": false
+ },
+ {
+  "number": 67,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#94마1059, 1060#1~2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#94마1059, 1060#1~1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "심급관할 위반 이송결정 기속력 상급심에 미치지 않음",
+  "label_doubt": false
+ },
+ {
+  "number": 67,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#83다카1981#1~1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "이송된 재심 기간준수는 제1심 제기시 기준",
+  "label_doubt": false
+ },
+ {
+  "number": 68,
+  "statement": "ㄱ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2009다48312#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2009다48312#2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "백지 미보충 어음금 청구도 시효중단",
+  "label_doubt": false
+ },
+ {
+  "number": 68,
+  "statement": "ㄴ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2008다59230#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "백지 미보충 패소확정 후 보충 후소는 기판력 저촉",
+  "label_doubt": false
+ },
+ {
+  "number": 68,
+  "statement": "ㄷ",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "LAW-CIVPRO#제9조",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-CIVPRO#제8조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "어음 소는 지급지 법원; 소지인 주소지 관할 근거 없음",
+  "label_doubt": false
+ },
+ {
+  "number": 68,
+  "statement": "ㄹ",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#99다16378#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#99다16378#2",
+    "grade": "decisive"
+   }
+  ],
+  "note": "원인채권 행사는 어음채권 시효중단X, 어음채권 행사는 원인채권 중단O",
+  "label_doubt": false
+ },
+ {
+  "number": 69,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2007다51505#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "여러 안건 결의마다 제소기간 별도 판단",
+  "label_doubt": false
+ },
+ {
+  "number": 69,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#88다카9883#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "본안 승소 확정시 기간 정함 없는 가처분도 효력 상실",
+  "label_doubt": false
+ },
+ {
+  "number": 69,
+  "statement": "3",
+  "label": true,
+  "found": false,
+  "evidence": [],
+  "note": "대판 2016.7.22. 2015다66397(주주지위 상실시 결의취소 원고적격 상실) 코퍼스에 없음; 대표소송 유사 2017다35717#1",
+  "label_doubt": false
+ },
+ {
+  "number": 69,
+  "statement": "4",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#82다카957#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#91다45141#1~2",
+    "grade": "supporting"
+   }
+  ],
+  "note": "권리의무 보유하는 경우에만 퇴임이사 확인이익 인정",
+  "label_doubt": false
+ },
+ {
+  "number": 69,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#86다카553#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#80다2745#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "정당 소집권자 소집이면 절차 하자는 취소사유",
+  "label_doubt": false
+ },
+ {
+  "number": 70,
+  "statement": "1",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2017다244115#1",
+    "grade": "decisive"
+   }
+  ],
+  "note": "비상근이사도 이사회 참석·의결로 감시의무(직접판례 2005다51471 미확인)",
+  "label_doubt": false
+ },
+ {
+  "number": 70,
+  "statement": "2",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#84다카1954#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#68다305#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "위임관계 채무불이행책임, 시효 10년",
+  "label_doubt": false
+ },
+ {
+  "number": 70,
+  "statement": "3",
+  "label": false,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2016다260455#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "LAW-COMM#제399조",
+    "grade": "supporting"
+   }
+  ],
+  "note": "기권 기재시 제399조3항 찬성 추정 안됨",
+  "label_doubt": false
+ },
+ {
+  "number": 70,
+  "statement": "4",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#2007다25865#2",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2002다60467, 60474#1",
+    "grade": "supporting"
+   }
+  ],
+  "note": "다른 이사 위법 의심에도 방치시 감시의무 위반 배상책임",
+  "label_doubt": false
+ },
+ {
+  "number": 70,
+  "statement": "5",
+  "label": true,
+  "found": true,
+  "evidence": [
+   {
+    "chunk_id": "CASE#75다819#1",
+    "grade": "decisive"
+   },
+   {
+    "chunk_id": "CASE#2006다19603#5",
+    "grade": "supporting"
+   }
+  ],
+  "note": "일부청구시 전액에서 감액 후 청구액 한도 인용(이사책임 판례 직접은 미확인)",
+  "label_doubt": false
+ }
+]

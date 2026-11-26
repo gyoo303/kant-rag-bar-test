@@ -123,3 +123,17 @@ def test_v6r2_research_reasons(monkeypatch, tmp_path):
     assert res["changed"]["ㄴ"]["to"] == ["true", 0.95]
     assert rec["predicted"] == 2
     assert "cite_check" in rec and set(rec["cite_check"]) == {"ㄱ", "ㄴ"}
+
+
+def test_polarity_and_count_wording():
+    """'판례의 태도와 다른 것은?'(옳지 않은 것), '옳은 것의 수는?'(개수형) — 변형본 하네스 축 F 문구."""
+    opts = {i: f"보기{i}" for i in range(1, 6)}
+    q = ExamQuestion(id="X", number=22, stem="채권자대위권에 관한 설명 중 판례의 태도와 다른 것은?", options=opts)
+    assert q.polarity == "incorrect"
+    q2 = q.model_copy(update={"stem": "사해행위 취소에 관한 설명 중 판례의 입장에 부합하지 않는 것은?"})
+    assert q2.polarity == "incorrect"
+    q3 = q.model_copy(update={"stem": "甲은 乙과 다른 것을 약정하였다. 이에 관한 설명 중 옳은 것은?"})
+    assert q3.polarity == "correct"  # 물음 문장이 아닌 사례 본문의 '다른 것'
+    c = ExamQuestion(id="Y", number=40, stem="조합에 관한 설명 중 옳은 것의 수는?", items={"ㄱ": "a", "ㄴ": "b"},
+                     options={1: "0개", 2: "1개", 3: "2개", 4: "3개", 5: "4개"})
+    assert c.form == "count" and c.polarity == "correct"

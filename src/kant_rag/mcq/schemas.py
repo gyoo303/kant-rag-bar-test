@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -48,7 +50,12 @@ class ExamQuestion(BaseModel):
     @property
     def polarity(self) -> Polarity:
         neg = ("옳지 않은", "옳지않은", "틀린", "잘못된", "부적절한", "인정되지 않는", "해당하지 않는")
-        return "incorrect" if any(k in self.stem for k in neg) else "correct"
+        if any(k in self.stem for k in neg):
+            return "incorrect"
+        # '판례의 태도와 다른 것은?', '판례의 입장에 부합하지 않는 것은?' — 물음 문장에서만 본다 (사례 본문 오인 방지)
+        ask = self.stem[max(0, self.stem.rfind("?", 0, len(self.stem)) - 120):] if "?" in self.stem else self.stem[-120:]
+        neg_ask = ("다른 것", "부합하지 않는", "맞지 않는", "옳지 아니한", "어긋나는")
+        return "incorrect" if any(k in ask for k in neg_ask) else "correct"
 
     @property
     def form(self) -> Form:
@@ -56,7 +63,8 @@ class ExamQuestion(BaseModel):
             return "blank"
         if self.items and all("(○)" in o or "(×)" in o for o in self.options.values()):
             return "ox"
-        if self.items and ("몇 개" in self.stem or "개수" in self.stem):
+        count_opts = all(re.fullmatch(r"\s*\d+\s*개\s*", o or "") for o in self.options.values())
+        if self.items and ("몇 개" in self.stem or "개수" in self.stem or "것의 수" in self.stem or count_opts):
             return "count"
         return "combination" if self.items else "single"
 

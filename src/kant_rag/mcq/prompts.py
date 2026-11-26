@@ -203,3 +203,47 @@ MCQ_SYSTEM_V5 = MCQ_SYSTEM_V4.replace(
     '{"judgments": {"<진술키>": {"restated": "...", "verdict": "true|false|unknown", "confidence": 0.0, "reason": "...", "quote": "...", "cited_chunk_ids": ["..."]}}}',
     1,
 )
+
+# ---------- v6 (개선안 v6: 연결 근거·다시 찾는 검색) ----------
+# 판단 v6: v5 + 판례 변경 표시 읽기, 연결 근거(kind=link) 설명, 부족한 근거(missing) 적기
+MCQ_SYSTEM_V6 = MCQ_SYSTEM_V5.replace(
+    "확신도 기준:",
+    """13. 근거 머리의 overruled_by="사건번호(선고일)" 는 그 판례가 뒤의 전원합의체 등으로 변경되었다는 뜻입니다.
+    발문에 기준 시점이 있으면 그 시점에 유효했던 판례를, 없으면 변경한 판례(현재 판례)를 따릅니다.
+    overruled_after_asof="true" 는 발문 기준 시점 뒤에 변경되었다는 뜻이므로 기준 시점에는 이 판례가 유효합니다.
+    overrules="…" 는 이 판례가 그 판례를 변경했다는 뜻입니다.
+14. kind="link" 는 검색된 조문·판례의 참조판례·참조조문·준용 관계를 따라 더한 근거입니다. 진술과 직접 관련이 있을 때만 씁니다.
+15. 근거가 부족해 unknown 이거나 확신도가 0.85 미만이면 missing 에 더 찾아야 할 근거를 검색어로 적습니다
+    (예: "상법 공동대표이사 제3자 의사표시 수령 준용"). 근거가 충분하면 빈 문자열.
+
+확신도 기준:""",
+    1,
+).replace(
+    '"quote": "...", "cited_chunk_ids": ["..."]}}}',
+    '"quote": "...", "missing": "...", "cited_chunk_ids": ["..."]}}}',
+    1,
+)
+
+# 다시 찾는 검색(2차): 앞선 판단 + 새 근거로 해당 진술만 다시 판단
+MCQ_RESEARCH_USER = """<evidence>
+{evidence}
+</evidence>
+
+<new_evidence>
+{new_evidence}
+</new_evidence>
+
+[발문]
+{stem}
+
+[다시 판단할 진술]
+{statements}
+
+[앞선 판단]
+{previous}
+
+위 진술들은 앞선 판단에서 근거가 부족했거나({reasons}) 정답을 가르는 진술입니다.
+<new_evidence> 는 추가로 찾은 근거입니다. 위 진술 각각({keys})을 <evidence> 와 <new_evidence> 를 함께 보고 다시 판단하세요.
+- 앞선 판단을 그대로 따르지 말고 근거와 다시 대조합니다. 앞선 판단의 근거와 반대되는 조문·판례(예외·단서·변경 판례)가 있는지 확인합니다.
+- quote 에는 결정적 근거 문장을 그대로 옮겨 적습니다. 근거가 여전히 없으면 unknown.
+정답 번호를 고르지 말고 진술별 정오만 판단합니다."""

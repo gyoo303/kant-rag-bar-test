@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import re
 import json
 import random
 from pathlib import Path
@@ -32,15 +33,21 @@ class BarEvalSet(BaseModel):
     no_answer: list[EvalItem] = Field(default_factory=list)
 
 
+def parse_answer_cell(cell: str) -> tuple[int, list[int]]:
+    """정답 칸 "4" → (4, []), 복수 정답 "4|5" → (4, [4, 5]) (첫 번호가 대표 정답)."""
+    nums = [int(x) for x in re.split(r"[|/;]", str(cell)) if x.strip()]
+    return nums[0], (nums if len(nums) > 1 else [])
+
+
 def import_exam(text_path: Path, answers_csv: Path | None, exam: str, source: str, id_prefix: str) -> Exam:
     items = parse_exam_text(text_path.read_text(encoding="utf-8"), id_prefix=id_prefix, subject=None)
     if answers_csv:
         with answers_csv.open(encoding="utf-8-sig") as f:
-            key = {int(r["number"]): int(r["answer"]) for r in csv.DictReader(f)}
+            key = {int(r["number"]): parse_answer_cell(r["answer"]) for r in csv.DictReader(f)}
         from kant_rag.mcq.schemas import derive_statement_labels
 
         for q in items:
-            q.answer = key.get(q.number)
+            q.answer, q.accepted = key.get(q.number, (None, []))
             if q.answer is not None:
                 q.statement_labels = derive_statement_labels(q)  # 진술 단위 지표용 (apply-answers 와 동일)
     return Exam(exam=exam, source=source, items=items)

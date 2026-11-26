@@ -119,9 +119,10 @@ def main(argv: list[str] | None = None) -> None:
                     help="closed_book = 검색 없는 기준선 (선택형만, 본 60건과 별도 보고)")
     eb.add_argument("--label", default="")
     eb.add_argument("--rewrite", action="store_true", help="쿼리 리라이트 적용 (선택형 진술별 질의 + 근거 없음 문항)")
-    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc | v5 | v5c — 생략 시 configs/default.yaml 의 default_preset")
+    eb.add_argument("--preset", default=None, help="개선안 단계: v2 | a1 | a2 | a34 | b | c(=v3) | d(=v4) | dc | v5 | v5c | v6 | v6r — 생략 시 configs/default.yaml 의 default_preset")
     eb.add_argument("--set", dest="sets", action="append", default=[], help="설정 덮어쓰기 key=value (여러 번)")
     eb.add_argument("--repeat", type=int, default=1, help="같은 설정으로 N번 실행하고 평균·범위·흔들린 문항 집계")
+    eb.add_argument("--workers", type=int, default=1, help="문항 병렬 수 (LLM 호출만 겹침, 검색은 잠금). 3~4 권장")
 
     rs = sub.add_parser("rescore", help="기존 실행의 진술 판단으로 정답 번호만 예비 규칙(v4)으로 다시 계산 (LLM·검색 없음)")
     rs.add_argument("run_dirs", nargs="+", help="results/<실행> 폴더")
@@ -136,6 +137,7 @@ def main(argv: list[str] | None = None) -> None:
     rg = sub.add_parser("regrade", help="정답 없이 푼 실행을 나중에 정답이 들어간 문항 파일로 채점 (→ regrade.json)")
     rg.add_argument("run_dir")
     rg.add_argument("--exam", required=True, help="정답을 넣어 다시 만든 문항 JSON")
+    rg.add_argument("--answers", default=None, help="정답 CSV(number,answer)로 덮어쓰기. 복수 정답은 4|5")
 
     cb = sub.add_parser("calibrate", help="실행 기록의 진술 판단으로 확신도 보정표 생성 (튜닝 세트 실행만 쓸 것)")
     cb.add_argument("run_dirs", nargs="+")
@@ -439,10 +441,10 @@ def main(argv: list[str] | None = None) -> None:
     elif args.cmd == "apply-answers":
         import csv as _csv
 
-        from kant_rag.mcq.io import BarEvalSet, Exam
+        from kant_rag.mcq.io import BarEvalSet, Exam, parse_answer_cell
 
         with open(args.answers_csv, encoding="utf-8-sig") as f:
-            key = {int(r["number"]): int(r["answer"]) for r in _csv.DictReader(f)}
+            key = {int(r["number"]): parse_answer_cell(r["answer"]) for r in _csv.DictReader(f)}
         exam_path = ROOT / args.exam_json
         targets = [(exam_path, Exam), (exam_path.with_name(exam_path.stem + "_extra.json"), Exam),
                    (ROOT / "eval" / "dev.json", BarEvalSet), (ROOT / "eval" / "test.json", BarEvalSet)]
@@ -457,8 +459,8 @@ def main(argv: list[str] | None = None) -> None:
 
             n = 0
             for q in obj.items:
-                if q.number in key and q.answer != key[q.number]:
-                    q.answer = key[q.number]
+                if q.number in key and (q.answer, q.accepted) != key[q.number]:
+                    q.answer, q.accepted = key[q.number]
                     n += 1
                 q.statement_labels = derive_statement_labels(q)  # 정답 → 진술별 참/거짓 역산
             path.write_text(obj.model_dump_json(indent=2), encoding="utf-8")
@@ -532,7 +534,7 @@ def main(argv: list[str] | None = None) -> None:
         print("설정:", meta)
         if args.repeat <= 1:
             print("saved:", run_bar_eval(s, Path(args.eval_path), [RetrievalMode(m) for m in args.modes], args.label,
-                                         meta=meta))
+                                         meta=meta, workers=args.workers))
         else:
             import time as _time
 
@@ -542,7 +544,8 @@ def main(argv: list[str] | None = None) -> None:
             for i in range(1, args.repeat + 1):
                 print(f"===== 반복 {i}/{args.repeat} =====", flush=True)
                 dirs.append(run_bar_eval(s, Path(args.eval_path), [RetrievalMode(m) for m in args.modes],
-                                         f"{args.label}-r{i}", meta={**meta, "repeat": [i, args.repeat]}))
+                                         f"{args.label}-r{i}", meta={**meta, "repeat": [i, args.repeat]},
+                                         workers=args.workers))
             agg_dir = settings.resolve(settings.paths.results_dir) / (_time.strftime("%Y%m%d-%H%M%S") + f"-{args.label}-repeat")
             agg = aggregate_runs(dirs, agg_dir)
             print(json.dumps(agg["by_config"], ensure_ascii=False, indent=2))
@@ -574,6 +577,18 @@ def main(argv: list[str] | None = None) -> None:
         from kant_rag.mcq.io import load_bar_evalset
 
         items = {q.number: q for q in load_bar_evalset(Path(args.exam)).items}
+        if args.answers:  # 정답 CSV 로 덮어쓰기 (복수 정답 "4|5" 가능)
+            import csv as _csv
+
+            from kant_rag.mcq.io import parse_answer_cell
+            from kant_rag.mcq.schemas import derive_statement_labels
+
+            with open(args.answers, encoding="utf-8-sig") as f:
+                key = {int(r["number"]): parse_answer_cell(r["answer"]) for r in _csv.DictReader(f)}
+            for n, (a, acc) in key.items():
+                if n in items:
+                    items[n] = items[n].model_copy(update={"answer": a, "accepted": acc})
+                    items[n].statement_labels = derive_statement_labels(items[n])
         r = regrade_run(Path(args.run_dir), items)
         print(f"{r['run_id']}: 정답 {r['correct']}/{r['graded']} · 오답 {r['wrong']} · 형식별 {r['by_form']} · "
               f"진술 {r['statements']} → {Path(args.run_dir) / 'regrade.json'}")

@@ -78,12 +78,37 @@ def _squash(s: str) -> str:
     return re.sub(r"[\s\"'“”‘’「」｢｣.,·ㆍ()\[\]]", "", s or "")
 
 
-def quote_supported(quote: str | None, texts: list[str], min_len: int = 6) -> bool | None:
-    """판단이 근거로 든 인용 문장이 인용한 청크 본문에 실제로 있는가. 인용이 없거나 너무 짧으면 None."""
+def quote_supported(quote: str | None, texts: list[str], min_len: int = 6, mode: str = "strict",
+                    min_ratio: float = 0.7) -> bool | None:
+    """판단이 근거로 든 인용 문장이 인용한 청크 본문에 실제로 있는가. 인용이 없거나 너무 짧으면 None.
+
+    mode="relaxed" (v6 0-2): "…"·"..." 로 줄인 인용은 조각별로 대조하고, 조각마다 원문과 가장 길게 겹치는 부분을 더해
+    인용 길이의 min_ratio 이상이면 일치로 본다 (조사·어미 한두 글자 차이, 생략 인용 허용).
+    """
     q = _squash(quote)
     if len(q) < min_len:
         return None
-    return any(q in _squash(t) for t in texts)
+    bodies = [_squash(t) for t in texts]
+    if any(q in b for b in bodies):
+        return True
+    if mode != "relaxed" or not bodies:
+        return False
+    from difflib import SequenceMatcher
+
+    segs = [x for x in (_squash(p) for p in re.split(r"…|\.\.\.|⋯|~", quote or "")) if x]
+    total = sum(len(x) for x in segs) or 1
+    for b in bodies:
+        hit = 0
+        for seg in segs:
+            if seg in b:
+                hit += len(seg)
+                continue
+            # 조각과 원문의 공통 부분을 앞에서부터 차례로 (3글자 이상만: 흩어진 한두 글자 일치는 세지 않음)
+            sm = SequenceMatcher(None, seg, b, autojunk=False)
+            hit += sum(m.size for m in sm.get_matching_blocks() if m.size >= 3)
+        if hit / total >= min_ratio:
+            return True
+    return False
 
 
 # ---------- 확신도 보정 ----------

@@ -94,7 +94,7 @@ def _git_commit() -> str | None:
 
 
 def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode], label: str = "",
-                 meta: dict | None = None) -> Path:
+                 meta: dict | None = None, workers: int = 1) -> Path:
     es = load_bar_evalset(eval_path)
     if es.split == "test" and not es.frozen:
         raise SystemExit("test 평가셋이 frozen=true 로 고정되지 않았습니다.")
@@ -109,13 +109,14 @@ def run_bar_eval(settings: Settings, eval_path: Path, modes: list[RetrievalMode]
     agent = None if modes == [RetrievalMode.NONE] else KnowledgeAgent(settings, solver.retriever)
     mcq_recs: list[dict] = []
     na_recs: list[dict] = []
+    if workers > 1:  # A-4 문항 병렬: 검색·리랭커는 solver 안에서 잠금, LLM 호출만 겹친다
+        solver.warmup()
     with (out / "records.jsonl").open("w", encoding="utf-8") as f:
         for mode in modes:
-            for q in es.items:
-                r = solver.solve(q, mode, run_id)
+            for q, r in _solve_all(solver, es.items, mode, run_id, workers):
                 r["eval"] = {"kind": "mcq", "split": es.split, "version": es.version, "type": q.type,
                              "traps": q.traps,
-                             "answer": q.answer, "correct": int(r.get("predicted") == q.answer),
+                             "answer": q.answer, "correct": int(q.is_correct(r.get("predicted"))),
                              "hit@5": mcq_hit_at_k(r, q), "statement_acc": statement_accuracy(r, q)}
                 f.write(json.dumps(r, ensure_ascii=False) + "\n")
                 f.flush()
@@ -287,8 +288,8 @@ def rescore_run(run_dir: Path, items: dict[int, ExamQuestion] | None, cap: float
         js = {k: StatementJudgment.model_validate(v) for k, v in r["judgments"].items()}
         new, _, info = choose_answer_robust(q, js, cap)
         n += 1
-        before += r.get("predicted") == q.answer
-        after += new == q.answer
+        before += q.is_correct(r.get("predicted"))
+        after += q.is_correct(new)
         if info["inconsistent"]:
             inconsistent.append({"number": q.number, "flipped": info["flipped"]})
         if new != r.get("predicted"):
@@ -314,7 +315,7 @@ def _correct_map(run_dir: Path, items: dict[int, ExamQuestion] | None) -> dict[i
         else:
             q = ExamQuestion(**r["question"]) if r.get("question") else (items or {}).get(r["number"])
             if q is not None and q.answer is not None:
-                out[r["number"]] = r.get("predicted") == q.answer
+                out[r["number"]] = q.is_correct(r.get("predicted"))
     return out
 
 
@@ -365,6 +366,25 @@ def calibration_samples(run_dirs: list[Path], items: dict[int, ExamQuestion] | N
     return out
 
 
+def _solve_all(solver, items, mode, run_id, workers: int):
+    """문항 순서대로 (문항, 기록) 을 낸다. workers>1 이면 스레드로 동시에 풀고 순서를 맞춰 돌려준다."""
+    if workers <= 1:
+        for q in items:
+            yield q, solver.solve(q, mode, run_id)
+        return
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = [ex.submit(solver.solve, q, mode, run_id) for q in items]
+        for q, fu in zip(items, futs):
+            try:
+                yield q, fu.result()
+            except Exception as e:  # 한 문항 실패가 실행 전체를 멈추지 않게
+                yield q, {"run_id": run_id, "question_id": q.id, "number": q.number, "config": mode.value,
+                          "form": q.form, "status": "error", "error": f"{type(e).__name__}: {e}",
+                          "predicted": None, "timing_ms": {}}
+
+
 # ---------- 나중 채점 (regrade): 정답 없이 푼 실행을 정답이 들어간 문항 파일로 채점 ----------
 def regrade_run(run_dir: Path, items: dict[int, ExamQuestion]) -> dict:
     """예측(predicted)은 그대로 두고 정답만 대조. 진술 단위(정답/유보/확신 오답)와 오답 목록을 regrade.json 에."""
@@ -379,9 +399,9 @@ def regrade_run(run_dir: Path, items: dict[int, ExamQuestion]) -> dict:
         q = items.get(r.get("number"))
         if q is None or q.answer is None:
             continue
-        ok = r.get("predicted") == q.answer
+        ok = q.is_correct(r.get("predicted"))
         rows.append({"number": q.number, "config": r.get("config"), "form": q.form, "predicted": r.get("predicted"),
-                     "answer": q.answer, "correct": ok, "status": r.get("status")})
+                     "answer": q.answer, "accepted": q.accepted, "correct": ok, "status": r.get("status")})
         by_form.setdefault(q.form, [0, 0])
         by_form[q.form][0] += ok
         by_form[q.form][1] += 1

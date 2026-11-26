@@ -7,7 +7,9 @@ LLM 에게 번호를 직접 고르게 하지 않고, 진술별 판단(verdict)�
 from __future__ import annotations
 
 import re
+import threading
 import time
+from collections import Counter
 from pathlib import Path
 
 from kant_rag.config import Settings
@@ -28,10 +30,13 @@ from kant_rag.mcq.prompts import (
     MCQ_SYSTEM_V3,
     MCQ_SYSTEM_V4,
     MCQ_SYSTEM_V5,
+    MCQ_SYSTEM_V6,
+    MCQ_RESEARCH_USER,
     MCQ_REWRITE_SYSTEM_V4,
     MCQ_TIEBREAK_USER,
     MCQ_USER,
 )
+from kant_rag.mcq.links import LinkGraph, norm_case_no
 from kant_rag.mcq.schemas import ExamQuestion, StatementJudgment
 from kant_rag.retrieval.hybrid import rrf_fuse
 from kant_rag.retrieval.pipeline import RetrievalMode, Retriever
@@ -197,10 +202,13 @@ def rewrite_statement_queries(q: ExamQuestion, settings: Settings) -> tuple[dict
                                ("human", MCQ_REWRITE_USER.format(stem=q.stem[:stem_chars],
                                                                  statements=listing))], c.rewrite_max_tokens)
         info["llm_calls"] = calls
+        info["raw"] = (raw or "")[:4000]  # 0-1 전부 fallback 일 때 원인 확인용
         data = extract_json(raw)
     except Exception as e:
         data = {}
         info["error"] = f"{type(e).__name__}: {e}"
+    if c.rewrite_key_normalize and isinstance(data, dict):  # 0-1 "①"·"1."·"보기 1" → "1"
+        data = {**{_norm_key(k, list(statements)): v for k, v in data.items()}, **{k: v for k, v in data.items() if k in statements}}
     queries: dict[str, list[str]] = {}
     for k in statements:
         v = data.get(k)
@@ -213,7 +221,19 @@ def rewrite_statement_queries(q: ExamQuestion, settings: Settings) -> tuple[dict
             queries[k] = [original[k]]
             info["fallback_keys"].append(k)
     info["rewritten"] = queries
+    if statements and len(info["fallback_keys"]) == len(statements) and not info["error"]:
+        info["error"] = "all_fallback: 리라이트 출력에서 진술 키를 찾지 못함 (raw 참고)"
     return queries, info
+
+
+def _norm_key(k, keys: list[str]) -> str:
+    """리라이트·판단 출력의 진술 키 표기 차이를 흡수: '①'·'1.'·'(1)'·'보기 1'·'ㄱ.' → '1'·'ㄱ'."""
+    s = str(k).strip()
+    s = re.sub(r"^(보기|진술|지문|선지)\s*", "", s)
+    s = s.strip(" .:)(）（[]")
+    if s and s[0] in CIRCLED_NUM:
+        s = str(CIRCLED_NUM.index(s[0]) + 1)
+    return s if s in keys else str(k)
 
 
 def _parse_judgments(raw: str, keys: list[str]) -> dict[str, StatementJudgment]:
@@ -236,10 +256,15 @@ def _case_attrs(chunk, full_court: set[str] | None) -> str:
     return out
 
 
-def _doc(cid: str, chunk, text: str, kind: str | None = None, meta: set[str] | None | bool = False) -> str:
+def _doc(cid: str, chunk, text: str, kind: str | None = None, meta: set[str] | None | bool = False,
+         attrs: str = "") -> str:
     k = f' kind="{kind}"' if kind else ""
     extra = _case_attrs(chunk, meta if isinstance(meta, set) else None) if meta is not False else ""
-    return f'<doc id="{cid}" title="{chunk.title}" loc="{chunk.location()}"{k}{extra}>\n{text}\n</doc>'
+    return f'<doc id="{cid}" title="{chunk.title}" loc="{chunk.location()}"{k}{extra}{attrs}>\n{text}\n</doc>'
+
+
+def _fmt_date(d: str) -> str:
+    return f"{d[:4]}-{d[4:6]}-{d[6:8]}" if len(d or "") == 8 else (d or "")
 
 
 def full_court_cases(chunks_by_id: dict) -> set[str]:
@@ -253,46 +278,100 @@ def full_court_cases(chunks_by_id: dict) -> set[str]:
 
 
 def build_context(per_statement: dict[str, list[RetrievedChunk]], c, graph: ChunkGraph | None,
-                  full_court: set[str] | None = None) -> tuple[str, list[str], dict]:
-    """진술당 상위 k 근거(중복 제거) + 개선안 A3(같은 판결 다른 항목)·A4(준용 조문) 확장."""
+                  full_court: set[str] | None = None, links: list[tuple[str, str]] | None = None,
+                  annotate=None) -> tuple[str, list[str], dict]:
+    """진술당 상위 k 근거(중복 제거) + 개선안 A3(같은 판결 다른 항목)·A4(준용 조문) 확장.
+
+    v6: links = 연결 근거 [(청크 id, 연결 종류)] (kind="link"), annotate(chunk) = 판례 변경 표시 속성,
+    merge_case_pieces 이면 판결요지 조각을 항목 전체로 합쳐 한 블록으로 (조각 ids 는 모두 used 에).
+    """
     seen: dict[str, RetrievedChunk] = {}
     for results in per_statement.values():  # 진술 순서대로, 진술당 상위 k 개
         for r in results[: c.per_statement_k]:
             seen.setdefault(r.chunk.chunk_id, r)
+    merge = graph is not None and getattr(c, "merge_case_pieces", False)
+    meta = (full_court if full_court is not None else None) if c.case_meta else False
     parts, used, total = [], [], 0
-    for cid, r in seen.items():
-        meta = (full_court if full_court is not None else None) if c.case_meta else False
-        block = _doc(cid, r.chunk, r.chunk.text, meta=meta)
-        if total + len(block) > c.max_context_chars and used:
-            break
+    covered: set[str] = set()
+    info: dict = {"siblings": [], "references": []}
+
+    def add(cid, chunk, kind=None, text=None, primary=False) -> bool:
+        nonlocal total
+        if cid in covered:
+            return False
+        ids = graph.item_pieces(cid) if merge and text is None else [cid]
+        if any(x in covered for x in ids):
+            return False
+        body = text if text is not None else (graph.item_text(cid) if merge else chunk.text)
+        block = _doc(cid, chunk, body, kind, meta=meta, attrs=annotate(chunk) if annotate else "")
+        if total + len(block) > c.max_context_chars and (used or not primary):
+            return None if primary else False
         parts.append(block)
-        used.append(cid)
+        for x in ids:
+            covered.add(x)
+            if x not in used:
+                used.append(x)
         total += len(block)
-    info = {"siblings": [], "references": []}
+        if len(ids) > 1:
+            info.setdefault("merged", []).append(cid)
+        return True
+
+    for cid, r in seen.items():
+        if add(cid, r.chunk, primary=True) is None:
+            break
+    if links and graph is not None:
+        by_id = graph.by_id
+        for cid, kind in links:
+            ch = by_id.get(cid)
+            if ch is not None and add(cid, ch, "link"):
+                info.setdefault("links", []).append(cid)
     if graph is not None:
-        extra: list[tuple[str, str, str]] = []  # (id, text, kind)
+        extra: list[tuple[str, str | None, str]] = []  # (id, text, kind)
         if c.expand_references:
-            extra += [(x, graph.by_id[x].text, "reference") for x in graph.expand_references(used, c.max_expansions)]
+            extra += [(x, None, "reference") for x in graph.expand_references(used, c.max_expansions)]
         if getattr(c, "statute_parts", False):
-            extra += [(x, graph.by_id[x].text, "part") for x in graph.statute_parts(used, c.max_statute_parts)]
+            extra += [(x, None, "part") for x in graph.statute_parts(used, c.max_statute_parts)]
         if c.sibling_items:
             extra += [(x, t, "sibling") for x, t in graph.case_siblings(used, max_total=c.max_siblings)]
         for cid, text, kind in extra:
-            block = _doc(cid, graph.by_id[cid], text, kind,
-                         meta=(full_court if full_court is not None else None) if c.case_meta else False)
-            if total + len(block) > c.max_context_chars:
-                continue
-            parts.append(block)
-            used.append(cid)
-            total += len(block)
-            info.setdefault({"reference": "references", "sibling": "siblings", "part": "statute_parts"}[kind], []).append(cid)
+            ch = graph.by_id[cid]
+            if add(cid, ch, kind, text=text if text is not None else ch.text):
+                info.setdefault({"reference": "references", "sibling": "siblings", "part": "statute_parts"}[kind], []).append(cid)
     return "\n\n".join(parts), used, info
+
+
+def _type_balance(per_statement: dict[str, list[RetrievedChunk]], k: int):
+    """3-3 진술 상위 k 근거가 모두 판례이면 순위 밖에서 가장 높은 조문을 k 번째 자리로 올린다."""
+    out, moved = {}, {}
+    for key, rs in per_statement.items():
+        top = rs[:k]
+        if not top or any((r.chunk.metadata or {}).get("doc_type") == "statute" for r in top):
+            out[key] = rs
+            continue
+        idx = next((i for i, r in enumerate(rs[k:], start=k) if (r.chunk.metadata or {}).get("doc_type") == "statute"), None)
+        if idx is None:
+            out[key] = rs
+            continue
+        out[key] = rs[: k - 1] + [rs[idx]] + [r for i, r in enumerate(rs[k - 1:], start=k - 1) if i != idx]
+        moved[key] = rs[idx].chunk.chunk_id
+    return out, moved
 
 
 class MCQSolver:
     def __init__(self, settings: Settings, retriever: Retriever | None = None):
         self.s = settings
         self._retriever = retriever
+        self._lock = threading.RLock()  # A-4 병렬 풀이: GPU 검색·리랭커와 지연 생성은 한 번에 하나만
+
+    def warmup(self) -> None:
+        """병렬 풀이 전에 색인·관계 지도·연결 지도 등을 미리 만든다."""
+        _ = (self.retriever, self.graph, self.full_court, self.link_graph)
+        if self.s.mcq.out_of_corpus_warn:
+            _ = self.corpus_titles
+
+    def _retrieve(self, query: str, mode: RetrievalMode, cutoff: str | None):
+        with self._lock:
+            return self.retriever.retrieve(query, mode, cutoff) if cutoff else self.retriever.retrieve(query, mode)
 
     @property
     def retriever(self) -> Retriever:  # closed-book 만 돌릴 때는 색인을 읽지 않음
@@ -303,18 +382,31 @@ class MCQSolver:
     @property
     def graph(self) -> ChunkGraph | None:  # A3·A4 를 켰을 때만 생성
         c = self.s.mcq
-        if not (c.sibling_items or c.expand_references or c.statute_parts):
+        if not (c.sibling_items or c.expand_references or c.statute_parts or c.links or c.reverse_usage
+                or c.merge_case_pieces):
             return None
-        if getattr(self, "_graph", None) is None:
-            self._graph = ChunkGraph(self.retriever.vector.chunks_by_id)
+        with self._lock:
+            if getattr(self, "_graph", None) is None:
+                self._graph = ChunkGraph(self.retriever.vector.chunks_by_id)
         return self._graph
 
     @property
-    def full_court(self) -> set[str] | None:  # case_meta 를 켰을 때만 계산
-        if not self.s.mcq.case_meta:
+    def link_graph(self) -> LinkGraph | None:  # v6 2-1~2-3: links 를 켰을 때만 (원자료 한 번 읽고 index 폴더에 캐시)
+        if not self.s.mcq.links:
             return None
-        if getattr(self, "_full_court", None) is None:
-            self._full_court = full_court_cases(self.retriever.vector.chunks_by_id)
+        with self._lock:
+            if getattr(self, "_links", None) is None:
+                self._links = LinkGraph(self.retriever.vector.chunks_by_id, self.s.raw_path("cases"),
+                                        cache=self.s.index_path() / "links.pkl")
+        return self._links
+
+    @property
+    def full_court(self) -> set[str] | None:  # case_meta 를 켰을 때만 계산
+        if not (self.s.mcq.case_meta or self.s.mcq.recency_boost):
+            return None
+        with self._lock:
+            if getattr(self, "_full_court", None) is None:
+                self._full_court = full_court_cases(self.retriever.vector.chunks_by_id)
         return self._full_court
 
     def solve(self, q: ExamQuestion, mode: RetrievalMode = RetrievalMode.C, run_id: str | None = None) -> dict:
@@ -352,6 +444,9 @@ class MCQSolver:
             if refs:
                 rec["cross_refs"] = refs
         cutoff = asof_date(q.stem) if c.asof_from_stem else None  # 발문 기준 시점 이후 판례 제외 (v5)
+        if not cutoff and c.asof_default:  # 발문에 날짜가 없는 과거 시험: 시험 기준일 (v6)
+            cutoff = re.sub(r"\D", "", str(c.asof_default))
+            rec["asof_source"] = "default"
         if cutoff:
             rec["asof"] = cutoff
         rec["search_queries"] = queries
@@ -361,8 +456,7 @@ class MCQSolver:
         rec["retrieval"] = {}
         try:
             for key in statements:
-                finals = [self.retriever.retrieve(qq, mode, cutoff)["final"] if cutoff else
-                          self.retriever.retrieve(qq, mode)["final"] for qq in queries[key]]
+                finals = [self._retrieve(qq, mode, cutoff)["final"] for qq in queries[key]]
                 if len(finals) == 1:
                     per_statement[key] = finals[0]
                 else:  # 쟁점·예외 질의 결과를 순위로 결합 (RRF)
@@ -376,14 +470,25 @@ class MCQSolver:
             rec.update(status="retrieval_error", error=f"{type(e).__name__}: {e}", predicted=None)
             rec["timing_ms"]["total"] = round((time.perf_counter() - t0) * 1000, 1)
             return rec
+        if c.recency_boost:  # 3-6 전원합의체·최근 판례 가산
+            per_statement = {k: self._boost(v) for k, v in per_statement.items()}
+        if c.type_balance:  # 3-3 진술 근거에 조문이 없으면 순위 밖 조문 1개를 k 번째로
+            per_statement, rec["type_balance"] = _type_balance(per_statement, c.per_statement_k)
+        links = None
+        if c.links or c.reverse_usage:  # 2-1~2-4 연결 근거
+            try:
+                links = self._link_stage(per_statement, statements, cutoff, rec)
+            except Exception as e:  # 연결 실패는 풀이를 막지 않음
+                rec["links"] = {"error": f"{type(e).__name__}: {e}"}
         rec["timing_ms"]["retrieval"] = round((time.perf_counter() - t) * 1000, 1)
 
-        evidence, used, exp = build_context(per_statement, c, self.graph, self.full_court)
+        annotate = self._annotator(cutoff) if c.links else None
+        evidence, used, exp = build_context(per_statement, c, self.graph, self.full_court, links, annotate)
         rec["context_chunk_ids"] = used
         rec["context_expansions"] = exp
         rec["prompt_version"] = c.prompt_version
         system = {"v2": MCQ_SYSTEM_V2, "v3": MCQ_SYSTEM_V3, "v4": MCQ_SYSTEM_V4,
-                  "v5": MCQ_SYSTEM_V5}.get(c.prompt_version, MCQ_SYSTEM)
+                  "v5": MCQ_SYSTEM_V5, "v6": MCQ_SYSTEM_V6}.get(c.prompt_version, MCQ_SYSTEM)
         user = MCQ_USER.format(evidence=evidence, stem=q.stem, statements=listing, keys=", ".join(statements))
         if c.out_of_corpus_warn:  # 색인에 없는 법령이 쟁점이면 판단 입력에 경고 (v5)
             miss = out_of_corpus(q.stem + "\n" + listing, self.corpus_titles)
@@ -391,13 +496,279 @@ class MCQSolver:
                 rec["out_of_corpus"] = miss
                 user = f"[색인 밖 법령] 다음 법령은 근거 자료에 없습니다: {', '.join(miss)}\n\n" + user
         rec = self._judge(q, rec, t0, system, user, used)
+        if c.no_evidence_penalty < 1.0 and rec.get("judgments") is not None:
+            rec = self._flag_no_evidence(q, rec, used)
         if c.quote_check and rec.get("judgments") is not None:
             rec = self._check_quotes(q, rec)
+        if c.research and rec.get("judgments") is not None:
+            rec = self._research(q, rec, t0, system, evidence, used, mode, cutoff, annotate)
         if c.fusion == "fill_unknown" and rec.get("judgments") is not None:
             rec = self._fuse(q, rec, t0)
         if c.tie_rejudge and rec.get("judgments") is not None:
             rec = self._tiebreak(q, rec, t0, system, evidence, used)
         return rec
+
+    # ---------- v6 ----------
+    def _boost(self, rs: list[RetrievedChunk]) -> list[RetrievedChunk]:
+        """3-6 같은 쟁점 판례가 여럿이면 전원합의체·최근(10년 이내) 판례를 위로 (점수 × (1+boost))."""
+        b = self.s.mcq.recency_boost
+        fc = self.full_court or set()
+        recent = str(int(time.strftime("%Y")) - 10)
+
+        def w(r):
+            md = r.chunk.metadata or {}
+            if md.get("doc_type") != "case":
+                return 1.0
+            x = 1.0 + (b if md.get("case_no") in fc else 0.0)
+            return x + (b / 2 if str(md.get("decided") or "")[:4] >= recent else 0.0)
+        return sorted(rs, key=lambda r: -r.score * w(r))
+
+    def _annotator(self, cutoff: str | None):
+        """2-1 판례 근거 머리에 변경 관계 표시: overruled_by="사건(선고일)", overrules="사건"."""
+        lg = self.link_graph
+        if lg is None:
+            return None
+
+        def ann(chunk) -> str:
+            md = chunk.metadata or {}
+            if md.get("doc_type") != "case":
+                return ""
+            info = lg.overruled_info(norm_case_no(md.get("case_no")))
+            out = ""
+            if info.get("overruled_by"):
+                xs = info["overruled_by"]
+                out += ' overruled_by="' + ", ".join(f"{n}({_fmt_date(d)})" for n, d in xs) + '"'
+                if cutoff and all(d > cutoff for _, d in xs):
+                    out += ' overruled_after_asof="true"'
+            if info.get("overrules"):
+                out += ' overrules="' + ", ".join(n for n, _ in info["overrules"]) + '"'
+            return out
+        return ann
+
+    def _link_stage(self, per_statement: dict[str, list[RetrievedChunk]], statements: dict[str, str],
+                    cutoff: str | None, rec: dict) -> list[tuple[str, str]]:
+        """2-1~2-4 진술별 상위 근거에서 연결로 닿는 후보 → 진술과 리랭커로 대조 → 진술당 link_k 개."""
+        c = self.s.mcq
+        by_id = self.retriever.vector.chunks_by_id
+        primary = {r.chunk.chunk_id for rs in per_statement.values() for r in rs[: c.per_statement_k]}
+        chosen: dict[str, str] = {}
+        detail: dict = {}
+        for key, results in per_statement.items():
+            ids = [r.chunk.chunk_id for r in results[: c.per_statement_k]]
+            cands: dict[str, str] = {}
+            if self.link_graph is not None:
+                for x, kind in self.link_graph.candidates(ids, cutoff, c.link_candidates):
+                    cands.setdefault(x, kind)
+            if c.reverse_usage and self.graph is not None:
+                for x in self.graph.statute_users(ids):
+                    cands.setdefault(x, "statute_user")
+            cands = {x: k for x, k in cands.items() if x in by_id and x not in primary and x not in chosen}
+            cands = dict(list(cands.items())[: c.link_candidates])
+            if not cands:
+                continue
+            rcs = [RetrievedChunk(chunk=by_id[x], score=0.0, rank=i + 1, source="link", trace={"link": k})
+                   for i, (x, k) in enumerate(cands.items())]
+            reranker = getattr(self.retriever, "reranker", None)
+            if reranker is not None:
+                with self._lock:
+                    ranked = reranker.rerank(statements[key], rcs, len(rcs))
+            else:
+                ranked = [r.model_copy(update={"score": 1.0}) for r in rcs]
+            picked = [r.chunk.chunk_id for r in ranked if r.score >= c.link_min_score][: c.link_k]
+            over = [r.chunk.chunk_id for r in ranked if cands[r.chunk.chunk_id] == "overruler"]
+            if over and over[0] not in picked:  # 변경한 판례는 점수와 상관없이 가장 관련 높은 항목 하나
+                picked.append(over[0])
+            for x in picked:
+                chosen.setdefault(x, cands[x])
+            detail[key] = [{"chunk_id": r.chunk.chunk_id, "kind": cands[r.chunk.chunk_id], "score": round(r.score, 4),
+                            "picked": r.chunk.chunk_id in picked} for r in ranked[: c.link_k + 3]]
+        rec["links"] = {"chosen": chosen, "candidates": detail}
+        return list(chosen.items())
+
+    def _cited_texts(self, ids: list[str]) -> list[str]:
+        """인용 청크 본문 (조각을 합쳐 전달했으면 항목 전체)."""
+        by_id = self.retriever.vector.chunks_by_id
+        g = self.graph if self.s.mcq.merge_case_pieces else None
+        out = []
+        for x in ids:
+            if x in by_id:
+                out.append(g.item_text(x) if g is not None else by_id[x].text)
+        return out
+
+    def _quote_ok(self, j: StatementJudgment) -> bool | None:
+        c = self.s.mcq
+        return quote_supported(j.quote, self._cited_texts(j.cited_chunk_ids), mode=c.quote_match,
+                               min_ratio=c.quote_min_ratio)
+
+    def _flag_no_evidence(self, q: ExamQuestion, rec: dict, used: list[str]) -> dict:
+        """4-3 근거 판단인데 유효한 인용 청크가 하나도 없으면 표시하고 확신도 × no_evidence_penalty."""
+        c = self.s.mcq
+        have = set(used)
+        judgments = {k: StatementJudgment.model_validate(v) for k, v in rec["judgments"].items()}
+        flagged = [k for k, j in judgments.items() if j.verdict != "unknown" and j.source == "evidence"
+                   and not any(x in have for x in j.cited_chunk_ids)]
+        rec["no_evidence"] = flagged
+        if flagged:
+            for k in flagged:
+                j = judgments[k]
+                judgments[k] = j.model_copy(update={"confidence": round(j.confidence * c.no_evidence_penalty, 3)})
+            predicted, scores, chk = self._choose(q, judgments)
+            rec.update(judgments={k: j.model_dump() for k, j in judgments.items()}, option_scores=scores,
+                       predicted=predicted, answer_check=chk)
+        return rec
+
+    def _decisive(self, q: ExamQuestion, judgments: dict[str, StatementJudgment], predicted: int,
+                  max_n: int = 2) -> list[str]:
+        """3-2 판단을 뒤집으면 정답이 바뀌는 고확신(≥0.9) 진술."""
+        out = []
+        for k, j in judgments.items():
+            if j.verdict == "unknown" or j.confidence < 0.9:
+                continue
+            flip = {**judgments, k: j.model_copy(update={"verdict": "false" if j.verdict == "true" else "true"})}
+            if choose_answer(q, flip)[0] != predicted:
+                out.append(k)
+        return sorted(out, key=lambda k: judgments[k].confidence)[:max_n]
+
+    def _research(self, q: ExamQuestion, rec: dict, t0: float, system: str, evidence: str, used: list[str],
+                  mode: RetrievalMode, cutoff: str | None, annotate) -> dict:
+        """3-1 다시 찾는 검색: 유보·저확신·인용 불일치·근소 차 진술만 missing(또는 풀어 쓴 진술)로 2차 검색,
+        이미 본 근거를 뺀 새 근거와 함께 그 진술만 재판단. 새 판단은 인용이 확인되고 확신도가 같거나 높을 때만 채택."""
+        c = self.s.mcq
+        statements = q.statements()
+        order = list(statements)
+        judgments = {k: StatementJudgment.model_validate(v) for k, v in rec["judgments"].items()}
+        qc = rec.get("quote_check") or {}
+        reasons: dict[str, str] = {}
+        for k in statements:
+            j = judgments.get(k)
+            if j is None or j.verdict == "unknown":
+                reasons[k] = "유보"
+            elif qc.get(k) is False:
+                reasons[k] = "인용 불일치"
+            elif j.confidence < c.research_conf:
+                reasons[k] = "낮은 확신도"
+        tied = tied_options(rec.get("option_scores") or {}, ratio=c.rejudge_ratio)
+        if len(tied) > 1:
+            for k in statements:
+                if k not in reasons and len({_required(q, n).get(k) for n in tied}) > 1:
+                    reasons[k] = "근소 차"
+        if c.counter_check and rec.get("predicted") is not None:
+            for k in self._decisive(q, judgments, rec["predicted"]):
+                reasons.setdefault(k, "반대 근거 확인")
+        rank = ["유보", "인용 불일치", "낮은 확신도", "근소 차", "반대 근거 확인"]
+        keys = sorted(reasons, key=lambda k: (rank.index(reasons[k]), order.index(k)))[: c.research_max_keys]
+        if not keys:
+            return rec
+        info: dict = {"keys": keys, "reasons": {k: reasons[k] for k in keys}, "queries": {}, "new_ids": [],
+                      "changed": {}, "rejected": {}, "error": None, "before": rec.get("predicted")}
+        rec["research"] = info
+        t = time.perf_counter()
+        merge = self.graph if c.merge_case_pieces else None
+        meta = (self.full_court if self.full_court is not None else None) if c.case_meta else False
+        have = set(used)
+        blocks: list[str] = []
+        try:
+            for k in keys:
+                j = judgments.get(k)
+                base = (j.restated if j is not None and j.restated else None) or statements[k]
+                qs = []
+                if j is not None and j.missing and len(j.missing.strip()) >= 4:
+                    qs.append(j.missing.strip())
+                if reasons[k] == "반대 근거 확인":
+                    qs.append(base + " 예외 다만 반대")
+                if not qs or reasons[k] in ("인용 불일치", "근소 차"):
+                    qs.append(base)
+                info["queries"][k] = qs
+                finals = [self._retrieve(x, mode, cutoff)["final"] for x in qs]
+                fused = finals[0] if len(finals) == 1 else rrf_fuse(
+                    {f"q{i}": f for i, f in enumerate(finals)}, rrf_k=self.s.retrieval.rrf_k, top_k=self.s.retrieval.final_k)
+                n = 0
+                for r in fused:
+                    cid = r.chunk.chunk_id
+                    ids = merge.item_pieces(cid) if merge is not None else [cid]
+                    if any(x in have for x in ids):
+                        continue
+                    have.update(ids)
+                    info["new_ids"].extend(ids)
+                    text = merge.item_text(cid) if merge is not None else r.chunk.text
+                    blocks.append(_doc(cid, r.chunk, text, "research", meta=meta,
+                                       attrs=annotate(r.chunk) if annotate else ""))
+                    n += 1
+                    if n >= c.research_k:
+                        break
+        except Exception as e:
+            info["error"] = f"{type(e).__name__}: {e}"
+            return rec
+        info["timing_retrieval_ms"] = round((time.perf_counter() - t) * 1000, 1)
+        if not blocks:
+            info["error"] = "no_new_evidence"
+            return rec
+        previous = "\n".join(
+            f"{k}. " + (f"{judgments[k].verdict} (확신도 {judgments[k].confidence}) {judgments[k].reason[:300]}"
+                        if k in judgments else "판단 없음") for k in keys)
+        user = MCQ_RESEARCH_USER.format(
+            evidence=evidence, new_evidence="\n\n".join(blocks), stem=q.stem,
+            statements="\n".join(f"{k}. {statements[k]}" for k in keys), previous=previous,
+            reasons=", ".join(sorted(set(info["reasons"].values()), key=rank.index)), keys=", ".join(keys))
+        try:
+            again = self._call_judgments(system, user, keys, "research", rec, 1)
+        except Exception as e:
+            info["error"] = f"{type(e).__name__}: {e}"
+            return rec
+        for k, nj in again.items():
+            old = judgments.get(k)
+            if nj.verdict == "unknown":
+                info["rejected"][k] = "unknown"
+                continue
+            ok = self._quote_ok(nj) if nj.source == "evidence" else None
+            if old is None or old.verdict == "unknown":
+                accept = ok is not False
+            else:
+                accept = ok is True and nj.confidence >= old.confidence
+            if accept:
+                info["changed"][k] = {"from": [old.verdict, old.confidence] if old else None,
+                                      "to": [nj.verdict, nj.confidence], "quote_ok": ok}
+                judgments[k] = nj
+                if c.quote_check:
+                    rec.setdefault("quote_check", {})[k] = ok
+            else:
+                info["rejected"][k] = {"to": [nj.verdict, nj.confidence], "quote_ok": ok}
+        if info["changed"]:
+            predicted, scores, chk = self._choose(q, judgments)
+            rec.update(judgments={k: j.model_dump() for k, j in judgments.items()}, option_scores=scores,
+                       predicted=predicted, answer_check=chk)
+            if rec["status"] in ("insufficient_evidence", "inconsistent_judgments") and predicted is not None:
+                rec["status"] = "inconsistent_judgments" if chk.get("inconsistent") else "ok"
+        info["after"] = rec.get("predicted")
+        rec["timing_ms"]["research"] = round((time.perf_counter() - t) * 1000, 1)
+        rec["timing_ms"]["total"] = round((time.perf_counter() - t0) * 1000, 1)
+        return rec
+
+    def _call_judgments(self, system: str, user: str, keys: list[str], step: str, rec: dict,
+                        n: int = 1) -> dict[str, StatementJudgment]:
+        """판단 LLM 호출. n>1 이면 n번 불러 진술별 다수결 (4-1): 같은 표 수면 그 진술은 바꾸지 않음."""
+        runs = []
+        for _ in range(max(1, n)):
+            raw, calls = call_llm(self.s.models.llm_provider, self.s.models.llm_model,
+                                  [("system", system), ("human", user)], self.s.mcq.max_tokens)
+            rec.setdefault("llm_calls", []).extend({"step": step, **x} for x in calls)
+            runs.append(_parse_judgments(raw, keys))
+        if len(runs) == 1:
+            return runs[0]
+        out: dict[str, StatementJudgment] = {}
+        for k in keys:
+            js = [r[k] for r in runs if k in r and r[k].verdict != "unknown"]
+            if not js:
+                continue
+            cnt = Counter(j.verdict for j in js).most_common()
+            if len(cnt) > 1 and cnt[0][1] == cnt[1][1]:
+                continue
+            v, m = cnt[0]
+            maj = [j for j in js if j.verdict == v]
+            conf = sum(j.confidence for j in maj) / len(maj) * m / len(runs)
+            out[k] = max(maj, key=lambda j: j.confidence).model_copy(update={"confidence": round(conf, 3)})
+        rec.setdefault("votes", {})[step] = {k: [r[k].verdict if k in r else None for r in runs] for k in keys}
+        return out
 
     @property
     def corpus_titles(self) -> set[str]:
@@ -415,14 +786,12 @@ class MCQSolver:
     def _check_quotes(self, q: ExamQuestion, rec: dict) -> dict:
         """판단의 인용 문장이 인용한 청크에 실제로 있는지 대조. 없으면 확신도 × quote_penalty (v5)."""
         c = self.s.mcq
-        by_id = self.retriever.vector.chunks_by_id
         judgments = {k: StatementJudgment.model_validate(v) for k, v in rec["judgments"].items()}
         check: dict = {}
         for k, j in judgments.items():
             if j.verdict == "unknown" or j.source == "knowledge":
                 continue
-            texts = [by_id[x].text for x in j.cited_chunk_ids if x in by_id]
-            ok = quote_supported(j.quote, texts)
+            ok = self._quote_ok(j)
             check[k] = ok
             if ok is False and c.quote_penalty < 1.0:
                 judgments[k] = j.model_copy(update={"confidence": round(j.confidence * c.quote_penalty, 3)})
@@ -435,27 +804,40 @@ class MCQSolver:
 
     def _tiebreak(self, q: ExamQuestion, rec: dict, t0: float, system: str, evidence: str, used: list[str]) -> dict:
         """최고점 보기가 둘 이상이면(동점) 그 보기들 사이에서 요구가 갈리는 진술만 근거와 다시 판단한다 (LLM 1회)."""
-        tied = tied_options(rec.get("option_scores") or {}, ratio=self.s.mcq.rejudge_ratio)
+        c = self.s.mcq
+        tied = tied_options(rec.get("option_scores") or {}, ratio=c.rejudge_ratio)
+        count_mode = False
+        if len(tied) < 2 and q.form == "count" and c.count_tie:  # 5-1 개수형: 기대 개수가 두 보기 사이
+            ranked = sorted((rec.get("option_scores") or {}).items(), key=lambda kv: -kv[1])
+            if len(ranked) >= 2 and ranked[0][1] - ranked[1][1] <= 0.5 + 1e-9:
+                tied, count_mode = sorted(int(n) for n, _ in ranked[:2]), True
         if len(tied) < 2:
             return rec
-        keys = [k for k in q.statements() if len({_required(q, n).get(k) for n in tied}) > 1]
+        if count_mode:
+            js0 = {k: StatementJudgment.model_validate(v) for k, v in rec["judgments"].items()}
+            keys = [k for k in q.statements() if (j := js0.get(k)) is None or j.verdict == "unknown"
+                    or j.confidence < c.research_conf]
+        else:
+            keys = [k for k in q.statements() if len({_required(q, n).get(k) for n in tied}) > 1]
         info: dict = {"tied": tied, "keys": keys, "before": rec.get("predicted"), "error": None}
+        if count_mode:
+            info["count_tie"] = True
         rec["tiebreak"] = info
         if not keys:
             rec["status"] = "tie"
             return rec
         statements = q.statements()
         listing = "\n".join(f"{k}. {statements[k]}" for k in keys)
-        same = self.s.mcq.rejudge_ratio >= 1.0
-        note = "보기 " + ", ".join(CIRCLED_NUM[n - 1] for n in tied) + (" 가 같은 점수" if same else " 의 점수 차이가 작음")
+        same = c.rejudge_ratio >= 1.0
+        if count_mode:
+            note = "개수형: 옳은 진술 개수가 보기 " + " 와 ".join(CIRCLED_NUM[n - 1] for n in tied) + " 사이에 걸림"
+        else:
+            note = "보기 " + ", ".join(CIRCLED_NUM[n - 1] for n in tied) + (" 가 같은 점수" if same else " 의 점수 차이가 작음")
         t = time.perf_counter()
         try:
-            raw, calls = call_llm(self.s.models.llm_provider, self.s.models.llm_model,
-                                  [("system", system), ("human", MCQ_TIEBREAK_USER.format(
-                                      evidence=evidence, stem=q.stem, statements=listing, note=note,
-                                      keys=", ".join(keys)))], self.s.mcq.max_tokens)
-            rec.setdefault("llm_calls", []).extend({"step": "tiebreak", **x} for x in calls)
-            again = _parse_judgments(raw, keys)
+            again = self._call_judgments(system, MCQ_TIEBREAK_USER.format(
+                evidence=evidence, stem=q.stem, statements=listing, note=note, keys=", ".join(keys)),
+                keys, "tiebreak", rec, c.vote_n)
         except Exception as e:  # 실패하면 기존 판단 유지
             info["error"] = f"{type(e).__name__}: {e}"
             rec["status"] = "tie"
@@ -476,7 +858,11 @@ class MCQSolver:
                    predicted=predicted)
         rec["answer_check"] = chk
         info["after"] = predicted
-        still = len(tied_options(scores)) > 1  # 재판단 후에도 완전 동점이면 tie
+        if q.form == "count":
+            top2 = sorted(scores.values(), reverse=True)[:2]
+            still = len(top2) == 2 and abs(top2[0] - top2[1]) <= 1e-9
+        else:
+            still = len(tied_options(scores)) > 1  # 재판단 후에도 완전 동점이면 tie
         rec["status"] = "tie" if still else ("inconsistent_judgments" if chk.get("inconsistent") else
                                              ("ok" if rec["status"] in ("ok", "tie") else rec["status"]))
         rec["timing_ms"]["total"] = round((time.perf_counter() - t0) * 1000, 1)

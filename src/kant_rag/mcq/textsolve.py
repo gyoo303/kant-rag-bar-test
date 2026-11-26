@@ -45,7 +45,7 @@ def parse_answers(spec: str | None) -> dict[int, int]:
     p = Path(spec)
     if p.exists():
         with p.open(encoding="utf-8-sig") as f:
-            return {int(r["number"]): int(r["answer"]) for r in csv.DictReader(f)}
+            return {int(r["number"]): int(str(r["answer"]).split("|")[0]) for r in csv.DictReader(f)}
     vals = [v.strip() for v in spec.replace(" ", ",").split(",") if v.strip()]
     return {i + 1: int(v) for i, v in enumerate(vals)}
 

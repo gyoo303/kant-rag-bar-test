@@ -125,6 +125,28 @@ class MCQ(BaseModel):
     quote_penalty: float = 1.0        # 대조 실패 판단의 확신도 배율 (1.0 = 기록만)
     calibration: str | None = None    # 확신도 보정표 경로 (kant-rag calibrate 로 생성). 있으면 보기 점수에 보정 확률 사용
     rejudge_ratio: float = 1.0        # 동점 재판단 범위: 2등 점수가 1등 × 이 값 이상이면 재판단 (1.0 = 완전 동점만)
+    asof_default: str | None = None   # 발문에 기준 시점이 없을 때 쓸 시험 기준일 YYYYMMDD (과거 시험 재현용)
+    # ---- v6 스위치 (개선안 v6, 프리셋 v6 에서 켬) ----
+    rewrite_key_normalize: bool = False  # 0-1 리라이트 출력 키 정규화 (①·"1."·"보기 1" → "1")
+    quote_match: str = "strict"       # 0-2 인용 대조: strict = 원문 그대로, relaxed = "…" 분할·70% 이상 일치
+    quote_min_ratio: float = 0.7
+    links: bool = False               # 2-1~2-3 참조판례·참조조문 연결 지도 (data/raw/cases 원자료)
+    link_k: int = 2                   # 진술당 연결로 더할 근거 수 (리랭커로 진술과 대조해 고름)
+    link_min_score: float = 0.2       # 연결 근거의 리랭커 점수 하한
+    link_candidates: int = 24         # 진술당 리랭커에 넣을 연결 후보 상한
+    reverse_usage: bool = False       # 2-4 역방향 준용: 검색된 조문을 가져다 쓰는 조문도 연결 후보에
+    merge_case_pieces: bool = False   # 2-5 판결요지 조각(~k)을 한 항목으로 합쳐 전달
+    type_balance: bool = False        # 3-3 진술 근거에 조문이 없으면 순위 밖 조문 1개 보충
+    research: bool = False            # 3-1 다시 찾는 검색: 유보·저확신·인용 불일치·동점 진술만 2차 검색 후 재판단
+    research_conf: float = 0.85       # 3-1 이 확신도 미만이면 2차 검색 대상
+    research_k: int = 4               # 3-1 진술당 새 근거 수 (이미 본 근거 제외)
+    research_max_keys: int = 4        # 3-1 문항당 2차 검색 진술 상한
+    count_tie: bool = False           # 5-1 개수형: 기대 개수가 두 보기 사이에 걸리면 유보·저확신 진술 재판단
+    # ---- v6 확장 (A-3, 프리셋 v6r 에서 켬) ----
+    counter_check: bool = False       # 3-2 정답을 가르는 고확신 진술은 반대 근거를 찾아 2차 판단에 포함
+    vote_n: int = 1                   # 4-1 근소 차 문항: 재판단을 N번 해서 다수결
+    no_evidence_penalty: float = 1.0  # 4-3 근거 인용 없는 근거 판단의 확신도 배율 (1.0 = 표시만)
+    recency_boost: float = 0.0        # 3-6 전원합의체·최근 판례 순위 가산 (0 = 끔)
 
 
 class Models(BaseModel):

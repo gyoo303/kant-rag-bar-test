@@ -60,12 +60,16 @@ class ChunkGraph:
         self.case_items: dict[str, dict[str, str]] = defaultdict(dict)  # 판결 prefix → 항목번호 → 첫 조각 id
         self.articles: dict[tuple[str, str], list[str]] = defaultdict(list)  # (doc_id, 제N조) → 조각 ids
         self.referrers: dict[tuple[str, str], list[str]] = defaultdict(list)  # (doc_id, 제N조) → 그 조문을 준용하는 조문 키
+        self.users: dict[tuple[str, str], list[str]] = defaultdict(list)  # (doc_id, 제N조) → 그 조문을 가져다 쓰는 조문 키 (v6 2-4)
+        self.pieces: dict[str, list[str]] = defaultdict(list)  # 판례 항목 → 조각 ids (~1, ~2 …) (v6 2-5)
         for cid, c in chunks_by_id.items():
             m = CASE_ITEM.match(cid)
             if m:
                 prefix, item, part = m.group(1), m.group(2), m.group(3)
                 if part in (None, "1"):
                     self.case_items[prefix][item] = cid
+                if part is not None:
+                    self.pieces[prefix + item].append(cid)
                 continue
             art = c.metadata.get("article")
             if c.metadata.get("doc_type") == "statute" and art:
@@ -77,6 +81,10 @@ class ChunkGraph:
                     # 역방향은 ref 가 '적용 대상'일 때만: "제429조의 소에 관하여 … 준용" (ref 를 가져다 쓰는 조문은 제외)
                     if ref != art and _is_subject(text, ref):
                         self.referrers[(doc, ref)].append(art)
+                    elif ref != art:  # "제208조제2항 … 의 규정은 대표이사에 준용한다" (제389조 ③) → 제208조를 쓰는 조문
+                        self.users[(doc, ref)].append(art)
+        for v in self.pieces.values():
+            v.sort(key=lambda x: int(CASE_ITEM.match(x).group(3)))
 
     # ---------- A3 ----------
     def case_siblings(self, chunk_ids: list[str], per_case: int = 2, head_chars: int = 300,
@@ -152,3 +160,35 @@ class ChunkGraph:
             if len(out) >= max_add:
                 break
         return out[:max_add]
+
+    # ---------- v6 ----------
+    def statute_users(self, chunk_ids: list[str], max_total: int = 12) -> list[str]:
+        """2-4 역방향 준용: 검색된 조문을 '가져다 쓰는' 조문 청크 (예: 제208조 → 제389조 ③ 대표이사에 준용)."""
+        have = set(chunk_ids)
+        out: list[str] = []
+        for cid in chunk_ids:
+            c = self.by_id.get(cid)
+            if c is None or c.metadata.get("doc_type") != "statute":
+                continue
+            for user in self.users.get((c.doc_id, c.metadata.get("article")), []):
+                for x in self.articles.get((c.doc_id, user), []):
+                    if x not in have and x not in out:
+                        out.append(x)
+            if len(out) >= max_total:
+                break
+        return out[:max_total]
+
+    def item_pieces(self, cid: str) -> list[str]:
+        """판결요지 조각(CASE#…#n~k)이면 같은 항목의 모든 조각 ids, 아니면 [cid]."""
+        m = CASE_ITEM.match(cid)
+        if not m or m.group(3) is None:
+            return [cid]
+        return self.pieces.get(m.group(1) + m.group(2)) or [cid]
+
+    def item_text(self, cid: str) -> str:
+        """2-5 조각을 합친 판결요지 항목 전체 (머리줄 하나 + 본문들). 조각이 아니면 그 청크 본문."""
+        ids = self.item_pieces(cid)
+        if len(ids) == 1:
+            return self.by_id[ids[0]].text
+        head = re.sub(r"\s*\(\d+/\d+\)\s*$", "", self.by_id[ids[0]].text.split("\n", 1)[0])
+        return head + "\n" + "\n".join(_body(self.by_id[x]) for x in ids if x in self.by_id)

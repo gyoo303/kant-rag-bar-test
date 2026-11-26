@@ -192,3 +192,66 @@ class ChunkGraph:
             return self.by_id[ids[0]].text
         head = re.sub(r"\s*\(\d+/\d+\)\s*$", "", self.by_id[ids[0]].text.split("\n", 1)[0])
         return head + "\n" + "\n".join(_body(self.by_id[x]) for x in ids if x in self.by_id)
+
+
+# ---------- v6 M1·M2: 조문 위치(편·장)와 조문 제목 ----------
+COMPANY_TYPES = ("유한책임회사", "주식회사", "유한회사", "합명회사", "합자회사")
+STOCK_HINTS = ("대표이사", "이사회", "주주총회", "주주", "감사위원회", "집행임원", "신주", "사채", "발행주식")
+GENERIC_TITLES = {"준용규정", "의의", "동전", "정의", "목적", "적용범위", "준용", "벌칙", "과태료", "삭제", "특례",
+                  "효력", "기간", "통지", "등기", "청구", "관할", "신청"}
+
+
+def company_type(text: str) -> str | None:
+    """진술·발문이 다루는 회사 종류. 명시가 없으면 주식회사 기관 용어로 추정."""
+    t = text or ""
+    found = [x for x in COMPANY_TYPES if x in t]
+    if found:
+        return found[0] if len(set(found)) == 1 else None
+    return "주식회사" if any(h in t for h in STOCK_HINTS) else None
+
+
+def chapter_of(chunk: Chunk) -> str:
+    """조문 청크의 편·장 경로 (조문 자체 제외)."""
+    sec = chunk.section or ""
+    parts = [p.strip() for p in sec.split(">") if p.strip()]
+    if parts and re.match(r"^제\d+조", parts[-1]):
+        parts = parts[:-1]
+    return " > ".join(parts)
+
+
+def chapter_company(chunk: Chunk) -> str | None:
+    ch = chapter_of(chunk)
+    return next((x for x in COMPANY_TYPES if x in ch), None)
+
+
+def _norm_title(t: str) -> str:
+    t = re.sub(r"\s+", "", t or "")
+    return re.sub(r"(등|에관한특례|의특례)$", "", t)
+
+
+def build_title_index(by_id: dict) -> list[tuple[str, str]]:
+    """조문 제목 색인: [(정규화 제목, 첫 청크 id)] 긴 제목 먼저. 흔한 제목(준용규정·의의 등)과 2글자 이하는 제외."""
+    out: dict[str, list[str]] = defaultdict(list)
+    for cid, c in by_id.items():
+        md = c.metadata or {}
+        if md.get("doc_type") != "statute" or not md.get("article_title"):
+            continue
+        if re.search(r"-\d+$", cid) and not cid.endswith("-1"):
+            continue  # 항 단위 조각은 첫 조각만
+        t = _norm_title(md["article_title"])
+        if len(t) <= 2 or t in GENERIC_TITLES:
+            continue
+        out[t].append(cid)
+    return sorted(((t, x) for t, xs in out.items() for x in xs), key=lambda p: -len(p[0]))
+
+
+def title_matches(text: str, index: list[tuple[str, str]], max_n: int = 8) -> list[str]:
+    """M2 진술에 조문 제목이 그대로 들어 있으면 그 조문 (예: '공동대표이사' → 제208조(공동대표)·제389조(대표이사))."""
+    t = re.sub(r"\s+", "", text or "")
+    out: list[str] = []
+    for title, cid in index:
+        if title in t and cid not in out:
+            out.append(cid)
+            if len(out) >= max_n:
+                break
+    return out

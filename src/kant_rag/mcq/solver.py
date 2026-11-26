@@ -15,7 +15,14 @@ from pathlib import Path
 from kant_rag.config import Settings
 from kant_rag.generation.llmcall import call_llm, extract_json
 from kant_rag.mcq.parse import parse_combo, parse_ox
-from kant_rag.mcq.context import ChunkGraph
+from kant_rag.mcq.context import (
+    ChunkGraph,
+    build_title_index,
+    chapter_company,
+    chapter_of,
+    company_type,
+    title_matches,
+)
 from kant_rag.mcq.defense import Calibrator, asof_date, cross_refs, out_of_corpus, quote_supported
 from kant_rag.mcq.prompts import (
     MCQ_CLOSED_SYSTEM,
@@ -366,6 +373,8 @@ class MCQSolver:
     def warmup(self) -> None:
         """병렬 풀이 전에 색인·관계 지도·연결 지도 등을 미리 만든다."""
         _ = (self.retriever, self.graph, self.full_court, self.link_graph)
+        if self.s.mcq.title_search:
+            _ = self.title_index
         if self.s.mcq.out_of_corpus_warn:
             _ = self.corpus_titles
 
@@ -383,12 +392,19 @@ class MCQSolver:
     def graph(self) -> ChunkGraph | None:  # A3·A4 를 켰을 때만 생성
         c = self.s.mcq
         if not (c.sibling_items or c.expand_references or c.statute_parts or c.links or c.reverse_usage
-                or c.merge_case_pieces):
+                or c.merge_case_pieces or c.chapter_check or c.title_search):
             return None
         with self._lock:
             if getattr(self, "_graph", None) is None:
                 self._graph = ChunkGraph(self.retriever.vector.chunks_by_id)
         return self._graph
+
+    @property
+    def title_index(self) -> list[tuple[str, str]]:  # M2
+        with self._lock:
+            if getattr(self, "_titles_idx", None) is None:
+                self._titles_idx = build_title_index(self.retriever.vector.chunks_by_id)
+        return self._titles_idx
 
     @property
     def link_graph(self) -> LinkGraph | None:  # v6 2-1~2-3: links 를 켰을 때만 (원자료 한 번 읽고 index 폴더에 캐시)
@@ -475,14 +491,14 @@ class MCQSolver:
         if c.type_balance:  # 3-3 진술 근거에 조문이 없으면 순위 밖 조문 1개를 k 번째로
             per_statement, rec["type_balance"] = _type_balance(per_statement, c.per_statement_k)
         links = None
-        if c.links or c.reverse_usage:  # 2-1~2-4 연결 근거
+        if c.links or c.reverse_usage or c.chapter_check or c.title_search:  # 2-1~2-4·M1·M2 연결 근거
             try:
-                links = self._link_stage(per_statement, statements, cutoff, rec)
+                links = self._link_stage(per_statement, statements, cutoff, rec, q.stem)
             except Exception as e:  # 연결 실패는 풀이를 막지 않음
                 rec["links"] = {"error": f"{type(e).__name__}: {e}"}
         rec["timing_ms"]["retrieval"] = round((time.perf_counter() - t) * 1000, 1)
 
-        annotate = self._annotator(cutoff) if c.links else None
+        annotate = self._annotator(cutoff) if (c.links or c.chapter_check) else None
         evidence, used, exp = build_context(per_statement, c, self.graph, self.full_court, links, annotate)
         rec["context_chunk_ids"] = used
         rec["context_expansions"] = exp
@@ -526,12 +542,16 @@ class MCQSolver:
     def _annotator(self, cutoff: str | None):
         """2-1 판례 근거 머리에 변경 관계 표시: overruled_by="사건(선고일)", overrules="사건"."""
         lg = self.link_graph
-        if lg is None:
+        chapters = self.s.mcq.chapter_check
+        if lg is None and not chapters:
             return None
 
         def ann(chunk) -> str:
             md = chunk.metadata or {}
-            if md.get("doc_type") != "case":
+            if md.get("doc_type") == "statute" and chapters:  # M1 조문 위치
+                ch = chapter_of(chunk)
+                return f' chapter="{ch}"' if ch else ""
+            if md.get("doc_type") != "case" or lg is None:
                 return ""
             info = lg.overruled_info(norm_case_no(md.get("case_no")))
             out = ""
@@ -546,8 +566,11 @@ class MCQSolver:
         return ann
 
     def _link_stage(self, per_statement: dict[str, list[RetrievedChunk]], statements: dict[str, str],
-                    cutoff: str | None, rec: dict) -> list[tuple[str, str]]:
-        """2-1~2-4 진술별 상위 근거에서 연결로 닿는 후보 → 진술과 리랭커로 대조 → 진술당 link_k 개."""
+                    cutoff: str | None, rec: dict, stem: str = "") -> list[tuple[str, str]]:
+        """2-1~2-4·M1·M2 진술별 상위 근거에서 연결로 닿는 후보 → 진술과 리랭커로 대조 → 진술당 link_k 개.
+
+        반드시 넣는 것(점수 무관, 가장 관련 높은 하나): 변경한 판례(overruler), 회사 종류가 다른 장의 조문을
+        진술의 회사 종류 장에서 준용하는 조문(chapter_user)."""
         c = self.s.mcq
         by_id = self.retriever.vector.chunks_by_id
         primary = {r.chunk.chunk_id for rs in per_statement.values() for r in rs[: c.per_statement_k]}
@@ -559,14 +582,26 @@ class MCQSolver:
             if self.link_graph is not None:
                 for x, kind in self.link_graph.candidates(ids, cutoff, c.link_candidates):
                     cands.setdefault(x, kind)
+            if c.chapter_check and self.graph is not None:  # M1 진술은 주식회사인데 근거는 합명회사 장 → 준용 조문
+                want = company_type(statements[key]) or company_type(stem)
+                for x in ids if want else []:
+                    ch = by_id.get(x)
+                    have_ct = chapter_company(ch) if ch is not None and (ch.metadata or {}).get("doc_type") == "statute" else None
+                    if have_ct and have_ct != want:
+                        for u in self.graph.statute_users([x]):
+                            if chapter_company(by_id[u]) == want:
+                                cands[u] = "chapter_user"
             if c.reverse_usage and self.graph is not None:
                 for x in self.graph.statute_users(ids):
                     cands.setdefault(x, "statute_user")
+            if c.title_search:  # M2 조문 제목이 진술에 그대로 있으면
+                for x in title_matches(statements[key], self.title_index):
+                    cands.setdefault(x, "title")
             cands = {x: k for x, k in cands.items() if x in by_id and x not in primary and x not in chosen}
             cands = dict(list(cands.items())[: c.link_candidates])
             if not cands:
                 continue
-            rcs = [RetrievedChunk(chunk=by_id[x], score=0.0, rank=i + 1, source="link", trace={"link": k})
+            rcs = [RetrievedChunk(chunk=by_id[x], score=0.0, rank=i + 1, source="rerank")
                    for i, (x, k) in enumerate(cands.items())]
             reranker = getattr(self.retriever, "reranker", None)
             if reranker is not None:
@@ -575,9 +610,10 @@ class MCQSolver:
             else:
                 ranked = [r.model_copy(update={"score": 1.0}) for r in rcs]
             picked = [r.chunk.chunk_id for r in ranked if r.score >= c.link_min_score][: c.link_k]
-            over = [r.chunk.chunk_id for r in ranked if cands[r.chunk.chunk_id] == "overruler"]
-            if over and over[0] not in picked:  # 변경한 판례는 점수와 상관없이 가장 관련 높은 항목 하나
-                picked.append(over[0])
+            for must in ("overruler", "chapter_user"):  # 점수와 상관없이 가장 관련 높은 하나
+                hit = [r.chunk.chunk_id for r in ranked if cands[r.chunk.chunk_id] == must]
+                if hit and hit[0] not in picked:
+                    picked.append(hit[0])
             for x in picked:
                 chosen.setdefault(x, cands[x])
             detail[key] = [{"chunk_id": r.chunk.chunk_id, "kind": cands[r.chunk.chunk_id], "score": round(r.score, 4),
@@ -700,9 +736,11 @@ class MCQSolver:
             info["error"] = f"{type(e).__name__}: {e}"
             return rec
         info["timing_retrieval_ms"] = round((time.perf_counter() - t) * 1000, 1)
-        if not blocks:
-            info["error"] = "no_new_evidence"
-            return rec
+        if not blocks:  # 새 근거가 없어도 유보·인용 불일치는 같은 근거로 한 번 더 대조 (연결 근거를 놓쳤을 수 있음)
+            info["no_new_evidence"] = True
+            if not any(info["reasons"][k] in ("유보", "인용 불일치") for k in keys):
+                return rec
+            blocks = ["(추가로 찾은 새 근거 없음 — <evidence> 를 다시 대조하세요)"]
         previous = "\n".join(
             f"{k}. " + (f"{judgments[k].verdict} (확신도 {judgments[k].confidence}) {judgments[k].reason[:300]}"
                         if k in judgments else "판단 없음") for k in keys)

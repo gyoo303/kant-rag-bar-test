@@ -14,7 +14,8 @@
   v5c  : v5 + 판단 결합(지식 원 확신도 0.8 이상만)
   v6   : v5 + 연결 지도(판례 변경·조문→판례·판례→판례)·역방향 준용·판결요지 조각 합치기·조문 보충(final_k 8)
          + 다시 찾는 검색(유보·저확신·인용 불일치·근소 차 진술 2차 검색 후 재판단)·개수형 동점 재판단
-         + 인용 대조 완화·리라이트 키 정규화·판단 프롬프트 v6(missing)   (docs/analysis/improvement-plan-v6.md A-1·A-2)
+         + 인용 대조 완화·리라이트 키 정규화·판단 프롬프트 v6(missing)
+         + 조문 위치(편·장) 표시·회사 종류가 다른 장이면 준용 조문 연결(M1)·조문 제목 일치 조문 연결(M2)   (docs/analysis/improvement-plan-v6.md A-1·A-2)
   v6r  : v6 + 반대 근거 확인·근소 차 다수결(3회)·근거 없는 판단 감점·전원합의체/최근 판례 가산   (A-3)
 """
 
@@ -53,7 +54,8 @@ PRESETS["v5c"] = {**PRESETS["v5"], "mcq.fusion": "fill_unknown", "mcq.fusion_min
 PRESETS["v6"] = {**PRESETS["v5"], "mcq.prompt_version": "v6", "mcq.rewrite_key_normalize": True,
                  "mcq.quote_match": "relaxed", "mcq.links": True, "mcq.reverse_usage": True,
                  "mcq.merge_case_pieces": True, "mcq.type_balance": True, "retrieval.final_k": 8,
-                 "mcq.research": True, "mcq.count_tie": True, "mcq.max_context_chars": 28000}
+                 "mcq.research": True, "mcq.count_tie": True, "mcq.max_context_chars": 28000,
+                 "mcq.chapter_check": True, "mcq.title_search": True}
 # v6r (A-3): 반대 근거·다수결·근거 없음 감점·판례 가산 — 비용이 늘어 따로 비교
 PRESETS["v6r"] = {**PRESETS["v6"], "mcq.counter_check": True, "mcq.vote_n": 3, "mcq.no_evidence_penalty": 0.8,
                   "mcq.recency_boost": 0.1, "mcq.research_max_keys": 5}

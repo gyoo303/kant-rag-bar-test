@@ -136,3 +136,53 @@
 - 최종 구성 확정 후 `freeze-test --yes`
 
 **기대치**: 처음 보는 시험 92~94% → 단계 0~2 후 95~97% → 단계 3~4 후 97~99%. 마지막 1~2% 는 "확신 없을 때 표시"로 다룬다.
+
+## 6. 구현 상태 (2026-11-26)
+
+`--preset v6` = A-1 + A-2 + M1·M2, `--preset v6r` = v6 + A-3. v5 이하는 동작이 바뀌지 않았다(기존 테스트 80개 통과, v6 테스트 10개 추가 → 90개).
+
+| 항목 | 스위치 | v6 | v6r | 코드 |
+|---|---|---|---|---|
+| 0-1 리라이트 키 정규화·원문 기록·전부 fallback 시 오류 | `mcq.rewrite_key_normalize` | ○ | ○ | `solver._norm_key`, `rewrite["raw"]` |
+| 0-2 인용 대조 완화 ("…" 분할, 70% 일치) | `mcq.quote_match=relaxed` | ○ | ○ | `defense.quote_supported` |
+| 0-3 복수 정답 (`4\|5`) | (항상) | | | `ExamQuestion.accepted`, `regrade --answers` |
+| 2-1 판례 변경 표시 (`overruled_by`·`overrules`, 기준 시점 뒤 변경 표시) + 변경한 판례 연결 | `mcq.links` | ○ | ○ | `mcq/links.py` |
+| 2-2 조문 → 판례 / 2-3 판례 → 판례 | `mcq.links` | ○ | ○ | `LinkGraph.candidates` |
+| 2-4 역방향 준용 (검색된 조문을 가져다 쓰는 조문) | `mcq.reverse_usage` | ○ | ○ | `ChunkGraph.statute_users` |
+| 2-5 판결요지 조각 합쳐 전달 | `mcq.merge_case_pieces` | ○ | ○ | `ChunkGraph.item_text` |
+| 3-1 다시 찾는 검색 (`missing`) | `mcq.research` | ○ | ○ | `MCQSolver._research` |
+| 3-3 조문 보충 (final_k 8) | `mcq.type_balance` | ○ | ○ | `solver._type_balance` |
+| 5-1 개수형 동점 재판단 | `mcq.count_tie` | ○ | ○ | `MCQSolver._tiebreak` |
+| **M1** 조문 위치(편·장) 표시, 회사 종류가 다른 장이면 그 장에서 준용하는 조문 연결 | `mcq.chapter_check` | ○ | ○ | `context.company_type·chapter_of` |
+| **M2** 진술에 조문 제목이 그대로 있으면 그 조문 연결 | `mcq.title_search` | ○ | ○ | `context.title_matches` |
+| 3-2 반대 근거 확인 (정답을 가르는 고확신 진술) | `mcq.counter_check` | | ○ | `_decisive` |
+| 4-1 근소 차 다수결 (3회) | `mcq.vote_n` | | ○ | `_call_judgments` |
+| 4-2 검증 | (3-1 2차 판단 프롬프트에 포함) | ○ | ○ | `MCQ_RESEARCH_USER` |
+| 4-3 근거 없는 판단 감점 (×0.8) | `mcq.no_evidence_penalty` | | ○ | `_flag_no_evidence` |
+| 3-6 전원합의체·최근 판례 가산 | `mcq.recency_boost` | | ○ | `_boost` |
+| 6-1 문항 병렬 | `eval --workers N` | | | `evaluate._solve_all` |
+| 1-2 시험 기준일 | `mcq.asof_default=YYYYMMDD` | | | 발문에 날짜가 없을 때 |
+
+연결 근거는 모두 **진술과 리랭커로 대조**해 진술당 2개(점수 0.2 이상)만 넣는다. 예외로 변경한 판례와 M1 준용 조문은 가장 관련 높은 하나를 점수와 상관없이 넣는다. 2차 판단은 **원문과 맞는 인용 + 확신도가 같거나 높을 때만** 1차 판단을 바꾼다(유보였던 진술은 인용이 틀리지 않으면 채택).
+
+### 오프라인 확인 (`uv run python scripts/check_v6_links.py`, 색인·GPU·LLM 없이 원자료로)
+
+| 오답 | 필요한 근거 | v6 에서 |
+|---|---|---|
+| bar12 40 ㅁ | 상법 제389조 ③ (제208조 ② 준용) | 제208조(합명회사 장) 검색 → M1 이 주식회사 장의 **제389조**를 반드시 연결. M2 제목 일치도 제208조·제389조 |
+| bar12 69 | 99다23888 이 2025년 2021다252977 로 변경 | 근거에 `overruled_by="2021다252977(2025-10-23)"` 표시. 시험 기준(2023) 정답이면 `--set mcq.asof_default=20230101` 로 실행 → 변경 판례 제외 + `overruled_after_asof` |
+| bar13 23 | 2008스67 이 2024년 2018스724 로 변경 | 같은 방식. 시험 기준이면 `mcq.asof_default=20240101` |
+| bar13 38 | 2014다51756 (물상보증인 변제자대위) | 민법 제481·482·368조에서 연결 후보 10~14위 (후보 상한 24 안) → 리랭커가 고르면 근거에 들어감 |
+
+남은 확인은 PC 실행뿐이다. 리랭커 선택·LLM 의 2차 판단은 실제 실행에서만 알 수 있다.
+
+### PC 실행
+
+```
+git pull
+uv run kant-rag eval data/exam/bar12_adv.json --modes hybrid_rerank --preset v6 --workers 3 --label bar12-adv-v6
+uv run kant-rag regrade results/<위 실행> --exam data/exam/bar12_adv.json
+uv run kant-rag compare results/20261125-152123-bar12-adv-v5 results/<위 실행> --exam data/exam/bar12_adv.json
+```
+
+처음 실행할 때 `data/raw/cases` 를 읽어 `<색인 폴더>/links.pkl` 을 만든다(수 초). 기준 비교는 tune 세트로 `--preset v5`·`v6` 를 각각 `--repeat 3`.

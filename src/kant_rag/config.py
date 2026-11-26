@@ -142,6 +142,8 @@ class MCQ(BaseModel):
     research_k: int = 4               # 3-1 진술당 새 근거 수 (이미 본 근거 제외)
     research_max_keys: int = 4        # 3-1 문항당 2차 검색 진술 상한
     count_tie: bool = False           # 5-1 개수형: 기대 개수가 두 보기 사이에 걸리면 유보·저확신 진술 재판단
+    chapter_check: bool = False       # M1 조문 위치(편·장) 표시 + 회사 종류가 다른 장의 조문이면 그 조문을 준용하는 조문을 연결
+    title_search: bool = False        # M2 진술에 조문 제목이 들어 있으면 그 조문을 연결 후보로
     # ---- v6 확장 (A-3, 프리셋 v6r 에서 켬) ----
     counter_check: bool = False       # 3-2 정답을 가르는 고확신 진술은 반대 근거를 찾아 2차 판단에 포함
     vote_n: int = 1                   # 4-1 근소 차 문항: 재판단을 N번 해서 다수결

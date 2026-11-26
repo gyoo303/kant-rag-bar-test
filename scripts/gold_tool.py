@@ -5,6 +5,7 @@
   uv run python scripts/gold_tool.py show CHUNK_ID [CHUNK_ID ...]
   uv run python scripts/gold_tool.py article 민법 제750조   # 조문 청크 id 찾기
   uv run python scripts/gold_tool.py case 2019다12345      # 판례 항목 청크 ids
+  uv run python scripts/gold_tool.py cites 2014다211336    # 참조판례로 이 판례를 인용한 코퍼스 판례 (같은 법리 재확인)
 
 처음 실행 때 청크·BM25 를 만들어 캐시 (KANT_GOLD_CACHE, 기본 scratch 대신 .cache/gold_2022.pkl).
 """
@@ -45,6 +46,7 @@ def main():
     sh = sub.add_parser("show"); sh.add_argument("ids", nargs="+")
     ar = sub.add_parser("article"); ar.add_argument("law"); ar.add_argument("art")
     ca = sub.add_parser("case"); ca.add_argument("case_no")
+    ci = sub.add_parser("cites"); ci.add_argument("case_no")
     a = ap.parse_args()
 
     if a.cmd == "brief":
@@ -87,6 +89,29 @@ def main():
             if md.get("doc_type") == "statute" and re.sub(r"\s", "", c.title) == law and \
                     str(md.get("article", "")).split("~")[0] == a.art:
                 print(f"- {cid} | {c.text[:200].replace(chr(10), ' ')}")
+    elif a.cmd == "cites":
+        import json as _json
+
+        from kant_rag.mcq.links import parse_ref_cases
+        items = {}
+        for cid, c in by_id.items():
+            md = c.metadata or {}
+            if md.get("doc_type") == "case":
+                items.setdefault(md.get("case_no"), []).append(cid)
+        for f in sorted((ROOT / "data" / "raw" / "cases").glob("*.jsonl")):
+            for line in f.open(encoding="utf-8"):
+                if a.case_no not in line:
+                    continue
+                try:
+                    d = _json.loads(line)
+                except ValueError:
+                    continue
+                labs = [lb for lb, no, _, _ in parse_ref_cases(d.get("ref_cases") or "") if no == a.case_no]
+                if not labs:
+                    continue
+                ids = items.get(d.get("case_no"), [])
+                print(f"- {d.get('case_no')} ({d.get('decided')}) 항목 {sorted({x for l in labs for x in l})} "
+                      f"→ 코퍼스 {'있음: ' + ' '.join(sorted(ids)[:6]) if ids else '없음 (기준일 뒤 또는 필터)'}")
     elif a.cmd == "case":
         for cid, c in by_id.items():
             if (c.metadata or {}).get("case_no", "").startswith(a.case_no):

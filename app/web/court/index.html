@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16110c">
+  <title>KANT COURT · 법정 모드</title>
+  <link rel="icon" href="/static/assets/kant-seal.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Noto+Serif+KR:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/static/court/court.css?v=7">
+  <link rel="stylesheet" href="/static/court/court-cinematics.css?v=7">
+  <link rel="preload" href="/static/court/assets/court-door-closed.webp" as="image">
+  <script defer src="/static/court/court-audio.js?v=7"></script>
+  <script defer src="/static/court/court-cinematics.js?v=7"></script>
+  <script defer src="/static/court/court.js?v=7"></script>
+</head>
+<body>
+  <main class="game" id="game" data-state="opening" data-shot="courtroom" aria-label="KANT COURT 법정">
+    <div class="set" id="set" aria-hidden="true">
+      <div class="shot is-current" data-shot="courtroom">
+        <img src="/static/court/assets/courtroom.webp" alt="" fetchpriority="high">
+      </div>
+    </div>
+    <div class="atmosphere" aria-hidden="true">
+      <div class="sunlit"></div>
+      <div class="dust"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="entrance-veil" aria-hidden="true"></div>
+    <div class="cinematic" id="cinematic" hidden>
+      <div class="cinematic-frame" aria-hidden="true"></div>
+      <div class="cinematic-atmosphere" aria-hidden="true"><div class="dust"><i></i><i></i><i></i><i></i><i></i></div></div>
+      <p class="cinematic-description sr-only" role="status"></p>
+      <button type="button" class="cinematic-skip">연출 건너뛰기 <kbd aria-hidden="true">Esc</kbd></button>
+    </div>
+
+    <header class="game-header">
+      <a class="wordmark" href="/court" aria-label="KANT COURT 법정 모드">
+        <img src="/static/assets/kant-seal.png" alt="" width="30" height="30">
+        <span>KANT COURT</span>
+      </a>
+      <nav class="game-menu" aria-label="법정 메뉴">
+        <a href="/">일반 모드 <span aria-hidden="true">↗</span></a>
+        <button type="button" id="fullscreen" class="hud-button" aria-label="전체 화면" title="전체 화면">
+          <span class="icon-expand" aria-hidden="true"></span>
+        </button>
+        <button type="button" id="options" class="hud-button" aria-label="설정" title="설정">
+          <span class="icon-settings" aria-hidden="true"></span>
+        </button>
+      </nav>
+    </header>
+
+    <div class="ruling" id="ruling" aria-hidden="true" hidden>
+      <div class="ruling-title" id="ruling-title">판결을 선고합니다</div>
+    </div>
+
+    <section class="hud" id="hud" aria-label="재판 대화">
+      <div class="scene-meta">
+        <div class="scene-position">
+          <span class="scene-phase" id="scene-phase">민사 법정</span>
+          <kbd class="ballot-keys" id="ballot-keys" aria-label="숫자 1에서 5 키로 선택" hidden>1–5</kbd>
+          <span class="scene-count" id="scene-step"></span>
+        </div>
+        <button class="evidence-cue" type="button" id="evidence-cue" hidden>
+          <span class="icon-paper" aria-hidden="true"></span>
+          <span id="evidence-cue-label">증거 열기</span>
+          <span class="cue-arrow" aria-hidden="true">↗</span>
+        </button>
+      </div>
+      <div class="dialogue" id="dialogue">
+        <div class="nameplate" id="speaker">재판장</div>
+        <button class="dialogue-copy" id="dialogue-copy" type="button" disabled aria-label="대사 진행">
+          <span class="dialogue-text" id="dialogue-text">민사 법정에 입장했습니다.</span>
+        </button>
+        <div class="ballot" id="ballot" role="group" aria-label="내 판단 제출" tabindex="-1" hidden></div>
+        <button class="next-button" type="button" id="next">
+          <span id="next-label">사건 접수</span><span class="next-arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+      <div class="playback">
+        <div class="playback-group">
+          <button type="button" id="log" aria-haspopup="dialog" disabled>기록</button>
+          <button type="button" id="auto" aria-pressed="false" disabled>자동</button>
+          <button type="button" id="previous" disabled>이전</button>
+        </div>
+        <div class="playback-group">
+          <span class="submission-state" id="submission-state" role="status" hidden></span>
+          <button type="button" id="new-case" hidden>새 사건</button>
+          <button type="button" id="skip" hidden>판결로 건너뛰기</button>
+          <button type="button" id="open-verdict" hidden>판결문</button>
+          <span class="key-hint" id="key-hint" hidden><kbd>Space</kbd> 다음</span>
+        </div>
+      </div>
+    </section>
+    <p class="sr-only" id="scene-announcement" aria-live="polite" aria-atomic="true"></p>
+  </main>
+
+  <dialog class="overlay intake" id="case-dialog" aria-labelledby="case-title">
+    <div class="overlay-header">
+      <h1 id="case-title">사건 접수</h1>
+      <button class="close" type="button" data-close aria-label="사건 접수 닫기">×</button>
+    </div>
+    <form id="case-form">
+      <label for="question">민사법 질문 또는 기출 문항</label>
+      <textarea id="question" name="question" rows="5" maxlength="20000" required placeholder="심리할 내용을 입력하세요." autofocus></textarea>
+      <div class="form-actions">
+        <div class="examples" aria-label="예시 질문">
+          <button type="button" class="demo-case" id="demo-case">무권대리 예제 사건 <span aria-hidden="true">↗</span></button>
+          <button type="button" data-example="민법 제125조와 제126조의 표현대리가 성립하기 위한 요건은 어떻게 다른가요?">표현대리</button>
+          <button type="button" data-example="민법 제750조에 따른 불법행위 손해배상 책임의 성립 요건은 무엇인가요?">불법행위</button>
+        </div>
+        <button type="submit" class="action" id="submit">심리 시작 <span aria-hidden="true">→</span></button>
+      </div>
+      <p id="request-state" class="form-state" aria-live="polite"></p>
+    </form>
+  </dialog>
+
+  <dialog class="overlay log-dialog" id="log-dialog" aria-labelledby="log-title">
+    <div class="overlay-header">
+      <h2 id="log-title">재판 대화 기록</h2>
+      <button class="close" type="button" data-close aria-label="대화 기록 닫기">×</button>
+    </div>
+    <ol class="transcript" id="transcript"></ol>
+  </dialog>
+
+  <dialog class="overlay options-dialog" id="options-dialog" aria-labelledby="options-title">
+    <div class="overlay-header">
+      <h2 id="options-title">법정 설정</h2>
+      <button class="close" type="button" data-close aria-label="설정 닫기">×</button>
+    </div>
+    <label class="option"><span>효과음 및 환경음</span><input id="sound" type="checkbox" autocomplete="off"></label>
+    <div class="option volume">
+      <label for="volume">볼륨</label>
+      <input type="range" id="volume" min="0" max="100" value="35" autocomplete="off">
+      <output for="volume" id="volume-value">35%</output>
+    </div>
+    <label class="option"><span>카메라 움직임 및 타이핑 줄이기</span><input id="motion" type="checkbox"></label>
+    <label class="option"><span>연출 속도</span>
+      <select id="cinematic-speed"><option value=".8">느리게</option><option value="1" selected>기본</option><option value="1.35">빠르게</option></select>
+    </label>
+    <button type="button" class="intro-replay" id="replay-intro">입장 연출 다시 보기</button>
+  </dialog>
+
+  <dialog class="paper" id="evidence-dialog" aria-labelledby="evidence-title">
+    <header class="paper-header">
+      <div><p class="paper-kicker">KANT COURT · 증거 기록</p><h2 id="evidence-title">증거 자료</h2></div>
+      <button class="close" type="button" data-close aria-label="증거 자료 닫기">×</button>
+    </header>
+    <div class="paper-body" id="evidence-body"></div>
+  </dialog>
+
+  <dialog class="paper verdict-paper" id="verdict-dialog" aria-labelledby="record-title">
+    <header class="paper-header">
+      <div><p class="paper-kicker">KANT COURT · 심리 기록</p><h2 id="record-title">판결문</h2></div>
+      <div class="paper-actions">
+        <span class="outcome" id="outcome"></span>
+        <button class="close" type="button" data-close aria-label="판결문 닫기">×</button>
+      </div>
+    </header>
+    <div class="paper-body" id="record-body"></div>
+  </dialog>
+</body>
+</html>

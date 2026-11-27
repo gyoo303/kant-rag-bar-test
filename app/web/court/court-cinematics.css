@@ -1,0 +1,114 @@
+.cinematic {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  overflow: hidden;
+  background: #110b08;
+  isolation: isolate;
+}
+.cinematic-frame { position: absolute; inset: 0; overflow: hidden; background: #110b08; }
+.cinematic-atmosphere { position: absolute; z-index: 3; inset: 0; pointer-events: none; display: none; }
+.cinematic[data-kind="intro"] .cinematic-atmosphere { display: block; }
+.cinematic-frame::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 46%, transparent 50%, #12090652 100%);
+}
+.cinematic-skip {
+  position: absolute;
+  z-index: 4;
+  right: max(28px, env(safe-area-inset-right));
+  bottom: max(23px, calc(env(safe-area-inset-bottom) + 12px));
+  padding: 8px 13px;
+  min-height: 39px;
+  border: 1px solid #b798714f;
+  border-radius: 3px;
+  color: #ecd6ba;
+  background: #1b130deb;
+  font-size: 13px;
+}
+.cinematic-skip:hover { color: #ffdfb1; border-color: #c99863; }
+.cinematic-skip kbd { margin-left: 5px; font-size: 11px; }
+.cine-doors {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: max(100%, 177.684dvh);
+  height: max(100%, 56.28vw);
+  translate: -50% -50%;
+  transform: scale(1.105);
+  transform-origin: 50% 54%;
+}
+.cine-doors img, .cine-chamber, .cine-gavel { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cinematic-frame[data-cue="closed"] .cine-doors { animation: door-approach var(--cue-time) cubic-bezier(.23,.64,.42,1) both; }
+.cinematic-frame[data-cue="closed"] .cine-open { visibility: hidden; }
+.cinematic-frame[data-cue="open"] .cine-doors { animation: door-traverse var(--cue-time) cubic-bezier(.27,.44,.34,1) both; }
+.cinematic-frame[data-cue="open"] .cine-open { animation: door-aperture var(--cue-time) cubic-bezier(.32,.03,.39,1) both; }
+.cine-door-light {
+  position: absolute; inset: 13% 41% 11%; opacity: 0;
+  background: radial-gradient(ellipse at center, #f4bc6531, transparent 64%);
+  mix-blend-mode: screen;
+}
+.cinematic-frame[data-cue="open"] .cine-door-light { animation: doorway-light var(--cue-time) ease both; }
+@keyframes door-approach { from { opacity: 0; transform: scale(1.005); } to { opacity: 1; transform: scale(1.04); } }
+@keyframes door-traverse { from { transform: scale(1.04); } to { transform: scale(1.105); } }
+@keyframes door-aperture {
+  0% { clip-path: polygon(49.8% 15%,50.2% 15%,50.4% 29%,50.4% 88%,49.6% 88%,49.6% 29%); }
+  69% { clip-path: polygon(36% 15%,64% 15%,72% 28%,72% 89%,28% 89%,28% 28%); }
+  100% { clip-path: polygon(0 0,100% 0,100% 26%,100% 100%,0 100%,0 26%); }
+}
+@keyframes doorway-light { 0%, 100% { opacity: 0; } 32% { opacity: .84; } }
+.cine-chamber { transform-origin: 50% 48%; transform: scale(1.033); }
+.cinematic-frame[data-cue="chamber"] .cine-chamber { animation: chamber-travel var(--cue-time) cubic-bezier(.24,.61,.42,1) both; }
+@keyframes chamber-travel { from { opacity: 0; transform: scale(1); } to { opacity: 1; transform: scale(1.033); } }
+.cine-title {
+  position: absolute; z-index: 2; inset: 0; display: grid; align-content: center; justify-items: center;
+  padding: 0 18px 8vh; text-align: center; color: #e0bc83;
+  background: radial-gradient(ellipse at center, #1a120ca3 4%, #1b110d27 56%, transparent 75%);
+  opacity: 0;
+}
+.cinematic-frame[data-cue="title"] .cine-title { animation: court-title-in var(--cue-time) ease-out both; }
+.cine-title span {
+  font: 600 clamp(3rem, 7.6vw, 6.8rem)/1.06 var(--display);
+  letter-spacing: .11em; text-shadow: 0 3px 23px #110906;
+}
+.cine-title p { margin: 13px 0 0; color: #fff0d9; font: 500 clamp(14px, 1.4vw, 19px)/1.55 var(--serif); text-shadow: 0 2px 12px #130b07; }
+@keyframes court-title-in {
+  0% { opacity: 0; transform: translateY(5px); }
+  25%, 74% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
+.cine-gavel { object-position: 50% 51%; }
+.cinematic-frame[data-cue="raised"] .cine-gavel { animation: gavel-raise var(--cue-time) cubic-bezier(.22,.63,.39,1) both; transform-origin: 41% 48%; }
+.cinematic-frame[data-cue="strike"] .cine-gavel { animation: gavel-impact min(210ms, var(--cue-time)) ease-out both; }
+@keyframes gavel-raise {
+  from { opacity: .16; filter: brightness(.8); transform: scale(1); }
+  to { opacity: 1; filter: brightness(.93); transform: scale(1.035); }
+}
+@keyframes gavel-impact {
+  0% { transform: scale(1.017) translateY(2px); }
+  32% { transform: scale(1.012) translateY(-1px); }
+  100% { transform: scale(1) translateY(0); }
+}
+.cinematic-frame[data-cue="exit"] { animation: cinematic-exit var(--cue-time) ease-in-out both; }
+@keyframes cinematic-exit { from { opacity: 1; } to { opacity: 0; } }
+.verdict-paper[open] { animation-name: verdict-unfold; animation-duration: .48s; }
+@keyframes verdict-unfold {
+  from { opacity: 0; transform: perspective(900px) rotateX(-6deg) translateY(18px) scale(.98); }
+  to { opacity: 1; transform: perspective(900px) rotateX(0) translateY(0) scale(1); }
+}
+.option select { color: var(--cream); background: #34241b; border: 1px solid #886241; font: inherit; padding: 4px 6px; }
+.intro-replay { margin-top: 12px; padding: 6px 10px; border: 1px solid #886241; background: #432c1c; color: #f4d6ad; }
+.verdict-answer { display: flex; align-items: baseline; flex-wrap: wrap; margin-top: 5px; gap: 8px 16px; border-bottom: 1px solid #ba9767; }
+.paper-body .verdict-answer h3 { margin: 0; }
+.paper-body .verdict-answer p { margin-block: 4px 6px; }
+.verdict-answer strong { color: #783f25; font-size: 1.4em; }
+@media (max-aspect-ratio: 4/3) {
+  [data-kind="verdict"] .cinematic-frame { background: radial-gradient(ellipse at center, #322119, #110a07 74%); }
+  [data-kind="verdict"] .cine-gavel { object-fit: contain; }
+}
+@media (max-width: 650px) {
+  .cinematic-skip { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); }
+  .cinematic-skip kbd { display: none; }
+  .cine-title span { font-size: clamp(2.15rem, 10vw, 3.45rem); letter-spacing: .08em; }
+}
+@media (prefers-reduced-motion: reduce) { .verdict-paper[open] { animation: none !important; } }
+html[data-reduced="true"] .verdict-paper[open] { animation: none; }

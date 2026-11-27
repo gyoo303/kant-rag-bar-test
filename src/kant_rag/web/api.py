@@ -554,6 +554,11 @@ def index() -> FileResponse:
     return FileResponse(WEB_DIR / "index.html", headers={"Cache-Control": "no-cache"})
 
 
+@app.get("/court", include_in_schema=False)
+def court() -> FileResponse:
+    return FileResponse(WEB_DIR / "court" / "index.html", headers={"Cache-Control": "no-cache"})
+
+
 if WEB_DIR.exists():
     app.mount("/static", StaticFiles(directory=WEB_DIR), name="static")
 

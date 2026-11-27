@@ -13,8 +13,17 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-web%20UI-009688?logo=fastapi&logoColor=white)
 ![FAISS](https://img.shields.io/badge/FAISS-bge--m3-4B8BBE)
 ![Reranker](https://img.shields.io/badge/rerank-bge--reranker--v2--m3-b49a70)
-[빠른 시작](#-빠른-시작) · [화면](#-화면) · [성적](#-성적) · [어떻게 푸나](#-어떻게-푸나) · [명령어](#-명령어-전체) · [팀](#-팀)
+[시연 영상](#-시연-영상) · [빠른 시작](#-빠른-시작) · [화면](#-화면) · [성적](#-성적) · [어떻게 푸나](#-어떻게-푸나) · [명령어](#-명령어-전체) · [팀](#-팀)
 
+</div>
+
+## 🎬 시연 영상
+
+<div align="center">
+<a href="https://drive.google.com/file/d/1Vo-K2HTrmW5PMh7xhZmPzNUe6qikiezE/view?usp=sharing" title="시연 영상 보기 (Google Drive)">
+<img src="docs/images/readme-demo.png" alt="시연 영상 보기" width="85%">
+</a>
+<br><sub>이미지를 누르면 Google Drive에서 영상이 열립니다</sub>
 </div>
 
 ---
@@ -40,6 +49,12 @@
 > 2026 기출은 개발(튜닝)용, 2022는 코드를 고정한 뒤 처음 푼 검증용입니다. 검증 세트 구성과 지표는 팀 분석 문서에 있습니다.
 
 ## 🖥 화면
+
+<div align="center">
+<img src="docs/images/readme-ui-demo.gif" alt="시험지 파일 첨부부터 채점·근거 확인까지" width="100%">
+<br><sub><b>시험지 풀이 흐름</b> — 시험지 파일 첨부 → 문항별 풀이 진행 → 자동 채점 → 지문별 O/X → 근거 번호를 누르면 판례 원문 (실제 엔진 녹화 · 풀이 대기 구간만 빨리 감기)</sub>
+</div>
+<br>
 
 <table>
 <tr>

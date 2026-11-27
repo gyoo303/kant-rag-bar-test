@@ -1,0 +1,28 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# 생성물 (재생성 가능: README 참고)
+index/
+.cache/
+# results/ 의 실행 기록(JSONL/CSV)은 제출 산출물이므로 커밋합니다. 캐시만 제외.
+results/cache.sqlite
+
+# 대용량/무단 배포 불가 원본은 data/raw 에 두지 말고 링크로 관리
+data/raw/**/*.pdf
+
+# editor / os
+.idea/
+.vscode/
+.DS_Store
+.cache/

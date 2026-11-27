@@ -1,0 +1,9 @@
+{
+  "project": "변호사시험 민사법 수험생과 신입 변호사가 민법 조문과 대법원 판례를 빠르게 찾고, 헷갈리는 지문을 근거와 함께 확인하도록 돕는 RAG 학습 도우미입니다.",
+  "purpose": "검색된 판례·조문만 근거로 답하고, 근거가 없으면 판단하지 않는 신뢰할 수 있는 학습 도구를 만드는 것이 목표입니다.",
+  "members": [
+    { "image": "/static/assets/cat-3.webp", "name": "최규형", "role": "" },
+    { "image": "/static/assets/cat-1.webp", "name": "서상혁", "role": "" },
+    { "image": "/static/assets/cat-2.webp", "name": "배유민", "role": "" }
+  ]
+}

@@ -1,0 +1,73 @@
+# 클라우드 세션(GPU 없음)용: default.yaml 과 같고 아래만 다름
+#  - 임베딩은 OpenAI API (EMBEDDING_MODEL=text-embedding-3-small, scripts/cloud_run.sh 가 설정)
+#  - 리랭커 CPU 실행 → 후보 20→10개, 입력 1024→512 토큰
+# 모든 실험 설정의 단일 출처. 값을 바꾸면 versions.* 도 올려서 기록에 남깁니다.
+versions:
+  docs: "docs-v0.1"        # data/documents.csv 및 원문 버전
+  index: "index-v0.4-openai"      # 청킹/임베딩 설정이 바뀌면 올림 (v0.2 긴 청크 분할 / v0.3 민사·가사 / v0.4 팀 판례 병합·대법원만·다카 포함)
+  prompt: "prompt-v0.1"    # src/kant_rag/generation/prompts.py 변경 시 올림
+  eval: "eval-v0.1"        # eval/*.json 고정 버전
+
+paths:
+  manifest: data/documents.csv
+  raw_dir: data/raw
+  index_dir: index
+  results_dir: results
+  cache_db: results/cache.sqlite
+
+# 법령·판례 수집 (kant-rag fetch-laws / build-topics / fetch-cases)
+corpus:
+  law_date: "20260101"        # 이 날짜에 시행 중인 법령 버전 (시험일 기준)
+  case_date_from: "20110101"  # 판례 선고일 범위 (최근 15년)
+  case_date_to: "20251231"    # 시험일 이후 판례 제외
+  topic_level: article        # section(편/장/절 제목만) | article(+조문 제목)
+  cases_per_topic: 5
+  case_kinds: ["민사", "가사"]   # 수집 시 사건종류명 필터 (본문검색은 행정·형사 판례도 걸림)
+  # 색인 시 사건번호 부호 필터: 다·다카(민사 상고) 마·그(민사 신청·항고) 스·므·으·브(가사) 카·라·머(민사 기타)
+  #   재다(민사 재심) 민상·민재항(1950년대 민사 상고·재항고)
+  case_codes: ["다", "다카", "재다", "민상", "민재항", "마", "그", "스", "므", "으", "브", "카", "라", "머"]
+  case_courts: ["대법원"]   # 시험의 '판례' = 대법원 판례. 하급심(고법·지법) 판결요지는 제외
+
+chunking:
+  chunk_size: 500          # 문자 기준
+  chunk_overlap: 80
+  max_chars: 1000          # 이보다 긴 조문·판결요지는 문장 경계에서 분할 (임베딩 max_tokens 잘림 방지)
+
+# 로컬 임베딩·reranker 메모리 설정 (8GB GPU 기준). 메모리 부족 시 batch_size 를 4 로
+embedding:
+  max_tokens: 512      # 청크 최대 토큰 (클라우드: 리랭커 CPU 속도) (넘는 부분은 잘림, 길이를 바꾸면 versions.index 올림)
+  batch_size: 8
+  fp16: true           # GPU 에서 반정밀도 (메모리 절반)
+
+retrieval:
+  # A: vector / B: hybrid / C: hybrid_rerank
+  vector_k: 20             # 벡터 후보 수
+  bm25_k: 20               # BM25 후보 수
+  rrf_k: 60                # RRF 상수 (score = Σ 1/(rrf_k + rank))
+  fused_k: 10              # 결합 후 reranker 로 넘길 후보 수
+  final_k: 5               # 최종 근거 개수 (Hit@5 기준)
+  bm25_tokenizer: simple   # simple | kiwi  (kiwi 는 `uv sync --extra ko`)
+
+rerank:
+  # reranker 점수가 이 값 미만이면 '근거 부족' 후보로 판단 (개발셋으로만 튜닝)
+  min_score: 0.2
+
+generation:
+  max_context_chunks: 5
+  max_context_chars: 4000
+  max_tokens: 1024
+
+optimization:
+  cache:
+    enabled: false         # A/B/C 품질 비교 시에는 반드시 false
+    ttl_seconds: 86400
+  rewrite:
+    enabled: false
+
+# 변호사시험 선택형 풀이 (src/kant_rag/mcq)
+mcq:
+  per_statement_k: 4         # 진술(보기/ㄱㄴㄷ)마다 검색해 컨텍스트에 넣을 근거 수
+  stem_chars_in_query: 300   # 검색 질의에 붙일 발문(사례) 앞부분 길이
+  max_context_chars: 16000
+  max_tokens: 16000          # 추론형 모델은 추론 토큰도 출력 한도에 포함 (4096 에서 빈 응답 발생 → 상향)
+  rewrite_max_tokens: 4000

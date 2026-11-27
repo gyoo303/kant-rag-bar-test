@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>민사법 AI · KANTNYANGI</title>
+  <link rel="icon" href="/static/assets/kant-seal.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+KR:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="/static/styles.css?v=12">
+</head>
+<body>
+<div class="app is-empty" id="app">
+  <!-- 사이드바 -->
+  <aside class="sidebar" id="sidebar" aria-label="대화 목록">
+    <div class="sb-head">
+      <div class="brand">
+        <img class="seal" src="/static/assets/kant-seal.png" alt="" width="36" height="36">
+        <div class="brand-text"><span class="brand-name">민사법 AI</span><span class="brand-sub">KANTNYANGI</span></div>
+      </div>
+      <button class="icon-btn" id="btnCollapse" title="사이드바 접기" aria-label="사이드바 접기"><i data-lucide="panel-left-close"></i></button>
+    </div>
+    <nav class="sb-nav">
+      <button class="nav-item primary" id="btnNew"><i data-lucide="plus"></i><span>새 대화</span></button>
+      <label class="nav-item search"><i data-lucide="search"></i><input id="search" type="search" placeholder="대화 검색" aria-label="대화 검색"></label>
+      <button class="nav-item" id="btnNotes"><i data-lucide="bookmark"></i><span>오답 노트</span><span class="count" id="noteCount"></span></button>
+    </nav>
+    <div class="sb-history" id="history"></div>
+    <div class="sb-foot">
+      <div class="avatar"><i data-lucide="user"></i></div>
+      <div class="who"><span>수험생</span><small>기록은 이 브라우저에만 저장</small></div>
+      <button class="icon-btn" id="btnTeam" title="팀 소개" aria-label="팀 소개"><i data-lucide="info"></i></button>
+      <button class="icon-btn" id="btnSettings" title="모델·검색 설정" aria-label="모델·검색 설정"><i data-lucide="settings"></i></button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- 본문 -->
+  <main class="main" id="main">
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="icon-btn" id="btnExpand" title="사이드바 펼치기" aria-label="사이드바 펼치기"><i data-lucide="panel-left-open"></i></button>
+        <div class="picker">
+          <button class="picker-btn" id="pickerBtn" aria-haspopup="true" aria-expanded="false">
+            <i data-lucide="sparkles" class="pk-ic"></i><span id="pickerLabel">불러오는 중…</span><i data-lucide="chevron-down"></i>
+          </button>
+          <div class="menu" id="menu" role="menu" hidden></div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <span class="asof" id="asof" title="이 날짜까지 선고된 판례와 그 시점 법령을 근거로 판단합니다"><i data-lucide="calendar"></i><span></span></span>
+      </div>
+    </header>
+
+    <section class="scroll" id="scroll">
+      <div class="hero" id="hero">
+        <div class="emblem-row"><span class="rule"></span><img class="emblem" src="/static/assets/kant-emblem.png" alt=""><span class="rule"></span></div>
+        <h1>오늘은 무엇을 공부할까요?</h1>
+        <p>대법원 판례와 조문을 근거로 민사법을 공부하세요.</p>
+      </div>
+      <div class="thread" id="thread"></div>
+    </section>
+
+    <div class="composer-wrap" id="composerWrap">
+      <form class="composer" id="composer">
+        <textarea id="input" rows="1" placeholder="민사법 지문이나 기출문항을 입력하세요." aria-label="메시지"></textarea>
+        <div class="composer-row">
+          <div class="composer-tools">
+            <label class="tool" title="시험지 파일(.txt 또는 문항 .json) 첨부 — 전체 문항을 하나씩 풀어요"><i data-lucide="paperclip"></i><span>시험지</span><input type="file" id="file" accept=".txt,.json,text/plain,application/json" hidden></label>
+            <span class="attach" id="attach" hidden></span>
+            <span class="intent" id="intentChip" hidden></span>
+          </div>
+          <button class="send" id="send" type="submit" aria-label="보내기" disabled><i data-lucide="arrow-up"></i></button>
+        </div>
+      </form>
+      <div class="suggest" id="suggest">
+        <button data-s="ox"><i data-lucide="square-check"></i>지문 O/X 확인</button>
+        <button data-s="exam"><i data-lucide="file-text"></i>기출 문항 풀이</button>
+        <button data-s="compare"><i data-lucide="arrow-left-right"></i>법리 비교</button>
+        <button data-s="case"><i data-lucide="search"></i>판례 검색</button>
+      </div>
+      <p class="disclaimer">검색된 판례·조문만 근거로 답해요. 근거가 없으면 판단하지 않아요.</p>
+    </div>
+  </main>
+
+  <!-- 근거 패널 -->
+  <aside class="panel" id="panel" aria-label="근거 자료" hidden>
+    <div class="panel-head">
+      <div class="ph-title"><i data-lucide="book-open"></i><span>근거 자료</span><span class="ph-count" id="panelCount"></span></div>
+      <button class="icon-btn" id="panelClose" aria-label="근거 자료 닫기"><i data-lucide="x"></i></button>
+    </div>
+    <div class="panel-tabs" id="panelTabs" role="tablist"></div>
+    <div class="panel-body" id="panelBody"></div>
+  </aside>
+</div>
+
+<!-- 팀 소개 -->
+<div class="modal" id="team" role="dialog" aria-modal="true" aria-labelledby="teamTitle" hidden>
+  <div class="modal-card">
+    <button class="icon-btn modal-close" id="teamClose" aria-label="닫기"><i data-lucide="x"></i></button>
+    <img class="banner" src="/static/assets/banner.webp" alt="칸트냥이 KANTNYANGI 배너">
+    <div class="modal-body">
+      <div class="wordmark-lg">KANTNYANGI</div>
+      <h2 id="teamTitle">칸트냥이 · 민사법 AI</h2>
+      <p id="teamProject"></p>
+      <p id="teamPurpose" class="muted"></p>
+      <h3>팀원</h3>
+      <div class="members" id="teamMembers"></div>
+    </div>
+  </div>
+</div>
+<!-- 확인 창 (브라우저 confirm 은 일부 화면에서 막혀서 직접 만든다) -->
+<div class="modal" id="ask" role="alertdialog" aria-modal="true" aria-labelledby="askTitle" aria-describedby="askBody" hidden>
+  <div class="ask-card">
+    <h2 id="askTitle"></h2>
+    <p id="askBody"></p>
+    <div class="ask-btns"><button class="ask-cancel" id="askCancel">취소</button><button class="ask-ok" id="askOk">삭제</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="/static/app.js?v=12"></script>
+</body>
+</html>

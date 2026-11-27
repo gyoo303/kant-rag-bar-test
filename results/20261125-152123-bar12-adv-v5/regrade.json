@@ -1,0 +1,655 @@
+{
+  "run_id": "20261125-152123-bar12-adv-v5",
+  "graded": 70,
+  "correct": 67,
+  "wrong": [
+    13,
+    40,
+    69
+  ],
+  "by_form": {
+    "single": "45/47",
+    "count": "6/7",
+    "ox": "4/4",
+    "combination": "11/11",
+    "blank": "1/1"
+  },
+  "statements": {
+    "correct": 292,
+    "unknown": 3,
+    "wrong": 8,
+    "confident_wrong(≥0.9)": 4
+  },
+  "rows": [
+    {
+      "number": 1,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 2,
+      "config": "hybrid_rerank",
+      "form": "count",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 3,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 4,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 5,
+      "config": "hybrid_rerank",
+      "form": "ox",
+      "predicted": 2,
+      "answer": 2,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 6,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 7,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 8,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 9,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 1,
+      "answer": 1,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 10,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 11,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 12,
+      "config": "hybrid_rerank",
+      "form": "count",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 13,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 5,
+      "correct": false,
+      "status": "ok"
+    },
+    {
+      "number": 14,
+      "config": "hybrid_rerank",
+      "form": "ox",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 15,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 16,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 17,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 18,
+      "config": "hybrid_rerank",
+      "form": "ox",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 19,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 20,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 21,
+      "config": "hybrid_rerank",
+      "form": "count",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 22,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 23,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 24,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 25,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 26,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 27,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 28,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 29,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 30,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 31,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 32,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 33,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 34,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 35,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 36,
+      "config": "hybrid_rerank",
+      "form": "count",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 37,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 38,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 39,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 40,
+      "config": "hybrid_rerank",
+      "form": "count",
+      "predicted": 3,
+      "answer": 4,
+      "correct": false,
+      "status": "ok"
+    },
+    {
+      "number": 41,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 2,
+      "answer": 2,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 42,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 43,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 44,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 45,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 46,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 47,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 2,
+      "answer": 2,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 48,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 49,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 50,
+      "config": "hybrid_rerank",
+      "form": "combination",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 51,
+      "config": "hybrid_rerank",
+      "form": "count",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 52,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 53,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 54,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 55,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 56,
+      "config": "hybrid_rerank",
+      "form": "blank",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 57,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 58,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 59,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 60,
+      "config": "hybrid_rerank",
+      "form": "ox",
+      "predicted": 2,
+      "answer": 2,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 61,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 62,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 63,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 64,
+      "config": "hybrid_rerank",
+      "form": "count",
+      "predicted": 3,
+      "answer": 3,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 65,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 66,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 67,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 4,
+      "answer": 4,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 68,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    },
+    {
+      "number": 69,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 1,
+      "answer": 5,
+      "correct": false,
+      "status": "tie"
+    },
+    {
+      "number": 70,
+      "config": "hybrid_rerank",
+      "form": "single",
+      "predicted": 5,
+      "answer": 5,
+      "correct": true,
+      "status": "ok"
+    }
+  ]
+}

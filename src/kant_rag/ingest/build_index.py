@@ -1,0 +1,124 @@
+"""색인 재생성: manifest → 정제 → 청킹 → chunks.jsonl + BM25 + 벡터 색인."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+import time
+
+from kant_rag.config import Settings
+from kant_rag.ingest.chunker import chunk_text
+from kant_rag.ingest.loader import clean_text, load_pages, read_manifest
+from kant_rag.ingest.split import split_long
+from kant_rag.ingest.statute import chunk_statute
+from kant_rag.schemas import Chunk
+
+
+def build_chunks(settings: Settings) -> list[Chunk]:
+    docs = read_manifest(settings.resolve(settings.paths.manifest))
+    chunks: list[Chunk] = []
+    missing: list[str] = []
+    fallback: list[str] = []
+    snap = settings.corpus.statute_snapshot
+    for meta in docs:
+        path = settings.raw_path(meta.path)
+        if snap and meta.doc_type == "statute":
+            if path.exists():  # 스냅숏 파일 머리줄 "민법 (시행 20210126, 공포번호 17905)" → 문서 버전
+                head = path.read_text(encoding="utf-8").split("\n", 1)[0]
+                m = re.search(r"시행\s*(\d{8})", head)
+                if m:
+                    meta = meta.model_copy(update={"version": f"시행 {m.group(1)} (스냅숏 {snap})"})
+            else:  # 스냅숏에 없는 법령은 현재 버전으로 (index_info 의 snapshot_fallback 에 기록)
+                cur = settings.resolve(settings.paths.raw_dir) / meta.path
+                if cur.exists():
+                    print(f"[warn] {meta.doc_id}: 스냅숏 {snap} 에 없음 → 현재 버전 사용 ({cur})")
+                    fallback.append(meta.doc_id)
+                    path = cur
+        if not path.exists():
+            # 아직 수집하지 않은 문서(예: kant-rag fetch-laws 미실행)는 건너뛰고 index_info 에 기록
+            missing.append(meta.doc_id)
+            print(f"[warn] {meta.doc_id}: 원문 파일 없음 → {path} (건너뜀)")
+            continue
+        if meta.doc_type == "cases":
+            from kant_rag.ingest.cases import chunk_cases
+
+            chunks.extend(chunk_cases(path, meta, date_to=settings.corpus.case_date_to,
+                                      codes=settings.corpus.case_codes, courts=settings.corpus.case_courts))
+            continue
+        if meta.doc_type == "statute":
+            text = "\n".join(clean_text(p.text) for p in load_pages(path))
+            chunks.extend(chunk_statute(text, meta, settings.chunking.chunk_size))
+            continue
+        for p_idx, page in enumerate(load_pages(path)):
+            chunks.extend(
+                chunk_text(
+                    clean_text(page.text),
+                    meta,
+                    settings.chunking.chunk_size,
+                    settings.chunking.chunk_overlap,
+                    page=page.page,
+                    section_offset=0 if page.page is None else p_idx * 100,
+                )
+            )
+    chunks = [part for c in chunks for part in split_long(c, settings.chunking.max_chars)]
+    ids = [c.chunk_id for c in chunks]
+    if len(ids) != len(set(ids)):
+        raise ValueError("청크 ID 충돌")
+    build_chunks.missing = missing  # type: ignore[attr-defined]
+    build_chunks.snapshot_fallback = fallback  # type: ignore[attr-defined]
+    return chunks
+
+
+def build_index(settings: Settings) -> dict:
+    from kant_rag.retrieval.bm25 import BM25Index
+    from kant_rag.retrieval.vector import VectorIndex
+
+    t0 = time.perf_counter()
+    index_dir = settings.index_path()
+    index_dir.mkdir(parents=True, exist_ok=True)
+
+    chunks = build_chunks(settings)
+    with (index_dir / "chunks.jsonl").open("w", encoding="utf-8") as f:
+        for c in chunks:
+            f.write(c.model_dump_json() + "\n")
+
+    by_type: dict[str, int] = {}
+    for c in chunks:
+        t = c.metadata.get("doc_type", "general")
+        by_type[t] = by_type.get(t, 0) + 1
+    split_n = len({c.metadata["parent_id"] for c in chunks if "parent_id" in c.metadata})
+    print(f"[1/3] 청크 {len(chunks)}개 생성 {by_type} · 최장 {max((len(c.text) for c in chunks), default=0)}자 · "
+          f"긴 청크 {split_n}개를 {settings.chunking.max_chars}자 이하로 분할", flush=True)
+    BM25Index.build(chunks, settings.retrieval.bm25_tokenizer).save(index_dir / "bm25.pkl")
+    print("[2/3] BM25 색인 완료", flush=True)
+    print(f"[3/3] 벡터 임베딩 시작 ({settings.models.embedding_model}) — 진행률이 표시됩니다", flush=True)
+    VectorIndex.build(chunks, settings.models.embedding_model, settings.embedding).save(index_dir / "faiss")
+    print("벡터 색인 완료", flush=True)
+
+    info = {
+        "versions": settings.versions.model_dump(),
+        "chunking": settings.chunking.model_dump(),
+        "embedding_model": settings.models.embedding_model,
+        "embedding": settings.embedding.model_dump(),
+        "bm25_tokenizer": settings.retrieval.bm25_tokenizer,
+        "n_docs": len({c.doc_id for c in chunks}),
+        "n_chunks": len(chunks),
+        "missing_docs": getattr(build_chunks, "missing", []),
+        "chunk_ids_sha256": hashlib.sha256("\n".join(sorted(c.chunk_id for c in chunks)).encode()).hexdigest()[:16],
+        "statute_snapshot": settings.corpus.statute_snapshot,
+        "snapshot_fallback": getattr(build_chunks, "snapshot_fallback", []),
+        "case_date_to": settings.corpus.case_date_to,
+        "built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "elapsed_s": round(time.perf_counter() - t0, 2),
+    }
+    (index_dir / "index_info.json").write_text(
+        json.dumps(info, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return info
+
+
+def load_chunks(settings: Settings) -> list[Chunk]:
+    path = settings.index_path() / "chunks.jsonl"
+    with path.open(encoding="utf-8") as f:
+        return [Chunk.model_validate_json(line) for line in f if line.strip()]

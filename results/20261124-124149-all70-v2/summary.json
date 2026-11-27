@@ -1,0 +1,81 @@
+{
+  "run_id": "20261124-124149-all70-v2",
+  "git_commit": "f36e477",
+  "eval": {
+    "path": "data\\exam\\2026_civil.json",
+    "version": "exam:2026_civil.json",
+    "split": "all"
+  },
+  "composition_warnings": [],
+  "versions": {
+    "docs": "docs-v0.1",
+    "index": "index-v0.4",
+    "prompt": "prompt-v0.1",
+    "eval": "eval-v0.1"
+  },
+  "models": {
+    "llm_provider": "openai",
+    "llm_model": "gpt-6-luna",
+    "embedding_model": "BAAI/bge-m3",
+    "reranker_model": "BAAI/bge-reranker-v2-m3"
+  },
+  "settings_fingerprint": "81129890ea85",
+  "optimization": {
+    "cache": {
+      "enabled": false,
+      "ttl_seconds": 86400
+    },
+    "rewrite": {
+      "enabled": false
+    }
+  },
+  "by_config": {
+    "hybrid_rerank": {
+      "accuracy": "58/70",
+      "hit@5": "0/0 (근거 미표기 70문항 제외)",
+      "statement_accuracy": "252/315",
+      "insufficient": 2,
+      "invalid_citation": 0,
+      "no_answer_insufficient_status(사람 검토 전)": "0/0",
+      "latency_mcq": {
+        "n_success": 70,
+        "n_total": 70,
+        "n_error": 0,
+        "mean_ms": 21042.2,
+        "median_ms": 18816.3
+      },
+      "llm_tokens": {
+        "calls": 70,
+        "input": 493817,
+        "output": 91258,
+        "reasoning": 57328,
+        "retries": 0,
+        "empty_responses": 0
+      },
+      "latency_no_answer": {
+        "n_success": 0,
+        "n_total": 0,
+        "n_error": 0,
+        "mean_ms": null,
+        "median_ms": null
+      }
+    }
+  },
+  "accuracy_by_trap": {
+    "복수 법령": {
+      "hybrid_rerank": "2/2"
+    },
+    "부정 극성": {
+      "hybrid_rerank": "31/36"
+    },
+    "숫자·기간": {
+      "hybrid_rerank": "15/19"
+    },
+    "예외·단서": {
+      "hybrid_rerank": "28/32"
+    },
+    "전 진술 판단": {
+      "hybrid_rerank": "30/40"
+    }
+  }
+}

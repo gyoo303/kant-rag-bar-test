@@ -34,9 +34,14 @@
   const icon = (n, cls = "") => `<i data-lucide="${n}"${cls ? ` class="${cls}"` : ""}></i>`;
   const uid = () => Math.random().toString(36).slice(2, 10);
   const short = (s, n) => { s = String(s || "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
-  function toast(msg) {
-    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
-    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 1800);
+  function toast(msg, actLabel, onAct) {
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show"); t.classList.toggle("has-act", !!onAct);
+    if (onAct) {
+      const b = document.createElement("button"); b.textContent = actLabel;
+      b.onclick = () => { onAct(); toast("되돌렸어요"); };
+      t.appendChild(b);
+    }
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show", "has-act"), onAct ? 5000 : 1800);
   }
   const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
   function prose(text) {
@@ -166,9 +171,15 @@
     }
     const row = e.target.closest(".conv"); if (!row) return;
     if (e.target.closest(".more")) {
-      if (!confirm("이 대화를 삭제할까요?")) return;
-      state.convs = state.convs.filter((c) => c.id !== row.dataset.id); saveConvs();
-      if (state.currentId === row.dataset.id) newChat(); else renderHistory();
+      // 확인 창(confirm)은 일부 브라우저·앱 안 화면에서 막혀 늘 '취소'가 된다 → 바로 지우고 '되돌리기'를 준다
+      const id = row.dataset.id, at = state.convs.findIndex((c) => c.id === id), gone = state.convs[at];
+      if (state.pending && id === state.currentId) return toast("답변·풀이가 끝난 뒤에 삭제할 수 있어요");
+      state.convs.splice(at, 1); saveConvs();
+      if (state.currentId === id) newChat(); else renderHistory();
+      toast("대화를 삭제했어요", "되돌리기", () => {
+        if (!state.convs.some((c) => c.id === id)) state.convs.splice(Math.min(at, state.convs.length), 0, gone);
+        saveConvs(); renderHistory();
+      });
       return;
     }
     openConv(row.dataset.id); app.classList.remove("drawer");

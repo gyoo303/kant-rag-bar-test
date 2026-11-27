@@ -358,3 +358,5 @@ dl.facts dd { margin: 0; color: var(--text); }
 .rd-head .tag.right { color: var(--ok); }
 .rd-head .tag.wrong { color: var(--bad); }
 @media (prefers-reduced-motion: reduce) { .rq.now { animation: none; background: var(--gold-wash); } }
+.toast.has-act { pointer-events: auto; display: flex; align-items: center; gap: 12px; }
+.toast button { font-weight: 600; color: #7a5f2e; text-decoration: underline; text-underline-offset: 3px; }

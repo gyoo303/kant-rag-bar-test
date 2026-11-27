@@ -124,3 +124,15 @@ def test_system_error_is_separate_and_masks_keys(client):
     r = client(raise_on="ask").post("/api/chat", json={"text": "질문"}).json()
     assert r["type"] == "error" and r["status_kind"] == "error"
     assert "sk-abcdef" not in r["error"]
+
+
+def test_missing_index_returns_setup_error(client, monkeypatch):
+    """엔진이 색인 없음으로 SystemExit 를 보내도 서버는 죽지 않고 안내를 돌려준다."""
+    eng = FakeEngine()
+
+    def no_index(model):
+        raise SystemExit("색인이 없거나 미완성입니다 (없음: chunks.jsonl).\n→ `uv run kant-rag build-index` 를 끝까지 실행한 뒤 다시 시도하세요.")
+    eng.agent = no_index
+    monkeypatch.setattr(api, "ENGINE", eng)
+    r = TestClient(api.app).post("/api/chat", json={"text": "질문"}).json()
+    assert r["type"] == "error" and r["code"] == "setup" and "build-index" in r["error"]

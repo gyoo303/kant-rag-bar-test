@@ -216,6 +216,10 @@
     }
     const r = m.result || {};
     if (r.type === "error" || (r.type === "mcq_batch" && r.status_kind === "error" && !r.items?.length)) {
+      if (r.code === "setup") { // 색인 없음 등 서버 준비 문제 — 엔진이 알려 준 안내를 그대로 보여 준다
+        el.innerHTML = noteHtml("err", "database", "검색 색인이 준비되지 않았어요", r.error || "", true);
+        return el;
+      }
       const timeout = /시간|timed? ?out|Timeout/i.test(r.error || "");
       el.innerHTML = noteHtml("err", timeout ? "timer-off" : "circle-alert", timeout ? "응답 시간이 초과됐어요" : "답변을 만들지 못했어요",
         `${r.error || ""} — 근거가 없다는 뜻이 아니라 시스템 문제예요.`, true);

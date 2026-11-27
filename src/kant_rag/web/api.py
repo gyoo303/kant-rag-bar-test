@@ -209,7 +209,7 @@ def _safe_error(err: str | None) -> str | None:
     """오류 문구에서 키처럼 보이는 값을 가린다 (화면 노출 방지)."""
     if not err:
         return err
-    return re.sub(r"(sk-|sk_|key=)[A-Za-z0-9_\-]{6,}", r"\1***", str(err))[:300]
+    return re.sub(r"(sk-|sk_|key=)[A-Za-z0-9_\-]{6,}", r"\1***", str(err))[:400]
 
 
 def looks_like_exam(text: str) -> bool:
@@ -273,6 +273,9 @@ def api_chat(body: ChatIn) -> dict:
             solver = eng.solver(body.model, preset)
             items = [normalize_mcq(q, solver.solve(q, mode), preset) for q in qs[:5]]
             return {"type": "mcq_batch", "status_kind": "ok", "items": items, "problems": problems}
+    except SystemExit as e:  # 엔진이 '색인 없음·임베딩 모델 불일치' 등 준비 문제로 종료 신호를 보냄 — 서버는 계속 띄워 둔다
+        return {"type": "error", "status_kind": "error", "code": "setup",
+                "error": _safe_error(str(e) or "검색 엔진을 준비하지 못했어요.")}
     except Exception as e:  # noqa: BLE001 — 시스템 오류는 '근거 없음'과 구분해 돌려준다
         return {"type": "error", "status_kind": "error", "error": _safe_error(f"{type(e).__name__}: {e}")}
 

@@ -132,25 +132,68 @@ class Engine:
         t0 = time.perf_counter()
         query, rw = rewrite_query(question, s)
         t1 = time.perf_counter()
-        finals = [self.retriever.retrieve(question, mode)["final"]]
-        if query.strip() and query.strip() != question.strip():
+        first = self.retriever.retrieve(question, mode)  # 단계별 후보 (검색 과정 보기용으로 기록)
+        finals = [first["final"]]
+        rewritten = query.strip() if query.strip() and query.strip() != question.strip() else None
+        if rewritten:
             finals.append(self.retriever.retrieve(query, mode)["final"])
         fused = finals[0] if len(finals) == 1 else rrf_fuse(
             {f"q{i}": f for i, f in enumerate(finals)}, rrf_k=s.retrieval.rrf_k, top_k=s.retrieval.final_k)
         by_id = self.retriever.vector.chunks_by_id
         have = {r.chunk.chunk_id for r in fused}
+        found = direct_refs(question, *self.refs)
         direct = [RetrievedChunk(chunk=by_id[c], score=1.0, rank=i + 1, source="rerank")
-                  for i, c in enumerate(direct_refs(question, *self.refs)) if c not in have]
+                  for i, c in enumerate(found) if c not in have]
         ctx = [r.model_copy(update={"rank": i + 1}) for i, r in enumerate(direct + list(fused))]
         t2 = time.perf_counter()
+        retrieval = {"mode": mode.value, "query": question, "rewritten": rewritten, "direct": found,
+                     "stages": stage_rows(first), "rewrite_final": [r.chunk.chunk_id for r in finals[1]] if rewritten else [],
+                     "context": [r.chunk.chunk_id for r in ctx[: s.generation.max_context_chunks]],
+                     "ms": round((t2 - t1) * 1000, 1)}
         answer, info = generate_answer(question, ctx, s, min_rerank_score=None)
         if answer.status.value == "generation_error":  # 일시적인 호출·형식 오류는 한 번만 다시 시도
             answer, info = generate_answer(question, ctx, s, min_rerank_score=None)
         t3 = time.perf_counter()
         return {"answer": answer.model_dump(mode="json"), "models": s.models.model_dump(),
-                "rewrite": rw, "direct_refs": [r.chunk.chunk_id for r in direct],
+                "rewrite": rw, "direct_refs": [r.chunk.chunk_id for r in direct], "retrieval": retrieval,
                 "timing_ms": {"rewrite": round((t1 - t0) * 1000, 1), "retrieval": round((t2 - t1) * 1000, 1),
                               "generation": round((t3 - t2) * 1000, 1), "total": round((t3 - t0) * 1000, 1)}}
+
+
+TRACE_KEYS = ("vector_rank", "vector_score", "bm25_rank", "bm25_score", "rrf_rank", "rrf_score",
+              "pre_rerank_rank", "rerank_rank", "rerank_score")
+
+
+def stage_rows(res: dict, n: int = 10) -> dict:
+    """Retriever.retrieve 결과 → 단계별 상위 n개 (chunk_id·순위·점수·단계별 순위 기록). 화면 '검색 과정'용."""
+    out = {}
+    for stage in ("vector", "bm25", "fused", "final"):
+        if stage in res:
+            out[stage] = [{"id": r.chunk.chunk_id, "rank": r.rank, "score": round(float(r.score), 4),
+                           "trace": {k: (round(v, 4) if isinstance(v, float) else v)
+                                     for k, v in (r.trace or {}).items() if k in TRACE_KEYS}}
+                          for r in res[stage][:n]]
+    return out
+
+
+def brief(cid: str) -> dict:
+    """청크 → 표에 쓸 짧은 이름 (원문 없이 가볍게)."""
+    ch = engine().chunk(cid)
+    if ch is None:
+        return {"kind": "case" if cid.startswith("CASE#") else "statute", "name": cid}
+    md = ch.metadata or {}
+    kind = md.get("doc_type") or ("case" if cid.startswith("CASE#") else "statute")
+    name = f"대법원 {md.get('case_no') or ch.title}" if kind == "case" else f"{ch.title} {md.get('article') or ''}".strip()
+    return {"kind": kind, "name": name, "loc": ch.location()}
+
+
+def normalize_retrieval(ret: dict | None) -> dict | None:
+    if not ret:
+        return None
+    ids = set(ret.get("direct") or []) | set(ret.get("rewrite_final") or []) | set(ret.get("context") or [])
+    for rows in (ret.get("stages") or {}).values():
+        ids |= {r["id"] for r in rows}
+    return {**ret, "names": {cid: brief(cid) for cid in ids}}
 
 
 ART_RE = re.compile(r"(?:([가-힣]+(?:법|규칙|법률|시행령))\s*)?제\s*(\d+)\s*조(?:\s*의\s*(\d+))?")
@@ -245,7 +288,8 @@ def normalize_qa(rec: dict) -> dict:
     return {"type": "qa", "status": status, "status_kind": kind,
             "answer": text, "citations": [c for c in ids if c in docs], "docs": docs,
             "error": _safe_error(ans.get("error")) if STATUS_KIND.get(status) == "error" else None,
-            "timing_ms": rec.get("timing_ms"), "model": (rec.get("models") or {}).get("llm_model")}
+            "timing_ms": rec.get("timing_ms"), "model": (rec.get("models") or {}).get("llm_model"),
+            "retrieval": normalize_retrieval(rec.get("retrieval"))}
 
 
 def normalize_mcq(q, rec: dict, preset: str) -> dict:
@@ -448,6 +492,55 @@ def exam_solve(body: ExamSolveIn) -> dict:
         item = {"type": "mcq", "number": q.number, "status": "generation_error", "status_kind": "error",
                 "error": _safe_error(f"{type(e).__name__}: {e}"), "statements": [], "docs": {}}
     return {"status_kind": "ok", "index": body.index, "item": item}
+
+
+# ---------------------------------------------------------------- 검색 방식 A/B/C 비교 (LLM 없이 검색만)
+COMPARE_MODES = [("vector", "A", "벡터 검색만", "코사인 유사도"),
+                 ("hybrid", "B", "BM25 + 벡터 (RRF)", "RRF 점수"),
+                 ("hybrid_rerank", "C", "B + 재정렬", "리랭커 관련도")]
+
+
+class CompareIn(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    top: int = Field(default=5, ge=1, le=10)
+
+
+@app.post("/api/compare")
+def api_compare(body: CompareIn) -> dict:
+    """같은 질문을 A/B/C 세 방식으로 검색만 해서 상위 근거를 나란히 돌려준다 (답변 생성 없음)."""
+    import time
+
+    from kant_rag.retrieval.pipeline import RetrievalMode
+
+    eng = engine()
+    try:
+        modes = []
+        with eng.lock:
+            for mid, letter, label, score_label in COMPARE_MODES:
+                t = time.perf_counter()
+                res = eng.retriever.retrieve(body.text, RetrievalMode(mid))
+                rows = stage_rows({"final": res["final"]}, body.top)["final"]
+                modes.append({"id": mid, "letter": letter, "label": label, "score_label": score_label,
+                              "ms": round((time.perf_counter() - t) * 1000, 1), "items": rows})
+    except SystemExit as e:
+        return {"status_kind": "error", "code": "setup", "error": _safe_error(str(e) or "검색 엔진을 준비하지 못했어요.")}
+    except Exception as e:  # noqa: BLE001
+        return {"status_kind": "error", "error": _safe_error(f"{type(e).__name__}: {e}")}
+    sets = [{r["id"] for r in m["items"]} for m in modes]
+    common = sorted(set.intersection(*sets)) if sets else []
+    ids = list(dict.fromkeys(r["id"] for m in modes for r in m["items"]))
+    return {"status_kind": "ok", "query": body.text, "modes": modes, "common": common,
+            "docs": {cid: d for cid in ids if (d := doc_info(cid))}}
+
+
+@app.get("/api/doc")
+def api_doc(id: str) -> dict:  # noqa: A002 — 쿼리 이름
+    """청크 하나의 원문 (검색 과정 표에서 인용되지 않은 후보를 열어 볼 때)."""
+    try:
+        d = doc_info(id)
+    except SystemExit as e:
+        return {"status_kind": "error", "code": "setup", "error": _safe_error(str(e))}
+    return {"status_kind": "ok", "doc": d} if d else {"status_kind": "error", "error": "색인에 없는 근거예요."}
 
 
 def short_text(s: str, n: int) -> str:

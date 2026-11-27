@@ -260,7 +260,8 @@
     if (r.type === "qa") el.innerHTML = qaHtml(r, i);
     if (r.type === "mcq_batch") el.innerHTML = r.items.map((it, k) => mcqHtml(it, i, k, r.items.length)).join("") +
       (r.problems?.length ? noteHtml("warn", "info", "인식하지 못한 문항이 있어요", r.problems.join(" · ")) : "");
-    el.insertAdjacentHTML("beforeend", actionsHtml(i));
+    if (r.type === "qa" && m.compare) el.insertAdjacentHTML("beforeend", compareHtml(m.compare, i));
+    el.insertAdjacentHTML("beforeend", actionsHtml(i, r));
     return el;
   }
   function noteHtml(kind, ic, title, sub, retry) {
@@ -338,9 +339,12 @@
     h += `<div class="meta">${meta.map(esc).join(" · ")}</div>`;
     return h;
   }
-  function actionsHtml(i) {
+  function actionsHtml(i, r) {
     const saved = state.notes.some((n) => n.key === `${state.currentId}:${i}`);
+    const qa = r?.type === "qa" && r.status_kind !== "error";
     return `<div class="actions">
+      ${qa && r.retrieval ? `<button class="act-btn" data-act="trace">${icon("git-branch")}검색 과정</button>` : ""}
+      ${qa ? `<button class="act-btn" data-act="compare">${icon("columns-3")}검색 방식 비교</button>` : ""}
       <button class="act-btn" data-act="copy">${icon("copy")}복사</button>
       <button class="act-btn ${saved ? "saved" : ""}" data-act="note">${icon(saved ? "bookmark-check" : "bookmark")}${saved ? "오답 노트에 저장됨" : "오답 노트 저장"}</button>
       <button class="act-btn" data-act="regen">${icon("rotate-ccw")}다시 생성</button></div>`;
@@ -348,7 +352,9 @@
 
   // ---------------------------------------------------------------- 근거 패널
   function panelItem(i, k) {
-    const m = current()?.messages[i]; if (m?.run) return m.run.results[k] || null;
+    const m = current()?.messages[i];
+    if (k === "cmp") return m?.compare?.docs ? { type: "qa", docs: m.compare.docs, citations: Object.keys(m.compare.docs), cmp: true } : null;
+    if (m?.run) return m.run.results[k] || null;
     const r = m?.result; if (!r) return null;
     return r.type === "mcq_batch" ? r.items[k] : r;
   }
@@ -367,9 +373,12 @@
     const order = it.type === "qa" ? docOrder(docs, it.citations || []) : docOrder(docs, it.statements.flatMap((s) => s.cited));
     const nCase = order.filter((id) => docs[id].kind === "case").length;
     $("#panelCount").textContent = order.length;
-    $("#panelTabs").innerHTML = [["all", `전체 (${order.length})`], ["case", `판례 (${nCase})`], ["statute", `조문 (${order.length - nCase})`]]
+    const tabs = [["all", `전체 (${order.length})`], ["case", `판례 (${nCase})`], ["statute", `조문 (${order.length - nCase})`]];
+    if (it.retrieval) tabs.push(["trace", "검색 과정"]);
+    $("#panelTabs").innerHTML = tabs
       .map(([f, label]) => `<button role="tab" aria-selected="${filter === f}" class="${filter === f ? "on" : ""}" data-f="${f}">${label}</button>`).join("");
     const body = $("#panelBody");
+    if (filter === "trace" && it.retrieval) { body.innerHTML = traceHtml(it); body.scrollTop = 0; return icons(); }
     const shown = order.filter((id) => filter === "all" || docs[id].kind === filter);
     body.innerHTML = shown.map((id) => {
       const n = order.indexOf(id) + 1, d = docs[id];
@@ -409,12 +418,13 @@
     const b = e.target.closest("[data-act]"); if (!b) return;
     if (b.dataset.act === "fold") { const d = b.closest(".doc"); d.classList.toggle("closed"); b.setAttribute("aria-expanded", String(!d.classList.contains("closed"))); }
     if (b.dataset.act === "expand") { const t = b.previousElementSibling; t.classList.toggle("open"); b.textContent = t.classList.contains("open") ? "접기" : "전체 보기"; }
+    if (b.dataset.act === "tr-open") traceOpen(b);
   });
 
   thread.addEventListener("click", (e) => {
     const conv = e.target.closest("[data-conv]"); if (conv) return openConv(conv.dataset.conv);
-    const cite = e.target.closest(".cite, .ref-btn");
-    if (cite) return openPanel(+cite.dataset.i, +cite.dataset.k, cite.dataset.doc);
+    const cite = e.target.closest(".cite, .ref-btn, .cmp-item");
+    if (cite) return openPanel(+cite.dataset.i, cite.dataset.k === "cmp" ? "cmp" : +cite.dataset.k, cite.dataset.doc);
     const act = e.target.closest("[data-act]"); if (!act) return;
     const i = +act.closest(".msg-ai")?.dataset.i;
     const c = current(); if (!c || Number.isNaN(i)) return;
@@ -422,6 +432,8 @@
     if (act.dataset.act === "retry" || act.dataset.act === "regen") return rerun(i);
     if (act.dataset.act === "copy") navigator.clipboard?.writeText(plain(c.messages[i].result)).then(() => toast("복사했어요"), () => toast("복사하지 못했어요"));
     if (act.dataset.act === "note") toggleNote(c, i);
+    if (act.dataset.act === "compare") runCompare(c, i);
+    if (act.dataset.act === "trace") { openPanel(i, 0); state.panel.filter = "trace"; renderPanel(); }
   });
   function plain(r) {
     if (!r) return "";
@@ -563,6 +575,101 @@
   // 경과 시간 (실제 경과만, 가짜 진행률 없음)
   setInterval(() => document.querySelectorAll(".elapsed").forEach((el) => { el.textContent = Math.round((Date.now() - +el.dataset.start) / 1000) + "초"; }), 1000);
 
+
+
+  // ---------------------------------------------------------------- 검색 과정 (근거 패널 탭)
+  // 서버가 기록한 원질문 검색의 단계별 순위(벡터·BM25·RRF·재정렬)를 그대로 보여 준다.
+  const MODE_NAME = { vector: "A · 벡터 검색만", hybrid: "B · BM25 + 벡터 (RRF)", hybrid_rerank: "C · B + 재정렬" };
+  const num = (v, d = 3) => (v == null ? "–" : Number.isInteger(v) ? String(v) : Number(v).toFixed(d));
+  function moveTag(t) {
+    if (t?.pre_rerank_rank == null || t?.rerank_rank == null) return "";
+    const d = t.pre_rerank_rank - t.rerank_rank;
+    return d > 0 ? `<span class="mv up" title="재정렬 전 ${t.pre_rerank_rank}위">▲${d}</span>`
+      : d < 0 ? `<span class="mv down" title="재정렬 전 ${t.pre_rerank_rank}위">▼${-d}</span>` : `<span class="mv" title="순위 그대로">–</span>`;
+  }
+  function traceHtml(it) {
+    const r = it.retrieval, names = r.names || {}, st = r.stages || {};
+    const used = new Set(r.context || []), cited = new Set(it.citations || []);
+    const sec = (id) => { const v = prettyLoc(names[id]?.loc).replace(/^대법원\s+\d{8}\s+\S+(,\s*\S+)?\s*/, ""); return names[id]?.kind === "case" && v ? ` <small class="sec">${esc(v)}</small>` : ""; };
+    const nm = (id) => `<span class="nmv">${esc(names[id]?.name || id)}</span>${sec(id)}`;
+    const kd = (id) => `<span class="kind">${names[id]?.kind === "case" ? "판례" : "조문"}</span>`;
+    const badges = (id) => (cited.has(id) ? `<span class="tb cited">인용</span>` : used.has(id) ? `<span class="tb used">답변에 전달</span>` : "");
+    const row = (id, cells) => `<tr class="${cited.has(id) ? "is-cited" : ""}"><td class="nm"><button class="tr-name" data-act="tr-open" data-id="${esc(id)}">${kd(id)}${nm(id)}</button>${badges(id)}</td>${cells}</tr>`;
+    let h = `<div class="tr">`;
+    h += `<section><h4>질의</h4><p class="tq">${esc(r.query)}</p>${r.rewritten ? `<p class="tq rw"><span>리라이트</span>${esc(r.rewritten)}</p>` : ""}
+      <p class="tmeta">${esc(MODE_NAME[r.mode] || r.mode)}${r.ms ? ` · 검색 ${num(r.ms / 1000, 1)}초` : ""} · 답변에 근거 ${used.size}개 전달</p></section>`;
+    if (r.direct?.length) h += `<section><h4>질문에 적힌 조문·사건번호로 바로 찾음</h4><ul class="tl">${r.direct.map((id) => `<li><button class="tr-name" data-act="tr-open" data-id="${esc(id)}">${kd(id)}${nm(id)}</button>${badges(id)}</li>`).join("")}</ul></section>`;
+    const fin = st.final || [];
+    if (fin.length) {
+      const C = r.mode === "hybrid_rerank", B = r.mode !== "vector";
+      h += `<section><h4>최종 순위 <small>원질문 검색</small></h4><div class="tscroll"><table class="tr-table"><thead><tr><th>근거</th><th>벡터</th>${B ? "<th>BM25</th><th>RRF</th>" : ""}${C ? "<th>재정렬</th>" : ""}</tr></thead><tbody>` +
+        fin.map((x) => { const t = x.trace || {};
+          return row(x.id, `<td>${num(t.vector_rank)}</td>${B ? `<td>${num(t.bm25_rank)}</td><td>${num(t.rrf_rank)}</td>` : ""}${C ? `<td class="rr"><b>${x.rank}</b>${moveTag(t)}<small>${num(t.rerank_score)}</small></td>` : ""}`); }).join("") +
+        `</tbody></table></div>${C ? `<p class="tnote">▲▼ 는 재정렬(리랭커)로 오르내린 칸 수, 작은 숫자는 리랭커 관련도(0~1)예요. '–' 는 그 검색기 상위 후보에 없었다는 뜻이에요.</p>` : ""}</section>`;
+    }
+    const stage = (key, title, scoreName) => {
+      const rows = st[key]; if (!rows?.length) return "";
+      return `<details class="tstage"><summary>${title} 상위 ${rows.length}</summary><table class="tr-table"><thead><tr><th>근거</th><th>순위</th><th>${scoreName}</th></tr></thead><tbody>` +
+        rows.map((x) => row(x.id, `<td>${x.rank}</td><td>${num(x.score)}</td>`)).join("") + `</tbody></table></details>`;
+    };
+    h += `<section><h4>단계별 후보</h4>${stage("vector", "벡터 검색", "유사도")}${stage("bm25", "BM25 키워드 검색", "BM25")}${stage("fused", "RRF 결합", "RRF")}</section>`;
+    if (r.rewrite_final?.length) h += `<section><h4>리라이트 질의 검색 결과 <small>원질문 결과와 RRF 로 합침</small></h4><ol class="tl">${r.rewrite_final.map((id) => `<li><button class="tr-name" data-act="tr-open" data-id="${esc(id)}">${kd(id)}${nm(id)}</button>${badges(id)}</li>`).join("")}</ol></section>`;
+    return h + `</div>`;
+  }
+  // 표의 근거 이름 → 인용된 근거면 원문 카드로, 아니면 원문을 불러와 바로 아래에 펼친다
+  async function traceOpen(b) {
+    const id = b.dataset.id, it = panelItem(state.panel.i, state.panel.k);
+    if (it?.docs?.[id] && (it.citations || []).includes(id)) { state.panel.filter = "all"; state.panel.focus = id; return renderPanel(); }
+    const host = b.closest("tr, li"), next = host.nextElementSibling;
+    if (next?.classList.contains("tr-prev")) return next.remove();
+    const prev = document.createElement(host.tagName === "TR" ? "tr" : "li"); prev.className = "tr-prev";
+    const cell = host.tagName === "TR" ? document.createElement("td") : prev;
+    if (host.tagName === "TR") { cell.colSpan = host.children.length; prev.appendChild(cell); }
+    cell.innerHTML = `<div class="tp">불러오는 중…</div>`; host.after(prev);
+    try {
+      const r = await (await fetch(`/api/doc?id=${encodeURIComponent(id)}`)).json();
+      const d = r.doc;
+      cell.innerHTML = d ? `<div class="tp"><div class="tp-h">${esc(docName(d))}${d.kind === "case" && d.decided ? ` · ${esc(d.decided)} 선고` : ""}</div><div class="tp-t">${esc(short(d.text, 700))}</div>${d.url ? `<a href="${esc(d.url)}" target="_blank" rel="noopener">원문 보기 ${icon("external-link")}</a>` : ""}</div>`
+        : `<div class="tp">${esc(r.error || "원문을 불러오지 못했어요")}</div>`;
+      icons();
+    } catch { cell.innerHTML = `<div class="tp">서버에 연결하지 못했어요</div>`; }
+  }
+
+  // ---------------------------------------------------------------- 검색 방식 A/B/C 비교 (답변 생성 없이 검색만)
+  function compareHtml(cm, i) {
+    let h = `<h3 class="sec-title">${icon("columns-3")}검색 방식 비교<small class="st-sub">같은 질문 · 답변 생성 없이 검색만</small></h3>`;
+    if (cm.loading) return h + `<div class="loading"><span class="dots"><i></i><i></i><i></i></span><span>A·B·C 세 방식으로 검색하는 중이에요</span><span class="elapsed" data-start="${cm.startedAt}">0초</span></div>`;
+    if (cm.status_kind !== "ok") return h + noteHtml("err", cm.code === "setup" ? "database" : "circle-alert", cm.code === "setup" ? "검색 색인이 준비되지 않았어요" : "비교하지 못했어요", cm.error || "");
+    const docs = cm.docs || {}, common = new Set(cm.common || []), seen = {};
+    cm.modes.forEach((m) => m.items.forEach((x) => { seen[x.id] = (seen[x.id] || 0) + 1; }));
+    h += `<div class="cmp">${cm.modes.map((m) => `<div class="cmp-col"><div class="cmp-head"><span class="lt">${esc(m.letter)}</span><b>${esc(m.label)}</b><small>${num(m.ms / 1000, 1)}초 · 점수: ${esc(m.score_label)}</small></div>
+      <ol>${m.items.map((x) => { const d = docs[x.id];
+        return `<li><button class="cmp-item ${common.has(x.id) ? "common" : ""}" data-i="${i}" data-k="cmp" data-doc="${esc(x.id)}">
+          <span class="r">${x.rank}</span><span class="b"><span class="t"><span class="kind">${d?.kind === "case" ? "판례" : "조문"}</span>${esc(d ? docName(d) : x.id)}</span>
+          <span class="s">${num(x.score)}${m.id === "hybrid_rerank" ? moveTag(x.trace) : ""}${seen[x.id] === 1 ? `<em>이 방식에만</em>` : ""}</span></span></button></li>`; }).join("") || `<li class="empty">결과 없음</li>`}</ol></div>`).join("")}</div>
+      <p class="cmp-legend"><span class="sw"></span>세 방식 모두 찾은 근거 ${common.size}개 · 점수 기준이 방식마다 달라 열끼리 점수를 비교하지 않아요 · 근거를 누르면 원문이 열려요</p>`;
+    return h;
+  }
+  function repaintMsg(c, i) {
+    if (state.currentId !== c.id || state.view !== "chat") return;
+    const el = thread.querySelector(`.msg-ai[data-i="${i}"]`); if (!el) return renderThread();
+    el.replaceWith(aiEl(c.messages[i], i)); icons();
+  }
+  async function runCompare(c, i) {
+    const m = c.messages[i];
+    if (m.compare && !m.compare.loading) { delete m.compare; saveConvs(); return repaintMsg(c, i); } // 다시 누르면 접기
+    if (state.pending) return toast("답변이 끝난 뒤에 비교할 수 있어요");
+    const text = m.req?.text || c.messages[i - 1]?.text; if (!text) return;
+    m.compare = { loading: true, startedAt: Date.now() }; repaintMsg(c, i);
+    state.pending = true; updateSend();
+    let r;
+    try {
+      const res = await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: short(text, 3900) }) });
+      r = res.ok ? await res.json() : { status_kind: "error", error: `서버 오류 (${res.status})` };
+    } catch { r = { status_kind: "error", error: "서버에 연결하지 못했어요" }; }
+    m.compare = r; state.pending = false; updateSend(); saveConvs(); repaintMsg(c, i);
+    if (state.currentId === c.id) thread.querySelector(`.msg-ai[data-i="${i}"] .cmp`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
 
   // ---------------------------------------------------------------- 시험지 전체 풀이 (문항을 하나씩 요청)
   // 문항마다 결과가 바로 쌓이고, 멈추기·이어 풀기·채점·CSV·오답 노트 담기가 된다. 정답은 채점에만 쓴다.

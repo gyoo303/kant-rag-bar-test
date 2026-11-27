@@ -196,3 +196,66 @@ def test_exam_parse_errors_and_expired_batch(client):
     assert c.post("/api/exam/parse", json={"text": "그냥 문장"}).json()["status_kind"] == "error"
     r = c.post("/api/exam/solve", json={"batch_id": "nope", "index": 0}).json()
     assert r["status_kind"] == "error" and r["code"] == "expired"
+
+
+def _rc(cid, rank, score, source, **trace):
+    from kant_rag.schemas import RetrievedChunk
+    return RetrievedChunk(chunk=CHUNKS[cid], score=score, rank=rank, source=source, trace=trace)
+
+
+class FakeRetriever:
+    """모드별로 다른 최종 순위를 돌려주는 가짜 검색기 (A/B 는 판례가 1위, C 는 재정렬로 조문이 1위)."""
+
+    def retrieve(self, query, mode):
+        a, b = "CASE#2017다213838#1", "LAW-CIVIL#제130조"
+        vec = [_rc(a, 1, 0.8, "vector", vector_rank=1, vector_score=0.8), _rc(b, 2, 0.7, "vector", vector_rank=2, vector_score=0.7)]
+        if mode.value == "vector":
+            return {"vector": vec, "final": vec}
+        fused = [_rc(a, 1, 0.03, "rrf", vector_rank=1, rrf_rank=1, rrf_score=0.03), _rc(b, 2, 0.02, "rrf", bm25_rank=1, rrf_rank=2)]
+        if mode.value == "hybrid":
+            return {"vector": vec, "bm25": vec, "fused": fused, "final": fused}
+        final = [_rc(b, 1, 0.9, "rerank", pre_rerank_rank=2, rerank_rank=1, rerank_score=0.9)]
+        return {"vector": vec, "bm25": vec, "fused": fused, "final": final}
+
+
+def test_compare_runs_three_modes_without_llm(monkeypatch):
+    eng = FakeEngine()
+    eng.retriever = FakeRetriever()
+    monkeypatch.setattr(api, "ENGINE", eng)
+    r = TestClient(api.app).post("/api/compare", json={"text": "무권대리 증명책임"}).json()
+    assert r["status_kind"] == "ok" and [m["letter"] for m in r["modes"]] == ["A", "B", "C"]
+    assert r["common"] == ["LAW-CIVIL#제130조"]  # 세 방식 모두에 나온 근거
+    c = r["modes"][2]["items"][0]
+    assert c["trace"]["pre_rerank_rank"] == 2 and c["trace"]["rerank_rank"] == 1
+    assert set(r["docs"]) == {"CASE#2017다213838#1", "LAW-CIVIL#제130조"}
+
+
+def test_compare_missing_index_is_setup_error(monkeypatch):
+    class NoIndex:
+        def retrieve(self, q, m):
+            raise SystemExit("색인이 없거나 미완성입니다.\n→ `uv run kant-rag build-index`")
+    eng = FakeEngine()
+    eng.retriever = NoIndex()
+    monkeypatch.setattr(api, "ENGINE", eng)
+    r = TestClient(api.app).post("/api/compare", json={"text": "질문"}).json()
+    assert r["status_kind"] == "error" and r["code"] == "setup"
+
+
+def test_qa_carries_retrieval_trace_with_names(monkeypatch):
+    monkeypatch.setattr(api, "ENGINE", FakeEngine())
+    from kant_rag.retrieval.pipeline import RetrievalMode
+    stages = api.stage_rows(FakeRetriever().retrieve("q", RetrievalMode.C))
+    rec = {"answer": {"status": "ok", "answer": "답", "citations": []},
+           "retrieval": {"mode": "hybrid_rerank", "query": "q", "rewritten": None, "direct": [],
+                         "stages": stages, "rewrite_final": [], "context": ["LAW-CIVIL#제130조"]}}
+    r = api.normalize_qa(rec)["retrieval"]
+    assert list(r["stages"]) == ["vector", "bm25", "fused", "final"]
+    assert r["stages"]["final"][0]["trace"] == {"pre_rerank_rank": 2, "rerank_rank": 1, "rerank_score": 0.9}
+    assert r["names"]["LAW-CIVIL#제130조"]["name"] == "민법 제130조"
+    assert r["names"]["CASE#2017다213838#1"]["kind"] == "case"
+
+
+def test_doc_endpoint(client):
+    c = client()
+    assert c.get("/api/doc", params={"id": "LAW-CIVIL#제130조"}).json()["doc"]["article"] == "제130조"
+    assert c.get("/api/doc", params={"id": "없음"}).json()["status_kind"] == "error"

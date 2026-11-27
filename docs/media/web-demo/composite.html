@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>v6r2 시연</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1729;--panel:#16213a;--panel2:#1b2846;--line:#2b3a5c;--text:#e8ecf4;--muted:#93a0bb;--accent:#5aa9ff;--ok:#3ccf91;--warn:#ffb547;--bad:#ff6b6b;--imp:#e3a24a;--new:#6fa8ff}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:var(--bg);color:var(--text);font-family:"Noto Sans KR",sans-serif;overflow:hidden}
+.top{position:absolute;left:0;right:0;top:0;height:56px;display:flex;align-items:center;gap:14px;padding:0 24px;border-bottom:1px solid var(--line)}
+.top b{font-size:20px;font-weight:900}.top b span{color:var(--accent)}
+.top .s{color:var(--muted);font-size:14px}
+.tag{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;border:1px solid}
+.t-real{color:var(--ok);border-color:var(--ok)}.t-demo{color:var(--warn);border-color:var(--warn)}
+#clock{margin-left:auto;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.left{position:absolute;left:20px;top:72px;width:1060px;height:990px;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:#fff}
+.left iframe{width:100%;height:100%;border:0}
+.box{position:absolute;left:1100px;width:800px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px 18px}
+.box h3{font-size:15px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.box h3 .now{margin-left:auto;font-size:12.5px;color:var(--accent);font-weight:700}
+#conf{top:72px;height:200px}
+#pipe{top:284px;height:472px}
+#data{top:768px;height:294px}
+/* confidence */
+.cr{display:grid;grid-template-columns:30px 70px 1fr 54px;align-items:center;gap:10px;height:28px;font-size:14px}
+.cr .k{font-weight:900;color:var(--accent);text-align:center}
+.vd{font-size:12.5px;font-weight:700;padding:2px 8px;border-radius:6px;text-align:center;background:#2a3550;color:var(--muted)}
+.vd.O{background:#3ccf9126;color:var(--ok)}.vd.X{background:#ff6b6b26;color:var(--bad)}
+.track{height:12px;background:#22304a;border-radius:6px;overflow:hidden}
+.fill{height:100%;width:0;background:var(--muted);border-radius:6px;transition:width .9s,background .6s}
+.cv{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.flash{animation:fl 1.2s}
+@keyframes fl{0%{background:#ffb54755}100%{background:transparent}}
+.sc{display:flex;gap:8px;margin-top:6px;font-size:13px;color:var(--muted);align-items:center}
+.sc .o{flex:1;text-align:center;padding:3px 0;border-radius:6px;background:var(--panel2);font-variant-numeric:tabular-nums}
+.sc .o.best{background:#3ccf9122;color:var(--ok);font-weight:700;outline:1px solid var(--ok)}
+/* pipeline */
+.cols{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+.col{display:flex;flex-direction:column;gap:7px}
+.ch{font-size:13px;font-weight:700;color:var(--muted);padding-bottom:4px;border-bottom:1px solid var(--line);margin-bottom:2px;white-space:nowrap;transition:color .3s}
+.ch.on{color:var(--accent)}
+.b{border:1px solid #3a4866;border-radius:9px;padding:7px 8px;background:#152039;font-size:12px;line-height:1.35;transition:all .35s;position:relative}
+.b b{display:block;font-size:13px;font-weight:700;margin-bottom:2px;padding-right:20px}
+.b small{color:var(--muted);font-size:11px}
+.b.imp{border-color:var(--imp)}.b.new{border-color:var(--new)}
+.b .v{position:absolute;right:5px;top:4px;font-size:9.5px;color:var(--new);font-weight:700}
+.b.imp .v{color:var(--imp)}
+.b.done{opacity:.55}
+.b.on{opacity:1;background:#1e3a66;box-shadow:0 0 0 3px #5aa9ff88,0 0 22px #5aa9ff55;transform:scale(1.04);z-index:2}
+.b.final{background:#e8ecf4;color:#0f1729;border-color:#e8ecf4}.b.final small{color:#45506a}
+.b.final.on{background:#fff}
+.legend{display:flex;gap:16px;font-size:11.5px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:10px;border-radius:3px;border:1.5px solid;margin-right:5px;vertical-align:-1px}
+.loop{font-size:12px;color:var(--warn);text-align:center;margin-top:10px}
+/* data */
+#dt{font-size:16px;font-weight:700;margin-bottom:6px}
+#dt .st{font-size:12px;margin-left:8px}
+#db{font-family:"Noto Sans KR",monospace;font-size:14px;line-height:1.6;color:#cfd8ea}
+#db .l{opacity:0;transform:translateX(-6px);transition:all .35s}
+#db .l.on{opacity:1;transform:none}
+#db em{color:var(--accent);font-style:normal;font-weight:700}
+#db .g{color:var(--ok)}#db .w{color:var(--warn)}#db .r{color:var(--bad)}
+.cap{position:absolute;left:24px;bottom:2px;font-size:11px;color:var(--muted)}
+</style></head><body>
+<div class="top"><b><span>v6r2</span> 시연 — 웹 화면에서 문항 하나를 풀 때</b><span class="s">2022 제11회 민사법 선택형 문 24 · 기준일 2022. 1. 10.</span><span class="tag t-real">웹 화면: 실제 dev 화면 코드</span><span class="tag t-demo">응답: 문 24 처리 결과 재구성 · 2차 판단은 예시</span><span id="clock">0:00</span></div>
+<div class="left"><iframe id="web" src="/"></iframe></div>
+
+<div class="box" id="conf"><h3>현재 시점의 확신도 <span class="now" id="confNow">판단 전</span></h3>
+ <div id="rows"></div>
+ <div class="sc"><span style="width:70px">보기 점수</span><span class="o" id="o1">① –</span><span class="o" id="o2">② –</span><span class="o" id="o3">③ –</span><span class="o" id="o4">④ –</span><span class="o" id="o5">⑤ –</span></div>
+</div>
+
+<div class="box" id="pipe"><h3>RAG 에이전트 파이프라인 (v6r2) <span class="now" id="pipeNow"></span></h3>
+ <div class="cols" id="cols"></div>
+ <div class="loop">②~④는 진술마다 반복 · 다시 찾는 검색은 고른 진술만 ③~⑤를 한 번 더</div>
+ <div class="legend"><span><i style="border-color:#3a4866"></i>v6와 같음</span><span><i style="border-color:var(--imp)"></i>개선 (v6에 있던 것을 바꿈)</span><span><i style="border-color:var(--new)"></i>새로 생김 (v6r·v6r2)</span></div>
+</div>
+
+<div class="box" id="data"><h3>중간 데이터 (실시간)</h3><div id="dt">대기 중</div><div id="db"></div></div>
+<div class="cap">웹 화면은 dev 브랜치 app/web 을 그대로 띄우고 API 응답만 문 24 처리 결과로 대신함 · 검색·연결·점수는 실측/코드 계산, ㄷ 2차 판단(참 0.95)은 v6r2 실측 전 예시</div>
+
+<script>
+const COLS=[
+ ["① 입력·문제 읽기",[["b11","시험 문항","①~⑤ 묶음·개수형·괄호형",""],["b12","진술 분리·발문 해석","'다른 것'=옳지 않은 것","imp"],["b13","기준 시점 추출","없으면 시험 기준일",""]]],
+ ["② 질의 만들기",[["b21","LLM 리라이트 3개","쟁점·예외·당사자",""],["b22","진술 원문","리라이트가 빗나가도",""],["b23","진술 간 참조","'ㄱ의 경우' → ㄱ 내용",""]]],
+ ["③ 검색 (구성 C)",[["b31","질의마다 검색→RRF 8개","BM25+벡터→리랭커",""],["b32","원문 상위 2 보장","판단 입력 밖이면 맞바꿈","new","v6r2"],["b33","판례 가산","전원합의체·최근 10년","new","v6r"],["b34","조문 보충","조문 없으면 1개",""]]],
+ ["④ 근거 확장",[["b41","연결 지도","조문→판례·판례→판례·변경",""],["b42","역방향 준용","가져다 쓰는 조문",""],["b43","조문 위치·제목","M1 다른 장 준용·M2 제목",""],["b44","근거 붙이기","같은 판결 항목·조각",""]]],
+ ["⑤ 컨텍스트·판단",[["b51","컨텍스트 ≤28,000자","선고일·조문 위치 표시",""],["b52","LLM 판단 v7","참/거짓/모름+확신도+stance","imp"],["b53","근거 없는 판단 감점","인용 없으면 ×0.8","new","v6r"],["b54","동점 기록","최고점 둘 이상 → tie","new","v6r2"]]],
+ ["⑥ 검증·정답",[["b61","인용 대조","인용이 원문에 있나",""],["b62","근거 적합성","인용↔진술 리랭커","new","v6r2"],["b63","다시 찾는 검색","이유 순서대로 최대 6","new","v6r2"],["b64","동점·근소 차 재판단","다수결 과반·하한 0.6","new","v6r2"],["b65","정답 계산 → 번호","보기 점수 최고",""]]]];
+const cols=document.getElementById('cols');
+COLS.forEach(([h,bs],ci)=>{const c=document.createElement('div');c.className='col';c.innerHTML=`<div class="ch" id="ch${ci+1}">${h}</div>`+bs.map(([id,t,s,cls,v])=>`<div class="b ${cls||''} ${id==='b65'?'final':''}" id="${id}"><b>${t}</b><small>${s}</small>${v?`<span class="v">${v}</span>`:''}</div>`).join('');cols.appendChild(c)});
+const KEYS=["ㄱ","ㄴ","ㄷ","ㄹ"];
+document.getElementById('rows').innerHTML=KEYS.map(k=>`<div class="cr" id="r${k}"><span class="k">${k}</span><span class="vd" id="v${k}">판단 전</span><div class="track"><div class="fill" id="f${k}"></div></div><span class="cv" id="c${k}">–</span></div>`).join('');
+function setConf(k,v,c){const vd=document.getElementById('v'+k);vd.className='vd '+v;vd.textContent=v==='O'?'옳음 ○':v==='X'?'틀림 ×':'유보';const f=document.getElementById('f'+k);f.style.width=(c*100)+'%';f.style.background=v==='O'?'#3ccf91':'#ff6b6b';document.getElementById('c'+k).textContent=c.toFixed(2);const r=document.getElementById('r'+k);r.classList.remove('flash');void r.offsetWidth;r.classList.add('flash')}
+function setScores(s){for(let i=1;i<=5;i++){const e=document.getElementById('o'+i);e.textContent="①②③④⑤"[i-1]+' '+s[i-1].toFixed(3);e.classList.toggle('best',s[i-1]===Math.max(...s)&&s[i-1]>0)}}
+const L=(t,c)=>`<div class="l ${c||''}">${t}</div>`;
+const ST=[
+ ["b11",2.5,"입력 — 문항 인식","real",[L("문항 1개 · <em>○× 조합형</em> · 지문 ㄱ·ㄴ·ㄷ·ㄹ · 보기 ①~⑤"),L("정답은 입력에 넣지 않음 (채점 때만)")]],
+ ["b12",3,"발문 해석","real",[L('"옳은 것(○)과 옳지 않은 것(×)을 올바르게 조합한 것은?"'),L("form = <em>ox</em> · 지문마다 참/거짓을 모두 맞혀야 보기가 정해짐")]],
+ ["b13",2.5,"기준 시점","real",[L("발문에 'YYYY. M. D. 당시' 없음"),L("→ 시험 기준일 <em>asof = 2022-01-10</em> · 이후 선고 판례 제외","g")]],
+ ["b21",4,"LLM 리라이트 — 지문 ㄷ","demo",[L("<em>쟁점</em> 지연손해금 비율 약정 손해배상액의 예정 추정 여부 감액"),L("<em>예외</em> 위약벌 약정 손해배상액 예정 아닌 경우 감액 불가"),L("<em>당사자</em> 금전채무 채무자 지체 지연손해금 약정 민법 제398조")]],
+ ["b22",2,"진술 원문 질의","real",[L("+ 원문: 금전채무에 관하여 이행지체에 대비한 지연손해금 비율을 따로 약정한 경우에 이는 손해배상액의 예정으로 추정되고 …")]],
+ ["b23",2,"진술 간 참조","real",[L("'위 ㄱ의 경우' 같은 참조 없음 → 추가 질의 없음")]],
+ ["b31",5,"검색 → RRF → 리랭크 — 지문 ㄷ 상위 5","real",[L("1  2017다206922 [1]  '일종의 손해배상액의 예정'"),L("2  <span class='g'>2016다52265 [1]  ← 정답 근거</span>"),L("3  2017다228762 [3]"),L("4  2016다275402 [1]"),L("5  98다45546 [4]")]],
+ ["b32",3,"원문 상위 2 보장 (v6r2)","real",[L("원문 질의 상위 2: 2016다52265 [1], 2017다228762 [3]"),L("최종 상위 5 안에 있음 (2위·3위) → <em>교체 없음</em>","g")]],
+ ["b33",2,"판례 가산 (v6r)","real",[L("전원합의체 해당 없음 · 2017년 판례들 최근 10년 +0.05"),L("→ 순위 그대로")]],
+ ["b34",2,"조문 보충","demo",[L("ㄷ 상위 5 가 모두 판례 → 순위 밖 조문이 있으면 5위로 올림")]],
+ ["b41",4,"연결 지도 (원자료 실측)","real",[L("2016다52265 → 참조판례 <em>99다38637 [2]</em> (2000) · 2016다275402 [1] (중복 제외)"),L("민법 제398조 → 이 조문을 인용한 판례 (2017다8876 등)"),L("판례 변경 표시: 2016다52265 <span class='g'>변경 없음</span>")]],
+ ["b42",2,"역방향 준용","demo",[L("제398조를 가져다 쓰는 조문 → 지문과 관련도 낮아 제외")]],
+ ["b43",2,"조문 위치·제목 (원자료 실측)","real",[L("지문 ㄷ '손해배상액의 예정' ↔ 조문 제목 '배상액의 예정'"),L("→ <em>민법 제398조</em> 연결 · chapter = 제3편 채권 › 제1장 총칙 › 제2절","g")]],
+ ["b44",2,"근거 붙이기","real",[L("같은 판결 다른 항목 동봉 · 잘린 판결요지 조각 합치기")]],
+ ["b51",3,"컨텍스트 조립","real",[L("문항당 약 39 청크 (v6 실행 평균) · ≤ 28,000자"),L('&lt;doc id="CASE#2016다52265#1" <em>decided="2017-07-11"</em>&gt; … 손해배상액의 예정으로서 감액의 대상이 된다 &lt;/doc&gt;')]],
+ ["b52",6,"LLM 1차 판단 (프롬프트 v7)","real",[L("ㄱ <span class='r'>거짓 1.00</span> · 2012다29557 · stance contradicts"),L("ㄴ <span class='g'>참 1.00</span> · 2018다204787 · supports"),L("ㄷ <span class='r'>거짓 0.92</span> · 2016다52265 · <span class='w'>supports</span>  ← '추정'이라 하지 않는다"),L("ㄹ <span class='r'>거짓 1.00</span> · 2019다215272 · contradicts"),L("판정·확신도·인용 = v6r 3회 실측 · stance 는 v7 출력 예시",'w')]],
+ ["b53",2,"근거 없는 판단 감점 (v6r)","real",[L("모든 판단에 유효한 인용 있음 → 감점 없음")]],
+ ["b54",2,"정답 계산 · 동점 기록","real",[L("판단과 정확히 맞는 보기 없음 · ⑤ 0.040 (ㄷ 하나만 어긋남)"),L("최고점 ⑤ 하나 → 동점 아님 (tie 기록 없음)")]],
+ ["b61",2,"인용 대조","real",[L("quote 4/4 가 인용 청크 원문에 있음 ✓","g")]],
+ ["b62",2.5,"검증 — 근거 적합성 · 인용-결론 · 답과 불일치","demo",[L("① 근거 적합성: ㄷ 인용 청크 = 자기 검색 2위 → 통과","g"),L("③ 인용-결론 불일치: ㄷ stance supports 인데 거짓 ⚠",'w'),L("④ 답과 불일치: 고른 ⑤ 는 ㄷ ○ 요구, 판단 × 0.92 ⚠",'w'),L("→ 2차 검색 대상 <em>ㄷ</em> (이유: 인용-결론 불일치)")]],
+ ["b63",8,"다시 찾는 검색 → 재판단 — 지문 ㄷ (예시)","demo",[L("질의: 지문 원문 · 풀어 쓴 문장 (리라이트 흔들림 회피)"),L("새 근거: 처음 보는 청크 최대 4개 · 다시 대조: 민법 제398조 ②·④"),L("④ 위약금의 약정은 손해배상액의 예정으로 추정한다."),L("재판단 ㄷ <span class='g'>참 0.95</span> · '일종의 손해배상액의 예정 … 감액의 대상' (2017다206922)"),L("채택 ✓ 인용 원문 일치 · 0.95 ≥ 0.92",'g')]],
+ ["b64",2.5,"동점·근소 차 재판단","real",[L("근소 차 보기 없음 (⑤ 단독 최고) → 다수결 생략")]],
+ ["b65",3,"정답 계산 → 예측 번호","mix",[L("판단 ㄱ× ㄴ○ ㄷ○ ㄹ× = 보기 ⑤ 와 정확히 일치"),L("<em>⑤ 0.975</em> → 예측 ⑤ · 웹 화면으로 응답 전송",'g')]]];
+const PIPE=ST.reduce((a,s)=>a+s[1],0); window.__pipe=PIPE;
+const T0=performance.now(); setInterval(()=>{const e=(performance.now()-T0)/1000;document.getElementById('clock').textContent=Math.floor(e/60)+':'+String(Math.floor(e%60)).padStart(2,'0')},250);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+let curCol=0;
+function runStage(i){const [id,d,title,kind,lines]=ST[i];
+ document.querySelectorAll('.b.on').forEach(b=>{b.classList.remove('on');b.classList.add('done')});
+ const b=document.getElementById(id);b.classList.remove('done');b.classList.add('on');
+ const ci=COLS.findIndex(c=>c[1].some(x=>x[0]===id))+1;document.querySelectorAll('.ch').forEach(h=>h.classList.toggle('on',h.id==='ch'+ci));
+ document.getElementById('pipeNow').textContent=COLS[ci-1][0]+' · '+title.split(' — ')[0];
+ const tg=kind==='demo'?"<span class='tag t-demo st'>예시</span>":kind==='mix'?"<span class='tag t-demo st'>실측+예시</span>":"<span class='tag t-real st'>실측</span>";
+ document.getElementById('dt').innerHTML=title+tg;const db=document.getElementById('db');db.innerHTML=lines.join('');
+ [...db.children].forEach((l,k)=>setTimeout(()=>l.classList.add('on'),250+k*Math.min(700,d*1000/(lines.length+1))));
+ if(id==='b52'){document.getElementById('confNow').textContent='1차 판단';[["ㄱ","X",1],["ㄴ","O",1],["ㄷ","X",0.92],["ㄹ","X",1]].forEach(([k,v,c],n)=>setTimeout(()=>setConf(k,v,c),900+n*900))}
+ if(id==='b54'){document.getElementById('confNow').textContent='보기 점수 계산';setScores([0,0,0,0,0.04])}
+ if(id==='b62'){document.getElementById('vㄷ').textContent='틀림 × ⚠'}
+ if(id==='b63'){setTimeout(()=>{document.getElementById('confNow').textContent='2차 판단 반영 (예시)';setConf("ㄷ","O",0.95)},5200)}
+ if(id==='b65'){setTimeout(()=>{setScores([0,0,0,0,0.975]);document.getElementById('confNow').textContent='최종 · 예측 ⑤'},600)}
+}
+async function pipeline(){for(let i=0;i<ST.length;i++){runStage(i);await sleep(ST[i][1]*1000)}document.querySelectorAll('.b.on').forEach(b=>{b.classList.remove('on')});document.getElementById('b65').classList.add('on')}
+// ---- 웹 화면 조작
+const W=()=>document.getElementById('web').contentWindow, D=()=>W().document;
+async function waitFor(fn,ms=30000){const t=Date.now();while(Date.now()-t<ms){try{const v=fn();if(v)return v}catch(e){}await sleep(150)}return null}
+async function main(){try{await main2()}catch(e){document.getElementById('dt').textContent='오류: '+e;window.__done=true}}
+async function main2(){
+ await waitFor(()=>D().querySelector('#pickerLabel')&&!/불러오는/.test(D().querySelector('#pickerLabel').textContent));
+ await sleep(1500);
+ document.getElementById('dt').textContent='웹 화면에 기출 문항 붙여 넣기';
+ const inp=D().querySelector('#input');inp.focus();
+ const text=window.__text;let s='';for(const part of text.match(/[\s\S]{1,24}/g)){s+=part;inp.value=s;inp.dispatchEvent(new (W().InputEvent)('input',{bubbles:true}));await sleep(28)}
+ await sleep(900);
+ document.getElementById('dt').textContent='기출 풀이 방식: v6r2 선택';
+ D().querySelector('#pickerBtn').click();await sleep(1400);
+ const o=D().querySelector('.opt[data-g="preset"][data-id="v6r2"]');if(o){o.scrollIntoView({block:'center'});await sleep(700);o.click()}
+ await sleep(1000);
+ document.getElementById('dt').textContent='보내기';
+ D().querySelector('#send').click();
+ window.__sent=Date.now();
+ await pipeline();
+ await waitFor(()=>D().querySelector('.answer-title'),20000);
+ document.getElementById('pipeNow').textContent='웹 화면에 결과 표시';
+ await sleep(2500);
+ const sc=D().querySelector('#scroll');for(let y=0;y<520;y+=20){sc.scrollTop+=20;await sleep(30)}
+ await sleep(1500);
+ const cites=[...D().querySelectorAll('.verdicts .cite')];const c=cites[2]||cites[0];if(c){c.click()}
+ document.getElementById('dt').textContent='근거 번호를 누르면 판례 원문 패널이 열림 (인용 문장 강조)';document.getElementById('db').innerHTML='';
+ await sleep(7000);
+ window.__done=true;
+}
+window.addEventListener('load',()=>setTimeout(main,500));
+</script></body></html>

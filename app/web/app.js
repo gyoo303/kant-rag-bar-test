@@ -20,7 +20,11 @@
     currentId: null, intent: null, pending: false, view: "chat",
     panel: { i: null, k: null, filter: "all", focus: null },
   };
-  state.convs.forEach((c) => { c.messages = (c.messages || []).filter((m) => !m.pending); });
+  state.convs.forEach((c) => {
+    c.messages = (c.messages || []).filter((m) => !m.pending);
+    c.messages.forEach((m) => { if (m.run && m.run.status === "running") m.run.status = "stopped"; }); // 새로고침 → 멈춤
+  });
+  state.attachment = null;
   const saveConvs = () => store.set(KEY.convs, state.convs.slice(0, 100));
   const current = () => state.convs.find((c) => c.id === state.currentId) || null;
 
@@ -214,6 +218,7 @@
       el.innerHTML = `<div class="loading"><span class="dots"><i></i><i></i><i></i></span><span>판례와 조문을 찾아 판정하는 중이에요</span><span class="elapsed" data-start="${m.startedAt}">0초</span></div>`;
       return el;
     }
+    if (m.run) { el.innerHTML = runHtml(m.run, i); return el; }
     const r = m.result || {};
     if (r.type === "error" || (r.type === "mcq_batch" && r.status_kind === "error" && !r.items?.length)) {
       if (r.code === "setup") { // 색인 없음 등 서버 준비 문제 — 엔진이 알려 준 안내를 그대로 보여 준다
@@ -316,7 +321,8 @@
 
   // ---------------------------------------------------------------- 근거 패널
   function panelItem(i, k) {
-    const r = current()?.messages[i]?.result; if (!r) return null;
+    const m = current()?.messages[i]; if (m?.run) return m.run.results[k] || null;
+    const r = m?.result; if (!r) return null;
     return r.type === "mcq_batch" ? r.items[k] : r;
   }
   function openPanel(i, k, focusId) {
@@ -385,6 +391,7 @@
     const act = e.target.closest("[data-act]"); if (!act) return;
     const i = +act.closest(".msg-ai")?.dataset.i;
     const c = current(); if (!c || Number.isNaN(i)) return;
+    if (c.messages[i]?.run) return runAction(c, i, act);
     if (act.dataset.act === "retry" || act.dataset.act === "regen") return rerun(i);
     if (act.dataset.act === "copy") navigator.clipboard?.writeText(plain(c.messages[i].result)).then(() => toast("복사했어요"), () => toast("복사하지 못했어요"));
     if (act.dataset.act === "note") toggleNote(c, i);
@@ -464,8 +471,9 @@
     ask(c, i, { ...req, model: state.settings.model, mode: state.settings.mode, preset: state.settings.preset });
   }
   function submit() {
-    const text = input.value.trim();
-    if (!text || state.pending || !state.config) return;
+    const text = input.value.trim(), att = state.attachment;
+    if ((!text && !att) || state.pending || !state.config) return;
+    if (att || countQuestions(text) >= 2) return startRun(text, att);
     let c = current();
     if (!c || state.view !== "chat") {
       c = { id: uid(), title: short(text.split("\n")[0], 40), messages: [], updatedAt: Date.now() };
@@ -482,14 +490,26 @@
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); submit(); }
   });
   function autosize() { input.style.height = "auto"; input.style.height = Math.min(input.scrollHeight, window.innerHeight * 0.4) + "px"; updateSend(); }
-  function updateSend() { sendBtn.disabled = state.pending || !input.value.trim() || !state.config; }
+  function updateSend() { sendBtn.disabled = state.pending || (!input.value.trim() && !state.attachment) || !state.config; }
   input.addEventListener("input", autosize);
   $("#file").addEventListener("change", async (e) => {
-    const f = e.target.files[0]; if (!f) return;
-    if (f.size > 200000) { toast("200KB 이하 텍스트 파일만 불러올 수 있어요"); return; }
-    input.value = (input.value ? input.value + "\n\n" : "") + (await f.text()); e.target.value = "";
-    setIntent("solve", "기출 문항 풀이"); autosize(); input.focus();
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    if (f.size > 600000) return toast("600KB 이하 파일만 불러올 수 있어요");
+    const text = await f.text();
+    if (/\.json$/i.test(f.name)) {
+      try { const ex = JSON.parse(text); if (!Array.isArray(ex.items)) throw 0; state.attachment = { name: f.name, exam: ex, n: ex.items.length }; }
+      catch { return toast("문항 JSON 형식이 아니에요 ({exam, source, items})"); }
+    } else state.attachment = { name: f.name, text, n: countQuestions(text) };
+    renderAttach(); updateSend(); input.focus();
   });
+  function renderAttach() {
+    const a = state.attachment, el = $("#attach");
+    if (!a) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = `${icon("file-text")}<span>${esc(short(a.name, 28))}</span><small>${a.n ? `${a.n}문항` : ""}</small><button type="button" aria-label="첨부 빼기">${icon("x")}</button>`;
+    el.querySelector("button").onclick = () => { state.attachment = null; renderAttach(); updateSend(); };
+    icons();
+  }
 
   // 추천 버튼: 입력 의도와 안내 문구만 바꾼다 (자동 전송 안 함)
   const SUGGEST = {
@@ -515,6 +535,176 @@
 
   // 경과 시간 (실제 경과만, 가짜 진행률 없음)
   setInterval(() => document.querySelectorAll(".elapsed").forEach((el) => { el.textContent = Math.round((Date.now() - +el.dataset.start) / 1000) + "초"; }), 1000);
+
+
+  // ---------------------------------------------------------------- 시험지 전체 풀이 (문항을 하나씩 요청)
+  // 문항마다 결과가 바로 쌓이고, 멈추기·이어 풀기·채점·CSV·오답 노트 담기가 된다. 정답은 채점에만 쓴다.
+  const CIRC = ["①", "②", "③", "④", "⑤"];
+  const countQuestions = (t) => (String(t || "").match(/(^|\n)\s*(?:【\s*)?문\s*\d+\s*[.】]/g) || []).length;
+  const toNum = (a) => CIRC.includes(a) ? CIRC.indexOf(a) + 1 : +a;
+  function parseKey(text, qs) { // "3,2" 줄(CSV) / "3:2, 5:5" / 문항 순서대로 "2 5 5 ③ …"
+    const key = {}, t = String(text || "");
+    const pairs = [...t.matchAll(/(\d+)\s*[,:=\t]\s*([1-5①-⑤])/g)];
+    if (pairs.length) for (const [, n, a] of pairs) key[+n] = [toNum(a)];
+    else [...t.replace(/[^1-5①-⑤]/g, "")].forEach((a, j) => { if (qs[j]) key[qs[j].number] = [toNum(a)]; });
+    return key;
+  }
+  function grade(run, q) {
+    const it = run.results[q.index], acc = run.key?.[q.number];
+    if (!it) return "todo";
+    if (it.status_kind === "error") return "err";
+    if (!acc?.length) return "done";
+    return acc.includes(it.predicted) ? "right" : "wrong";
+  }
+  function runStats(run) {
+    const qs = run.questions, g = qs.map((q) => grade(run, q));
+    const times = qs.map((q) => run.results[q.index]?.timing_ms?.total || 0).filter(Boolean);
+    const avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0;
+    const done = g.filter((x) => x !== "todo").length;
+    return { done, total: qs.length, right: g.filter((x) => x === "right").length, wrong: g.filter((x) => x === "wrong").length,
+      graded: g.filter((x) => x === "right" || x === "wrong").length, eta: avg * (qs.length - done) };
+  }
+  const mins = (ms) => { const s = Math.round(ms / 1000); return s < 60 ? `${s}초` : `${Math.floor(s / 60)}분${s % 60 ? ` ${s % 60}초` : ""}`; };
+
+  function runHtml(run, i) {
+    const st = runStats(run), pct = st.total ? Math.round(st.done / st.total * 100) : 0;
+    const cur = run.questions.find((q) => q.index === run.cur);
+    const status = run.status === "running" ? `${cur ? `문 ${esc(cur.number)} 푸는 중` : "준비 중"}${st.eta ? ` · 남은 시간 약 ${mins(st.eta)}` : ""}`
+      : run.status === "done" ? "풀이 완료" : run.error ? esc(run.error) : "멈춤 — 이어 풀 수 있어요";
+    let h = `<div class="run">
+      <div class="run-head"><div class="run-title">${icon("file-text")}<b>${esc(run.title)}</b></div>
+        <div class="run-btns">${run.status === "running" ? `<button class="act-btn" data-act="run-stop">${icon("square")}멈추기</button>`
+          : run.status !== "done" ? `<button class="act-btn gold" data-act="run-resume">${icon("play")}이어 풀기</button>` : ""}
+          ${st.done ? `<button class="act-btn" data-act="run-csv">${icon("download")}CSV</button>` : ""}</div></div>
+      <div class="run-bar"><span style="width:${pct}%"></span></div>
+      <div class="run-status"><span>${st.done}/${st.total}문항</span><span class="${run.status === "running" ? "live" : run.error ? "bad" : ""}">${status}</span>${run.status === "running" ? `<span class="elapsed" data-start="${run.startedAt}">0초</span>` : ""}</div>`;
+    if (st.graded) h += `<div class="run-score"><b>${st.right}</b><span>/ ${st.graded} 정답</span><em>${Math.round(st.right / st.graded * 100)}%</em>
+        ${st.wrong ? `<button class="link-btn" data-act="run-filter">${run.filter === "wrong" ? "전체 보기" : `오답 ${st.wrong}개만 보기`}</button>
+        <button class="link-btn" data-act="run-notes">오답 노트에 담기</button>` : ""}</div>`;
+    if (!run.hasKey) h += `<form class="run-key"><input name="key" placeholder="정답을 넣으면 채점해요 — 예) 2 5 5 3 … 또는 3:2, 5:5" aria-label="정답"><button type="button" class="act-btn" data-act="run-key">채점</button></form>`;
+    const qs = run.questions.filter((q) => run.filter !== "wrong" || grade(run, q) === "wrong");
+    const LBL = { right: "맞음", wrong: "틀림", err: "오류", done: "풀이 완료", todo: "대기", now: "푸는 중" };
+    h += `<div class="run-grid">${qs.map((q) => {
+      const g = run.status === "running" && q.index === run.cur ? "now" : grade(run, q), it = run.results[q.index];
+      return `<button class="rq ${g} ${run.open === q.index ? "on" : ""}" data-act="run-open" data-idx="${q.index}" title="문 ${esc(q.number)} · ${LBL[g]}">
+        <span class="no">${esc(q.number)}</span><span class="pa">${it?.predicted_label || (g === "now" ? "…" : g === "err" ? "!" : "·")}</span></button>`;
+    }).join("")}</div>`;
+    if (run.problems?.length) h += noteHtml("warn", "info", "인식하지 못한 부분이 있어요", run.problems.slice(0, 5).join(" · "));
+    const q = run.questions.find((x) => x.index === run.open), it = q && run.results[q.index];
+    if (q) {
+      const acc = run.key?.[q.number], g = grade(run, q);
+      h += `<div class="run-detail"><div class="rd-head"><b>문 ${esc(q.number)}</b>${q.subject ? `<span class="tag">${esc(q.subject)}</span>` : ""}
+        ${acc?.length ? `<span class="tag ${g}">정답 ${acc.map((a) => CIRC[a - 1]).join("·")}${g === "right" ? " · 맞음" : g === "wrong" ? " · 틀림" : ""}</span>` : ""}</div>
+        <p class="q-stem">${esc(q.stem)}</p>
+        ${it ? mcqHtml(it, i, q.index, 1) : `<p class="q-stem">${run.status === "running" && q.index === run.cur ? "푸는 중이에요…" : "아직 풀지 않은 문항이에요."}</p>`}</div>`;
+    }
+    return h + `</div>`;
+  }
+  function paintRun(c, i) {
+    if (state.currentId !== c.id || state.view !== "chat") return;
+    const el = thread.querySelector(`.msg-ai[data-i="${i}"]`); if (!el) return renderThread();
+    el.innerHTML = runHtml(c.messages[i].run, i); icons();
+  }
+  async function post(url, body) {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(`서버 오류 (${r.status})`);
+    return r.json();
+  }
+  async function parseExam(src) {
+    const p = await post("/api/exam/parse", src);
+    if (p.status_kind !== "ok") throw new Error(p.error || "시험지를 읽지 못했어요");
+    return p;
+  }
+  async function startRun(text, att) {
+    let c = current();
+    if (!c || state.view !== "chat") {
+      c = { id: uid(), title: att?.name || short(text.split("\n")[0], 40), messages: [], updatedAt: Date.now() };
+      state.convs.unshift(c); state.currentId = c.id; state.view = "chat";
+    }
+    c.messages.push({ role: "user", text: att ? `📎 ${att.name}${text ? `\n\n${text}` : ""}` : text });
+    const src = att?.exam ? { exam: att.exam, title: att.exam.exam } : { text: att?.text || text, title: att?.name };
+    const i = c.messages.length;
+    c.messages.push({ role: "ai", pending: true, startedAt: Date.now() });
+    input.value = ""; autosize(); setIntent(null); state.attachment = null; renderAttach();
+    saveConvs(); renderHistory(); renderThread(true);
+    try {
+      const p = await parseExam(src);
+      const key = {}; p.questions.forEach((q) => { if (q.accepted?.length) key[q.number] = q.accepted; });
+      const hasKey = Object.keys(key).length > 0;
+      c.messages[i] = { role: "ai", run: { title: p.title, batchId: p.batch_id, questions: p.questions, problems: p.problems, results: {},
+        key, hasKey, status: "running", src: JSON.stringify(src).length < 400000 ? src : null, open: null, filter: "all",
+        settings: { model: state.settings.model, mode: state.settings.mode, preset: state.settings.preset } } };
+      if (hasKey) toast("시험지에 정답이 있어 자동으로 채점해요");
+    } catch (err) {
+      c.messages[i] = { role: "ai", result: { type: "error", status_kind: "error", error: err.message } };
+      saveConvs(); return renderThread();
+    }
+    renderThread(); runLoop(c, i);
+  }
+  async function runLoop(c, i) {
+    const run = c.messages[i].run;
+    run.status = "running"; run.error = null; run.startedAt = Date.now();
+    state.pending = true; updateSend();
+    const solve = () => post("/api/exam/solve", { batch_id: run.batchId, index: run.cur, ...run.settings });
+    for (const q of run.questions) {
+      if (run.status !== "running") break;
+      if (run.results[q.index]) continue;
+      run.cur = q.index; paintRun(c, i);
+      let r;
+      try {
+        r = await solve();
+        if (r.code === "expired") {
+          if (!run.src) throw new Error("서버가 다시 켜져 시험지를 다시 첨부해야 해요");
+          run.batchId = (await parseExam(run.src)).batch_id; r = await solve();
+        }
+      } catch (err) { r = { status_kind: "error", error: err.message === "Failed to fetch" ? "서버에 연결하지 못했어요" : err.message }; }
+      if (r.status_kind !== "ok") { run.status = "stopped"; run.error = r.code === "setup" ? "검색 색인이 준비되지 않았어요" : r.error; break; }
+      run.results[q.index] = r.item;
+      if (run.open == null) run.open = q.index;
+      c.updatedAt = Date.now(); saveConvs(); paintRun(c, i);
+    }
+    run.cur = null;
+    if (run.status === "running") { run.status = "done"; run.src = null; toast("시험지 풀이를 마쳤어요"); }
+    state.pending = false; updateSend(); saveConvs(); paintRun(c, i); renderHistory();
+  }
+  function runAction(c, i, act) {
+    const run = c.messages[i].run, a = act.dataset.act;
+    if (a === "run-stop") { run.status = "stopped"; toast("지금 푸는 문항까지만 풀고 멈춰요"); return paintRun(c, i); }
+    if (a === "run-resume") return state.pending ? toast("다른 답변이 끝난 뒤에 이어 풀 수 있어요") : runLoop(c, i);
+    if (a === "run-open") { const k = +act.dataset.idx; run.open = run.open === k ? null : k; saveConvs(); return paintRun(c, i); }
+    if (a === "run-filter") { run.filter = run.filter === "wrong" ? "all" : "wrong"; saveConvs(); return paintRun(c, i); }
+    if (a === "retry" && run.open != null) {
+      if (state.pending) return toast("풀이가 끝난 뒤에 다시 풀 수 있어요");
+      delete run.results[run.open]; run.status = "stopped"; return runLoop(c, i);
+    }
+    if (a === "run-key") {
+      const key = parseKey(act.closest("form").querySelector("input").value, run.questions);
+      if (!Object.keys(key).length) return toast("정답을 읽지 못했어요");
+      run.key = key; run.hasKey = true; saveConvs(); toast(`${Object.keys(key).length}문항 정답으로 채점했어요`); return paintRun(c, i);
+    }
+    if (a === "run-csv") {
+      const rows = [["문항", "과목", "예측", "정답", "채점", "상태", "시간(초)"]].concat(run.questions.map((q) => {
+        const it = run.results[q.index], g = grade(run, q);
+        return [q.number, q.subject || "", it?.predicted || "", (run.key?.[q.number] || []).join("|"), g === "right" ? "O" : g === "wrong" ? "X" : "",
+          it?.status || "미풀이", it?.timing_ms?.total ? (it.timing_ms.total / 1000).toFixed(1) : ""];
+      }));
+      const csv = "﻿" + rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" })), link = document.createElement("a");
+      link.href = url; link.download = `${short(run.title, 40).replace(/[\\/:*?"<>|]/g, "_")}_풀이.csv`; link.click();
+      return setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    if (a === "run-notes") {
+      let n = 0;
+      for (const q of run.questions) {
+        const key = `${c.id}:${i}:${q.index}`;
+        if (grade(run, q) !== "wrong" || state.notes.some((x) => x.key === key)) continue;
+        state.notes.unshift({ key, convId: c.id, title: `문 ${q.number}. ${short(q.stem, 60)}`,
+          answer: `예측 ${run.results[q.index].predicted_label || "-"} · 정답 ${run.key[q.number].map((x) => CIRC[x - 1]).join("·")}`, at: Date.now() }); n++;
+      }
+      store.set(KEY.notes, state.notes); renderHistory(); toast(n ? `오답 ${n}문항을 노트에 담았어요` : "이미 모두 담겨 있어요");
+    }
+  }
+  thread.addEventListener("submit", (e) => { const f = e.target.closest(".run-key"); if (!f) return; e.preventDefault(); f.querySelector("[data-act]").click(); });
 
   // ---------------------------------------------------------------- 시작
   icons(); renderHistory(); newChat(); loadConfig().then(updateSend);

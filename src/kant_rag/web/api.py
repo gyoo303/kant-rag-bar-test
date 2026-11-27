@@ -357,6 +357,104 @@ def api_chat(body: ChatIn) -> dict:
         return {"type": "error", "status_kind": "error", "error": _safe_error(f"{type(e).__name__}: {e}")}
 
 
+# ---------------------------------------------------------------- 시험지 전체 풀이 (문항을 하나씩)
+# 시험지를 한 번 해석해 두고(LLM 없음), 화면이 문항을 하나씩 요청한다 — 오래 걸리는 요청 하나 대신
+# 문항마다 결과가 바로 쌓이고, 멈추기·이어 풀기가 된다. 정답은 채점용으로만 돌려주고 풀이 입력에서는 지운다.
+BATCHES: dict[str, dict] = {}
+MAX_BATCHES = 20
+
+
+class ExamParseIn(BaseModel):
+    text: str | None = Field(default=None, max_length=600_000)  # 시험지 텍스트 (문 1. / 【문 1】, ㄱ., ①~⑤)
+    exam: dict | None = None  # 문항 JSON (kant-rag import-exam 형식: {exam, source, items})
+    title: str | None = None
+
+
+class ExamSolveIn(BaseModel):
+    batch_id: str
+    index: int
+    model: str | None = None
+    mode: str = "hybrid_rerank"
+    preset: str | None = None
+
+
+def _mode(name: str):
+    from kant_rag.retrieval.pipeline import RetrievalMode
+
+    try:
+        m = RetrievalMode(name)
+    except ValueError:
+        return RetrievalMode.C
+    return RetrievalMode.C if m == RetrievalMode.NONE else m
+
+
+@app.post("/api/exam/parse")
+def exam_parse(body: ExamParseIn) -> dict:
+    """시험지 → 문항 목록 (LLM·검색 없음, 즉시)."""
+    import time
+    import uuid
+
+    problems: list[str] = []
+    title = body.title or "붙여 넣은 시험지"
+    try:
+        if body.exam is not None:
+            from kant_rag.mcq.io import Exam
+
+            ex = Exam.model_validate(body.exam)
+            qs, title = list(ex.items), body.title or ex.exam
+        elif body.text and body.text.strip():
+            from kant_rag.mcq.textsolve import parse_pasted
+
+            qs, problems = parse_pasted(body.text, id_prefix="WEB")
+        else:
+            qs = []
+    except Exception as e:  # noqa: BLE001 — 형식이 다른 JSON 등
+        return {"status_kind": "error", "error": _safe_error(f"시험지를 읽지 못했어요: {type(e).__name__}: {e}"), "questions": []}
+    if not qs:
+        return {"status_kind": "error", "questions": [], "problems": problems,
+                "error": "문항을 찾지 못했어요. '문 1.' 같은 문항 번호와 보기(①~⑤)가 있는지 확인해 주세요."}
+    bid = uuid.uuid4().hex[:12]
+    BATCHES[bid] = {"questions": qs, "created": time.time()}
+    for old in sorted(BATCHES, key=lambda k: BATCHES[k]["created"])[:-MAX_BATCHES]:
+        BATCHES.pop(old, None)
+    return {
+        "status_kind": "ok", "batch_id": bid, "title": title, "problems": problems,
+        "questions": [{"index": i, "number": q.number, "subject": q.subject, "form": q.form,
+                       "stem": short_text(q.stem, 90), "answer": q.answer,
+                       "accepted": sorted(set(q.accepted or []) | ({q.answer} if q.answer else set()))}
+                      for i, q in enumerate(qs)],
+    }
+
+
+@app.post("/api/exam/solve")
+def exam_solve(body: ExamSolveIn) -> dict:
+    """해석해 둔 시험지의 문항 하나를 푼다. 서버가 다시 켜져 시험지가 없으면 code=expired (화면이 다시 해석)."""
+    eng = engine()
+    batch = BATCHES.get(body.batch_id)
+    if batch is None:
+        return {"status_kind": "error", "code": "expired", "error": "시험지 정보가 만료됐어요. 다시 불러올게요."}
+    if not 0 <= body.index < len(batch["questions"]):
+        return {"status_kind": "error", "error": "문항 번호가 범위를 벗어났어요."}
+    q = batch["questions"][body.index]
+    q_in = q.model_copy(update={"answer": None, "accepted": [], "statement_labels": {}, "evidence": []})  # 정답은 풀이에 넣지 않음
+    preset = body.preset or eng.base.default_preset or "v5"
+    try:
+        with eng.lock:
+            rec = eng.solver(body.model, preset).solve(q_in, _mode(body.mode))
+        item = normalize_mcq(q_in, rec, preset)
+    except SystemExit as e:
+        return {"status_kind": "error", "code": "setup", "error": _safe_error(str(e) or "검색 엔진을 준비하지 못했어요.")}
+    except Exception as e:  # noqa: BLE001
+        item = {"type": "mcq", "number": q.number, "status": "generation_error", "status_kind": "error",
+                "error": _safe_error(f"{type(e).__name__}: {e}"), "statements": [], "docs": {}}
+    return {"status_kind": "ok", "index": body.index, "item": item}
+
+
+def short_text(s: str, n: int) -> str:
+    s = re.sub(r"\s+", " ", s or "").strip()
+    return s if len(s) <= n else s[: n - 1] + "…"
+
+
 @app.get("/")
 def index() -> FileResponse:
     # 화면을 고친 뒤에도 브라우저가 예전 index.html(예전 app.js 주소)을 쓰지 않도록 매번 확인하게 한다

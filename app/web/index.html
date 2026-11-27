@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+KR:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="/static/styles.css?v=7">
+  <link rel="stylesheet" href="/static/styles.css?v=8">
 </head>
 <body>
 <div class="app is-empty" id="app">
@@ -67,7 +67,8 @@
         <textarea id="input" rows="1" placeholder="민사법 지문이나 기출문항을 입력하세요." aria-label="메시지"></textarea>
         <div class="composer-row">
           <div class="composer-tools">
-            <label class="tool" title="텍스트 시험지 파일(.txt) 불러오기"><i data-lucide="paperclip"></i><span>시험지</span><input type="file" id="file" accept=".txt,text/plain" hidden></label>
+            <label class="tool" title="시험지 파일(.txt 또는 문항 .json) 첨부 — 전체 문항을 하나씩 풀어요"><i data-lucide="paperclip"></i><span>시험지</span><input type="file" id="file" accept=".txt,.json,text/plain,application/json" hidden></label>
+            <span class="attach" id="attach" hidden></span>
             <span class="intent" id="intentChip" hidden></span>
           </div>
           <button class="send" id="send" type="submit" aria-label="보내기" disabled><i data-lucide="arrow-up"></i></button>
@@ -112,6 +113,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
-<script src="/static/app.js?v=7"></script>
+<script src="/static/app.js?v=8"></script>
 </body>
 </html>

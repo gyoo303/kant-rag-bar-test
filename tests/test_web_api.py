@@ -158,3 +158,41 @@ def test_partial_answer_kept_with_citations(monkeypatch):
     r2 = api.normalize_qa({"answer": {"status": "insufficient_evidence",
                                   "answer": "제공된 문서에서 이 질문에 답할 근거를 찾지 못했습니다. 담당 부서에 확인해 주세요.", "citations": []}})
     assert r2["status_kind"] == "insufficient" and r2["answer"] == ""
+
+
+EXAM_TXT = "문 1.\n" + SAMPLE + "\n문 2.\n" + SAMPLE
+
+
+def test_exam_parse_then_solve_one_by_one(client):
+    c = client()
+    p = c.post("/api/exam/parse", json={"text": EXAM_TXT}).json()
+    assert p["status_kind"] == "ok" and len(p["questions"]) == 2
+    r = c.post("/api/exam/solve", json={"batch_id": p["batch_id"], "index": 1}).json()
+    assert r["status_kind"] == "ok" and r["index"] == 1 and r["item"]["predicted_label"] == "①"
+
+
+def test_exam_json_returns_answer_key_but_solver_never_sees_it(client, monkeypatch):
+    seen = {}
+
+    class Spy(FakeSolver):
+        def solve(self, q, mode=None):
+            seen["answer"], seen["accepted"] = q.answer, q.accepted
+            return super().solve(q, mode)
+
+    eng = FakeEngine()
+    eng.solver = lambda model, preset: Spy()
+    monkeypatch.setattr(api, "ENGINE", eng)
+    c = TestClient(api.app)
+    exam = {"exam": "샘플", "source": "test", "items": [{"id": "T-1", "number": 7, "stem": "옳은 것은?",
+                                                       "options": {str(n): f"보기{n}" for n in range(1, 6)}, "answer": 2}]}
+    p = c.post("/api/exam/parse", json={"exam": exam}).json()
+    assert p["title"] == "샘플" and p["questions"][0]["accepted"] == [2]
+    c.post("/api/exam/solve", json={"batch_id": p["batch_id"], "index": 0})
+    assert seen == {"answer": None, "accepted": []}
+
+
+def test_exam_parse_errors_and_expired_batch(client):
+    c = client()
+    assert c.post("/api/exam/parse", json={"text": "그냥 문장"}).json()["status_kind"] == "error"
+    r = c.post("/api/exam/solve", json={"batch_id": "nope", "index": 0}).json()
+    assert r["status_kind"] == "error" and r["code"] == "expired"

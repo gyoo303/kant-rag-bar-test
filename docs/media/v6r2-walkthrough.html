@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v6r2 문항 처리 과정</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1420; --panel:#161d2c; --panel2:#1c2537; --line:#2a3550; --text:#e8ecf4; --muted:#93a0bb;
+  --accent:#5aa9ff; --ok:#3ccf91; --warn:#ffb547; --bad:#ff6b6b; --violet:#b48cff; --chip:#22304a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);font-family:"Noto Sans KR",sans-serif;overflow:hidden;height:100%}
+#stage{width:1280px;height:720px;position:absolute;left:50%;top:50%;transform-origin:center;transform:translate(-50%,-50%) scale(var(--s,1));background:var(--bg)}
+header{position:absolute;left:0;right:0;top:0;height:64px;display:flex;align-items:center;padding:0 28px;border-bottom:1px solid var(--line);gap:16px}
+header .t{font-size:22px;font-weight:900;letter-spacing:-.3px}
+header .t b{color:var(--accent)}
+header .sub{color:var(--muted);font-size:14px}
+header .badge{margin-left:auto}
+.badge{font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;border:1px solid}
+.b-real{color:var(--ok);border-color:var(--ok);background:#3ccf9114}
+.b-raw{color:var(--accent);border-color:var(--accent);background:#5aa9ff14}
+.b-demo{color:var(--warn);border-color:var(--warn);background:#ffb54714}
+/* pipeline */
+#pipe{position:absolute;left:20px;top:84px;width:250px;bottom:84px}
+.node{position:relative;height:38px;margin-bottom:5px;border-radius:10px;border:1px solid var(--line);background:var(--panel);display:flex;align-items:center;padding:0 12px 0 40px;font-size:14px;color:var(--muted);transition:all .4s}
+.node .n{position:absolute;left:10px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);font-size:12px;display:flex;align-items:center;justify-content:center}
+.node .tag{margin-left:auto;font-size:11px;color:var(--violet)}
+.node.done{color:var(--text);border-color:#2f4a3d}
+.node.done .n{background:var(--ok);border-color:var(--ok);color:#0b1a12}
+.node.cur{color:#fff;border-color:var(--accent);background:#1b2b47;box-shadow:0 0 0 3px #5aa9ff33;transform:translateX(6px)}
+.node.cur .n{background:var(--accent);border-color:var(--accent);color:#06121f}
+/* main */
+#main{position:absolute;left:290px;right:24px;top:84px;bottom:84px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 26px;overflow:hidden}
+#main h2{font-size:22px;font-weight:900;margin-bottom:4px}
+#main h2 small{font-size:14px;color:var(--muted);font-weight:500;margin-left:10px}
+.desc{color:var(--muted);font-size:14px;margin-bottom:14px}
+footer{position:absolute;left:0;right:0;bottom:0;height:72px;border-top:1px solid var(--line);display:flex;align-items:center;padding:0 28px;gap:18px}
+#cap{font-size:17px;font-weight:500;flex:1;line-height:1.45}
+#bar{position:absolute;left:0;bottom:0;height:4px;background:var(--accent);width:0}
+#clock{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+#ctrl{display:flex;gap:6px}
+#ctrl button{background:var(--chip);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;cursor:pointer}
+body.rec #ctrl{display:none}
+/* atoms */
+[data-t]{opacity:0;transform:translateY(8px);transition:opacity .45s, transform .45s}
+[data-t].on{opacity:1;transform:none}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.row{display:flex;gap:12px}
+.col{display:flex;flex-direction:column;gap:8px}
+.chip{display:inline-block;background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:13px;margin:0 6px 6px 0}
+.chip.a{border-color:var(--accent);color:var(--accent)}
+.chip.ok{border-color:var(--ok);color:var(--ok)}
+.chip.w{border-color:var(--warn);color:var(--warn)}
+.chip.b{border-color:var(--bad);color:var(--bad)}
+.mono{font-family:"Noto Sans KR",monospace;font-size:13px}
+.k{color:var(--accent);font-weight:700}
+.stm{font-size:13.5px;line-height:1.55;padding:6px 10px;border-left:3px solid var(--line);margin-bottom:6px}
+.stm b{color:var(--accent)}
+.hl{background:#ffb5472e;border-radius:3px;padding:0 2px}
+.hl2{background:#3ccf912e;border-radius:3px;padding:0 2px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12.5px}
+.T{color:var(--ok);font-weight:700}.F{color:var(--bad);font-weight:700}.U{color:var(--warn);font-weight:700}
+.rank{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);margin-bottom:6px;font-size:13.5px;transition:transform .7s}
+.rank .r{width:22px;height:22px;border-radius:6px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:12px}
+.rank.gold{border-color:var(--ok)} .rank.gold .r{background:var(--ok);color:#06140d}
+.rank .src{margin-left:auto;font-size:11.5px;color:var(--muted)}
+.arrow{color:var(--muted);font-size:22px;align-self:center}
+.big{font-size:44px;font-weight:900}
+.optg{display:grid;grid-template-columns:70px repeat(4,1fr) 90px;gap:4px;font-size:13.5px}
+.optg div{padding:7px 8px;background:var(--panel2);border-radius:6px;text-align:center}
+.optg .h{background:none;color:var(--muted);font-size:12.5px}
+.optg .m{outline:2px solid var(--bad)}
+.optg .best{background:#3ccf9122;outline:1px solid var(--ok)}
+.check{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);margin-bottom:8px;font-size:14px}
+.check .ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900}
+.ic.ok{background:var(--ok);color:#06140d}.ic.w{background:var(--warn);color:#1c1200}
+.seg{height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#06121f;font-weight:700}
+svg text{font-family:"Noto Sans KR",sans-serif}
+.title-scene{display:flex;flex-direction:column;justify-content:center;height:100%;gap:18px}
+.title-scene .h1{font-size:40px;font-weight:900;line-height:1.25}
+.title-scene .h1 span{color:var(--accent)}
+.legend{display:flex;gap:10px;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <header><div class="t"><b>v6r2</b> 문항 하나를 푸는 과정</div><div class="sub">제11회(2022) 민사법 선택형 문 24 · 2022 색인</div><div class="badge" id="badge"></div></header>
+  <div id="pipe"></div>
+  <div id="main"></div>
+  <footer><div id="cap"></div><div id="clock"></div><div id="ctrl"><button id="prev">◀</button><button id="play">❚❚</button><button id="next">▶</button></div><div id="bar"></div></footer>
+</div>
+<script>
+const NODES=[["입력 파싱",""],["기준일",""],["질의 생성",""],["검색·리랭크",""],["원문 결과 보장","②"],["연결 지도",""],["판단 입력 조립",""],["1차 판단 (v7)","③"],["정답 계산",""],["검사 4종","①③④"],["2차 검색·재판단","⑤⑥"],["최종 결과",""]];
+const B={real:['b-real','실측'],raw:['b-raw','원자료 실측'],demo:['b-demo','시연 (예시 값)'],mix:['b-demo','실측 + 시연']};
+const S=[
+{n:-1,d:7,b:'real',cap:'v6r2 가 실제 시험 문항 하나를 어떻게 처리하는지, 단계마다 중간 출력물을 따라가 봅니다.',h:`
+<div class="title-scene">
+ <div class="h1" data-t="0.2">문항 하나가 정답이 되기까지<br><span>v6r2 파이프라인 12단계</span></div>
+ <div class="desc" data-t="1.0" style="font-size:16px">샘플: 2022 제11회 민사법 선택형 <b>문 24</b> (지연손해금, ○× 조합형)<br>v6 가 지문 ㄷ 을 <b>근거 판례를 인용하고도 거짓</b>으로 판단했던 문항 — v6r2 가 겨냥한 사례</div>
+ <div class="legend" data-t="2.0"><span class="badge b-real">실측: 실행 기록·코드 계산</span><span class="badge b-raw">원자료 실측: 2022 코퍼스</span><span class="badge b-demo">시연: v6r2 동작을 보여 주는 예시 값</span></div>
+</div>`},
+{n:0,d:9,b:'real',cap:'① 시험지 텍스트를 문항 구조로 바꿉니다. 지문 4개, ○× 조합형, 보기 5개. 정답은 입력에 넣지 않습니다.',h:`
+<h2>입력 파싱<small>parse.py · ExamQuestion</small></h2><div class="desc">발문 · 지문 · 보기를 나누고 형식·극성을 판정</div>
+<div class="row"><div class="col" style="flex:1.35">
+ <div class="card" data-t="0.3" style="font-size:14px">지연손해금에 관한 설명 중 옳은 것(○)과 옳지 않은 것(×)을 올바르게 조합한 것은?</div>
+ <div data-t="0.9" class="stm"><b>ㄱ</b> 이행기 없는 채권의 양수인이 소 제기 후 소송 중 양도통지 → 소장부본 송달 다음날부터 지체책임</div>
+ <div data-t="1.3" class="stm"><b>ㄴ</b> 불법행위 손해배상채무는 채무 성립과 동시에 지연손해금 발생</div>
+ <div data-t="1.7" class="stm"><b>ㄷ</b> 지연손해금 비율 약정은 손해배상액의 예정으로 <span class="hl">추정</span>되고, 부당히 과다하면 감액</div>
+ <div data-t="2.1" class="stm"><b>ㄹ</b> 소송촉진법 이율이 바뀌면 후소에서 선행판결과 다른 금액 인정 가능</div>
+</div><div class="col" style="flex:1">
+ <div class="card" data-t="2.8"><div class="mono" style="color:var(--muted);margin-bottom:6px">보기</div>
+ ① ㄱ○ ㄴ× ㄷ× ㄹ○<br>② ㄱ○ ㄴ○ ㄷ○ ㄹ×<br>③ ㄱ× ㄴ× ㄷ○ ㄹ×<br>④ ㄱ× ㄴ○ ㄷ○ ㄹ○<br>⑤ ㄱ× ㄴ○ ㄷ○ ㄹ×</div>
+ <div data-t="3.8"><span class="chip a">form = ox</span><span class="chip a">지문 4개</span><span class="chip a">보기 5개</span><span class="chip">정답 비공개 (채점 때만)</span></div>
+</div></div>`},
+{n:1,d:7,b:'real',cap:'② 발문에 기준 시점이 없으므로 시험 기준일(2022. 1. 10.)을 씁니다. 이 날 뒤 선고된 판례는 검색에서 빠집니다.',h:`
+<h2>기준일 정하기<small>asof_from_stem · asof_default</small></h2><div class="desc">"YYYY. M. D. 당시/현재/기준" 을 발문에서 찾고, 없으면 시험 기준일</div>
+<div class="row" style="align-items:center;gap:22px;margin-top:20px">
+ <div class="card" data-t="0.4" style="flex:1;font-size:15px">발문에서 날짜 찾기<br><span class="chip w" style="margin-top:8px">없음</span></div>
+ <div class="arrow" data-t="1.2">→</div>
+ <div class="card" data-t="1.6" style="flex:1;font-size:15px">시험 기준일 (설정)<br><span class="chip ok" style="margin-top:8px">asof = 2022-01-10</span></div>
+ <div class="arrow" data-t="2.4">→</div>
+ <div class="card" data-t="2.8" style="flex:1.3;font-size:14px">검색·연결에서 <b>선고일 &gt; 2022-01-10</b> 판례 제외<br>판례 변경 표시도 기준일 뒤 판례는 숨김 (<span class="mono">hide_future</span>)</div>
+</div>`},
+{n:2,d:10,b:'demo',cap:'③ 지문마다 검색 질의를 여러 개 만듭니다. LLM 이 쟁점·예외·당사자 지위 질의를 만들고, 지문 원문 질의를 따로 더합니다.',h:`
+<h2>질의 생성 — 지문 ㄷ<small>리라이트 v4 + 원문 질의</small></h2><div class="desc">질의마다 따로 검색해 순위를 합친다 (RRF). 원문 질의는 리라이트가 흔들려도 근거를 놓치지 않게 하는 안전장치</div>
+<div class="col" style="gap:10px;margin-top:6px">
+ <div class="card" data-t="0.4"><span class="chip ok">원문</span> 금전채무에 관하여 이행지체에 대비한 지연손해금 비율을 따로 약정한 경우에 이는 손해배상액의 예정으로 추정되고 …</div>
+ <div class="card" data-t="1.4"><span class="chip a">쟁점</span> 지연손해금 비율 약정 손해배상액의 예정 추정 여부 감액</div>
+ <div class="card" data-t="2.2"><span class="chip a">예외</span> 위약벌 약정 손해배상액 예정 아닌 경우 감액 불가</div>
+ <div class="card" data-t="3.0"><span class="chip a">당사자</span> 금전채무 채무자 지체 지연손해금 약정 민법 제398조</div>
+ <div data-t="4.0" class="desc" style="margin-top:4px">※ 리라이트 문장은 예시입니다 (실행마다 LLM 이 조금씩 다르게 씀). 원문 질의는 실제 지문 그대로.</div>
+</div>`},
+{n:3,d:12,b:'real',cap:'④ 키워드(BM25)와 의미(bge-m3 벡터) 검색 결과를 합치고, 리랭커가 지문과 다시 대조해 순위를 매깁니다. 정답 근거 2016다52265 가 상위에 있습니다.',h:`
+<h2>하이브리드 검색 → 리랭크 — 지문 ㄷ<small>BM25 + bge-m3 → RRF → bge-reranker-v2-m3</small></h2><div class="desc">왼쪽: 키워드 검색만 (2022 코퍼스 실측) · 오른쪽: 실제 실행의 최종 순위 (hybrid_rerank)</div>
+<div class="row" style="gap:20px">
+ <div style="flex:1"><div class="desc" data-t="0.2">BM25 상위 5</div>
+  <div class="rank gold" data-t="0.5"><span class="r">1</span>2016다52265 [1] · 손해배상액의 예정으로서 감액 대상<span class="src">정답 근거</span></div>
+  <div class="rank" data-t="0.8"><span class="r">2</span>2017다228762 [3]</div>
+  <div class="rank" data-t="1.1"><span class="r">3</span>2017다206922 [1]</div>
+  <div class="rank" data-t="1.4"><span class="r">4</span>2016다275402 [1]</div>
+  <div class="rank" data-t="1.7"><span class="r">5</span>99다38637 [2]</div>
+ </div>
+ <div class="arrow" data-t="2.6">⟶</div>
+ <div style="flex:1"><div class="desc" data-t="3.0">리랭크 후 상위 5 (지문당 판단 입력)</div>
+  <div class="rank" data-t="3.4"><span class="r">1</span>2017다206922 [1] · "일종의 손해배상액의 예정"</div>
+  <div class="rank gold" data-t="3.8"><span class="r">2</span>2016다52265 [1]<span class="src">정답 근거</span></div>
+  <div class="rank" data-t="4.2"><span class="r">3</span>2017다228762 [3]</div>
+  <div class="rank" data-t="4.6"><span class="r">4</span>2016다275402 [1]</div>
+  <div class="rank" data-t="5.0"><span class="r">5</span>98다45546 [4]</div>
+ </div>
+</div>
+<div class="desc" data-t="6.2" style="margin-top:8px">다섯 판례 모두 같은 법리 — "지연손해금 비율 약정 = 손해배상액의 예정 → 감액 대상". 검색은 성공했다. 문제는 다음 판단 단계에서 생긴다.</div>`},
+{n:4,d:8,b:'real',cap:'⑤ v6r2 ②: 원문 질의의 상위 2개가 최종 상위 5 안에 반드시 남게 합니다. 이 문항은 이미 들어 있어 교체가 없습니다.',h:`
+<h2>원문 질의 결과 보장<small>v6r2 ② original_keep = 2</small></h2><div class="desc">리라이트 질의를 합친 순위에서 원문 질의 상위 결과가 밀려나면 뒤쪽과 바꿔 넣는다 (v6 문 11 ㄹ 검색 변동 대응)</div>
+<div class="row" style="gap:16px;margin-top:14px">
+ <div class="card" data-t="0.4" style="flex:1">원문 질의 상위 2<br><span class="chip ok" style="margin-top:8px">2016다52265 [1]</span><span class="chip ok">2017다228762 [3]</span></div>
+ <div class="arrow" data-t="1.4">?</div>
+ <div class="card" data-t="1.8" style="flex:1">최종 상위 5 안에 있는가<br><span class="chip ok" style="margin-top:8px">2위 ✓</span><span class="chip ok">3위 ✓</span></div>
+ <div class="arrow" data-t="2.8">→</div>
+ <div class="card" data-t="3.2" style="flex:1"><span class="chip a">교체 없음</span><div class="desc" style="margin-top:6px">밀려났다면 상위 5 의 마지막 자리와 바꾸고 <span class="mono">original_kept</span> 에 기록</div></div>
+</div>`},
+{n:5,d:11,b:'raw',cap:'⑥ 원자료의 참조판례·참조조문·조문 제목으로 검색 결과에서 연결된 근거를 찾고, 리랭커로 지문과 맞는 것만 더합니다.',h:`
+<h2>연결 지도 — 지문 ㄷ<small>참조판례 · 참조조문 · 조문 제목 (2022 코퍼스 실측)</small></h2><div class="desc">검색에 안 걸린 근거를 원자료의 연결 관계로 끌어온다. 후보 중 지문과 리랭커 점수가 높은 것만 진술당 2개</div>
+<svg width="900" height="330" viewBox="0 0 900 330">
+ <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#5aa9ff"/></marker></defs>
+ <g data-t="0.3"><rect x="20" y="130" width="200" height="56" rx="10" fill="#1b2b47" stroke="#5aa9ff"/><text x="120" y="155" fill="#e8ecf4" font-size="14" text-anchor="middle" font-weight="700">2016다52265 [1]</text><text x="120" y="175" fill="#93a0bb" font-size="12" text-anchor="middle">검색 2위</text></g>
+ <g data-t="1.3"><line x1="220" y1="150" x2="430" y2="70" stroke="#5aa9ff" stroke-width="2" marker-end="url(#ar)"/><text x="300" y="95" fill="#b48cff" font-size="12">참조판례</text>
+  <rect x="440" y="40" width="210" height="52" rx="10" fill="#22304a" stroke="#2a3550"/><text x="545" y="63" fill="#e8ecf4" font-size="13.5" text-anchor="middle">99다38637 [2] (2000)</text><text x="545" y="81" fill="#93a0bb" font-size="11.5" text-anchor="middle">"일종의 손해배상액의 예정"</text></g>
+ <g data-t="2.1"><line x1="220" y1="160" x2="430" y2="150" stroke="#5aa9ff" stroke-width="2" marker-end="url(#ar)"/><text x="300" y="148" fill="#b48cff" font-size="12">참조판례</text>
+  <rect x="440" y="125" width="210" height="52" rx="10" fill="#22304a" stroke="#2a3550"/><text x="545" y="148" fill="#e8ecf4" font-size="13.5" text-anchor="middle">2016다275402 [1]</text><text x="545" y="166" fill="#93a0bb" font-size="11.5" text-anchor="middle">이미 검색됨 → 중복 제외</text></g>
+ <g data-t="3.0"><rect x="20" y="245" width="200" height="56" rx="10" fill="#1b2b47" stroke="#5aa9ff"/><text x="120" y="270" fill="#e8ecf4" font-size="13.5" text-anchor="middle" font-weight="700">지문 ㄷ 문장</text><text x="120" y="289" fill="#93a0bb" font-size="12" text-anchor="middle">"손해배상액의 예정"</text>
+  <line x1="220" y1="272" x2="430" y2="250" stroke="#5aa9ff" stroke-width="2" marker-end="url(#ar)"/><text x="290" y="252" fill="#b48cff" font-size="12">조문 제목 일치</text>
+  <rect x="440" y="215" width="210" height="60" rx="10" fill="#1d3a2c" stroke="#3ccf91"/><text x="545" y="240" fill="#e8ecf4" font-size="13.5" text-anchor="middle" font-weight="700">민법 제398조 (배상액의 예정)</text><text x="545" y="259" fill="#3ccf91" font-size="11.5" text-anchor="middle">④ 위약금의 약정은 … 예정으로 추정</text></g>
+ <g data-t="4.2"><line x1="650" y1="245" x2="720" y2="245" stroke="#5aa9ff" stroke-width="2" marker-end="url(#ar)"/><text x="640" y="305" fill="#b48cff" font-size="12">참조조문 → 판례</text>
+  <rect x="728" y="215" width="160" height="60" rx="10" fill="#22304a" stroke="#2a3550"/><text x="808" y="240" fill="#e8ecf4" font-size="12.5" text-anchor="middle">2017다8876 등</text><text x="808" y="258" fill="#93a0bb" font-size="11" text-anchor="middle">제398조 인용 판례</text></g>
+ <g data-t="5.4"><rect x="680" y="40" width="200" height="130" rx="10" fill="none" stroke="#ffb547" stroke-dasharray="5 4"/><text x="780" y="70" fill="#ffb547" font-size="13" text-anchor="middle" font-weight="700">판례 변경 표시</text><text x="780" y="95" fill="#e8ecf4" font-size="12" text-anchor="middle">2016다52265: 변경 없음</text><text x="780" y="118" fill="#93a0bb" font-size="11.5" text-anchor="middle">(있으면 overruled_by=…</text><text x="780" y="136" fill="#93a0bb" font-size="11.5" text-anchor="middle">로 근거 머리에 표시)</text></g>
+</svg>`},
+{n:6,d:9,b:'mix',cap:'⑦ 지문 4개의 검색 결과와 연결 근거를 모아 판단 입력(근거 묶음)을 만듭니다. 판례에는 선고일, 조문에는 위치(편·장)가 붙습니다.',h:`
+<h2>판단 입력 조립<small>build_context · 최대 28,000자</small></h2><div class="desc">v6 실행 평균 문항당 약 39개 청크 (실측). 아래 구성 비율은 예시</div>
+<div class="row" style="gap:4px;margin:14px 0 6px" data-t="0.4">
+ <div class="seg" style="flex:20;background:#5aa9ff">지문별 상위 5 × 4 = 20</div>
+ <div class="seg" style="flex:6;background:#b48cff">연결 6</div>
+ <div class="seg" style="flex:6;background:#3ccf91">같은 판결 항목 6</div>
+ <div class="seg" style="flex:4;background:#ffb547">준용 4</div>
+ <div class="seg" style="flex:3;background:#93a0bb">조문 3</div>
+</div>
+<div class="card mono" data-t="1.6" style="margin-top:14px;line-height:1.6;font-size:12.5px">
+&lt;doc id="CASE#2016다52265#1" title="대법원 2016다52265" <span class="k">decided="2017-07-11"</span>&gt;<br>
+[판례] 대법원 20170711 2016다52265 판결요지 [1]<br>판시사항: 금전채무에 관하여 이행지체에 대비한 지연손해금 비율을 따로 약정한 경우, 손해배상액의 예정으로서 … 감액의 대상이 되는지 여부(적극)<br>
+… 따라서 금전채무에 관하여 이행지체에 대비한 지연손해금 비율을 따로 약정한 경우에 이는 <span class="hl2">손해배상액의 예정으로서 감액의 대상이 된다.</span><br>&lt;/doc&gt;</div>
+<div class="card mono" data-t="3.0" style="margin-top:10px;font-size:12.5px;line-height:1.6">
+&lt;doc id="LAW-CIVIL#제398조" title="민법" kind="link" <span class="k">chapter="제3편 채권 &gt; 제1장 총칙 &gt; 제2절 채권의 효력"</span>&gt;<br>④위약금의 약정은 손해배상액의 예정으로 추정한다. … &lt;/doc&gt;</div>`},
+{n:7,d:13,b:'mix',cap:'⑧ LLM(gpt-6-luna)이 지문마다 참·거짓·유보와 확신도, 결정적 인용 문장, 그리고 v7 에서 새로 그 인용이 지문을 지지하는지(stance)를 적습니다.',h:`
+<h2>1차 판단<small>판단 프롬프트 v7 · 지문별 JSON</small></h2><div class="desc">판결·확신도·인용은 v6r 3회 실행에서 실제로 나온 값 · stance 는 v7 출력 예시</div>
+<table>
+<tr data-t="0.2"><th>지문</th><th>판단</th><th>확신도</th><th>인용 청크</th><th>quote (결정적 근거 문장)</th><th>stance</th></tr>
+<tr data-t="0.8"><td><b>ㄱ</b></td><td class="F">거짓</td><td>1.00</td><td class="mono">2012다29557#1</td><td>… 양도통지가 도달된 다음 날부터 이행지체의 책임</td><td><span class="chip">contradicts</span></td></tr>
+<tr data-t="1.6"><td><b>ㄴ</b></td><td class="T">참</td><td>1.00</td><td class="mono">2018다204787#1</td><td>채무 성립과 동시에 지연손해금이 발생한다</td><td><span class="chip">supports</span></td></tr>
+<tr data-t="2.4"><td><b>ㄷ</b></td><td class="F">거짓</td><td>0.92</td><td class="mono">2016다52265#1</td><td>손해배상액의 예정으로서 감액의 대상이 된다</td><td><span class="chip w">supports</span></td></tr>
+<tr data-t="3.2"><td><b>ㄹ</b></td><td class="F">거짓</td><td>1.00</td><td class="mono">2019다215272#3</td><td>… 다른 금액을 원고의 채권액으로 인정할 수 있는 것도 아니다</td><td><span class="chip">contradicts</span></td></tr>
+</table>
+<div class="card" data-t="5.0" style="margin-top:14px;font-size:14px;border-color:var(--warn)">ㄷ 판단 이유 (실측): "판례는 손해배상액의 예정으로 <b>취급</b>할 뿐 <b>추정</b>한다고 하지 않는다. 제398조 ④의 추정은 위약금 약정에 관한 것" → <span class="U">인용 문장은 지문을 지지하는데 결론은 거짓</span></div>`},
+{n:8,d:11,b:'real',cap:'⑨ 번호는 LLM 이 고르지 않습니다. 보기마다 "지문이 이래야 한다"는 요구와 판단을 대조해 점수를 계산합니다. 어느 보기와도 정확히 맞지 않고 ⑤가 0.04 로 최고입니다.',h:`
+<h2>정답 계산 (규칙)<small>choose_answer · 실제 코드로 계산</small></h2><div class="desc">보기 점수 = 각 지문이 보기의 요구(○/×)와 맞을 정도의 곱. 판단 ㄱ× ㄴ○ <span class="U">ㄷ×</span> ㄹ× 과 정확히 같은 보기는 없다</div>
+<div class="optg" style="margin-top:8px">
+ <div class="h">보기</div><div class="h">ㄱ</div><div class="h">ㄴ</div><div class="h">ㄷ</div><div class="h">ㄹ</div><div class="h">점수</div>
+ <div data-t="0.4">①</div><div data-t="0.4" class="m">○</div><div data-t="0.4" class="m">×</div><div data-t="0.4">×</div><div data-t="0.4" class="m">○</div><div data-t="0.4">0.000</div>
+ <div data-t="0.9">②</div><div data-t="0.9" class="m">○</div><div data-t="0.9">○</div><div data-t="0.9" class="m">○</div><div data-t="0.9">×</div><div data-t="0.9">0.000</div>
+ <div data-t="1.4">③</div><div data-t="1.4">×</div><div data-t="1.4" class="m">×</div><div data-t="1.4" class="m">○</div><div data-t="1.4">×</div><div data-t="1.4">0.000</div>
+ <div data-t="1.9">④</div><div data-t="1.9">×</div><div data-t="1.9">○</div><div data-t="1.9" class="m">○</div><div data-t="1.9" class="m">○</div><div data-t="1.9">0.000</div>
+ <div data-t="2.4" class="best">⑤</div><div data-t="2.4" class="best">×</div><div data-t="2.4" class="best">○</div><div data-t="2.4" class="m">○</div><div data-t="2.4" class="best">×</div><div data-t="2.4" class="best"><b>0.040</b></div>
+</div>
+<div class="desc" data-t="3.6" style="margin-top:12px">빨간 칸 = 판단과 어긋난 지문. 확신도 1.0 판단과 어긋나면 그 보기는 0점. ⑤ 는 ㄷ 하나만 어긋나 (0.92 → 0.04) 최고점</div>
+<div class="card" data-t="5.0" style="margin-top:6px;font-size:15px">v6 라면 여기서 끝 → <b>⑤ 선택 (정답)</b>. 하지만 ㄷ 의 확신 오답은 그대로 남는다 — 같은 오판이 답을 가르는 문항이었다면 실점</div>`},
+{n:9,d:12,b:'mix',cap:'⑩ v6r2 의 검사 4종. 인용 원문 대조와 근거 적합성은 통과하지만, ③ 인용-결론 불일치와 ④ 고른 보기와 어긋난 고확신 판단이 ㄷ 을 잡아냅니다.',h:`
+<h2>검사 4종 — 지문 ㄷ<small>quote_check · ① cite_relevance · ③ stance_check · ④ mismatch_check</small></h2><div class="desc">걸리면 2차 검색 대상. 우선순위: 유보 › 인용 불일치 › 인용-결론 불일치 › 근거 약함 › 답과 불일치 › 낮은 확신도 › 근소 차 › 반대 근거</div>
+<div class="check" data-t="0.5"><div class="ic ok">✓</div><div><b>인용 원문 대조</b> — "손해배상액의 예정으로서 감액의 대상이 된다" 가 2016다52265#1 원문에 있음</div></div>
+<div class="check" data-t="1.8"><div class="ic ok">✓</div><div><b>① 근거 적합성</b> — 인용 청크가 ㄷ 자신의 검색 2위, 리랭커 점수 높음 → 근거 약함 아님</div></div>
+<div class="check" data-t="3.1" style="border-color:var(--warn)"><div class="ic w">!</div><div><b>③ 인용-결론 불일치</b> — stance = supports 인데 판단은 거짓</div></div>
+<div class="check" data-t="4.4" style="border-color:var(--warn)"><div class="ic w">!</div><div><b>④ 답과 불일치</b> — 고른 보기 ⑤ 는 ㄷ ○ 를 요구, 판단은 × (확신도 0.92 ≥ 0.9)</div></div>
+<div data-t="6.0" style="margin-top:6px"><span class="chip w">2차 검색 대상: ㄷ</span><span class="chip">이유: 인용-결론 불일치</span><span class="chip">v6·v6r 에서는 대상이 아니었음 (뒤집어도 답 그대로)</span></div>`},
+{n:10,d:15,b:'demo',cap:'⑪ 지문 원문과 풀어 쓴 문장으로 다시 검색하고, 앞선 판단과 새 근거를 함께 보여 주며 ㄷ 만 다시 판단합니다. 인용이 원문과 맞고 확신도가 이전 이상일 때만 바꿉니다.',h:`
+<h2>2차 검색 · 재판단 — 지문 ㄷ<small>research · MCQ_RESEARCH_USER</small></h2><div class="desc">이 단계의 값은 v6r2 동작을 보여 주는 예시입니다 (v6r2 실측 전). 근거 원문은 실제 코퍼스 문장</div>
+<div class="row" style="gap:14px">
+ <div class="col" style="flex:1">
+  <div class="card" data-t="0.4"><span class="chip a">질의</span> 지문 원문 · 풀어 쓴 문장 (리라이트 흔들림 회피)</div>
+  <div class="card" data-t="1.6"><span class="chip ok">새 근거</span> 처음 보는 청크만 최대 4개 (이미 본 근거는 제외)<br><span style="font-size:13px;color:var(--muted)">예: 제398조를 인용한 판례들</span></div>
+  <div class="card" data-t="2.2"><span class="chip a">다시 대조</span> <b>민법 제398조</b> (판단 입력에 이미 있음)<br><span style="font-size:13px">②손해배상의 예정액이 부당히 과다한 경우에는 법원은 적당히 감액할 수 있다.<br>④위약금의 약정은 손해배상액의 예정으로 추정한다.</span></div>
+  <div class="card" data-t="3.0" style="font-size:13px"><span class="chip">앞선 판단</span> ㄷ 거짓 (0.92) "판례는 추정이라 하지 않는다" — <span class="desc">다시 대조하라는 지시와 함께</span></div>
+ </div>
+ <div class="arrow" data-t="4.0">⟶</div>
+ <div class="col" style="flex:1">
+  <div class="card" data-t="4.6" style="border-color:var(--ok)"><b>재판단 ㄷ</b> <span class="T">참</span> · 확신도 <b>0.95</b> · stance supports<br><span style="font-size:13px">quote: "이는 일종의 손해배상액의 예정으로서 민법 제398조 제2항에 의한 감액의 대상이 된다" (2017다206922#1)</span><br><span class="desc" style="font-size:12.5px">이유: 지연손해금 약정은 위약금 약정의 일종 → 제398조 ④ 추정, ② 감액</span></div>
+  <div class="check" data-t="6.6"><div class="ic ok">✓</div><div>인용이 원문과 일치</div></div>
+  <div class="check" data-t="7.6"><div class="ic ok">✓</div><div>확신도 0.95 ≥ 이전 0.92</div></div>
+  <div class="check" data-t="8.6"><div class="ic ok">✓</div><div>⑥ 유보 대체 하한 0.6 · ⑤ 다수결 과반 (해당 없음)</div></div>
+  <div data-t="9.8"><span class="chip ok">채택: ㄷ 거짓 0.92 → 참 0.95</span></div>
+ </div>
+</div>`},
+{n:11,d:14,b:'mix',cap:'⑫ 바뀐 판단으로 점수를 다시 계산합니다. ⑤ 가 판단과 정확히 맞아 0.975 — 같은 정답이지만 이번에는 모든 지문이 근거와 맞는 정답입니다.',h:`
+<h2>최종 결과<small>점수는 실제 코드로 계산 · 2차 판단 값은 예시</small></h2>
+<div class="row" style="gap:18px;margin-top:6px">
+ <div class="card" data-t="0.4" style="flex:1;text-align:center"><div class="desc">v6 (1차 판단으로 끝)</div><div class="big" style="color:var(--muted)">⑤</div><div>점수 0.040 · ㄷ <span class="F">거짓 0.92</span><br><span class="U">정답이지만 확신 오답 1개</span></div></div>
+ <div class="arrow" data-t="1.6">⟶</div>
+ <div class="card" data-t="2.2" style="flex:1;text-align:center;border-color:var(--ok)"><div class="desc">v6r2</div><div class="big" style="color:var(--ok)">⑤</div><div>점수 <b>0.975</b> · ㄱ× ㄴ○ <span class="T">ㄷ○</span> ㄹ×<br><span class="T">판단과 정확히 맞는 보기</span></div></div>
+ <div class="card" data-t="3.4" style="flex:1;text-align:center"><div class="desc">채점 (정답표)</div><div class="big">⑤</div><div>정답 ✓ · 지문 4/4 정답<br>모든 지문이 정답 근거 인용 (A)</div></div>
+</div>
+<div class="card mono" data-t="5.2" style="margin-top:16px;font-size:12.5px;line-height:1.65">
+{ "number": 24, "predicted": 5, "status": "ok", "asof": "20220110",<br>
+&nbsp;&nbsp;"option_scores": {"1":0, "2":0, "3":0, "4":0, "5":0.975},<br>
+&nbsp;&nbsp;"research": { "keys": ["ㄷ"], "reasons": {"ㄷ": "인용-결론 불일치"},<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"changed": {"ㄷ": {"from": ["false", 0.92], "to": ["true", 0.95], "quote_ok": true}} },<br>
+&nbsp;&nbsp;"quote_check": {"ㄱ":true, "ㄴ":true, "ㄷ":true, "ㄹ":true}, "cite_check": { … } }</div>`},
+{n:12,d:10,b:'real',cap:'정리: 검색은 처음부터 정답 근거를 찾았고, v6r2 는 판단과 근거·보기가 어긋나는 지점을 검사해 그 지문만 다시 봅니다.',h:`
+<h2>정리</h2>
+<div class="col" style="gap:10px;margin-top:10px;font-size:15px">
+ <div class="card" data-t="0.4"><b>검색</b> — 정답 근거 2016다52265 를 처음부터 상위 2위로 찾음. 원자료가 판결요지 항목 단위라 지문과 거의 같은 문장이 한 청크에 들어 있음</div>
+ <div class="card" data-t="1.6"><b>판단</b> — v6 는 근거를 인용하고도 '추정' 한 단어를 엄격하게 읽어 거짓 (v6·v6r 3회 모두 같은 오판)</div>
+ <div class="card" data-t="2.8"><b>v6r2 검사</b> — 인용 문장이 지지하는데 거짓 (③), 고른 보기와 어긋난 고확신 (④) 을 잡아 그 지문만 2차 검색·재판단</div>
+ <div class="card" data-t="4.0"><b>안전장치</b> — 인용이 원문과 맞고 확신도가 이전 이상일 때만 판단을 바꿈 · 약한 표로 유보를 대체하지 않음 (⑤⑥)</div>
+ <div class="desc" data-t="5.4">표기: <span class="badge b-real">실측</span> 실행 기록·코드 계산 · <span class="badge b-raw">원자료 실측</span> 2022 코퍼스 · <span class="badge b-demo">시연</span> v6r2 2차 판단은 실측 전 예시 — PC 실행으로 확인 필요</div>
+</div>`}
+];
+const pipe=document.getElementById('pipe');
+NODES.forEach((x,i)=>{const d=document.createElement('div');d.className='node';d.innerHTML=`<span class="n">${i+1}</span>${x[0]}<span class="tag">${x[1]}</span>`;pipe.appendChild(d)});
+const main=document.getElementById('main'),cap=document.getElementById('cap'),badge=document.getElementById('badge'),bar=document.getElementById('bar'),clock=document.getElementById('clock');
+const TOTAL=S.reduce((a,s)=>a+s.d,0);let idx=0,timers=[],playing=true,sceneStart=0,elapsedBefore=0;
+function fmt(t){t=Math.max(0,Math.floor(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
+function show(i){timers.forEach(clearTimeout);timers=[];idx=i;const s=S[i];
+  main.innerHTML=s.h;cap.textContent=s.cap;const b=B[s.b];badge.className='badge '+b[0];badge.textContent=b[1];
+  [...pipe.children].forEach((n,k)=>{n.className='node'+(k<s.n?' done':'')+(k===s.n?' cur':'')});
+  main.querySelectorAll('[data-t]').forEach(el=>{timers.push(setTimeout(()=>el.classList.add('on'),parseFloat(el.dataset.t)*1000))});
+  elapsedBefore=S.slice(0,i).reduce((a,x)=>a+x.d,0);sceneStart=performance.now();
+  if(playing)timers.push(setTimeout(()=>{if(i+1<S.length)show(i+1);else{playing=false;window.__done=true}},s.d*1000));
+}
+function tick(){const e=playing?elapsedBefore+(performance.now()-sceneStart)/1000:elapsedBefore+S[idx].d;bar.style.width=Math.min(100,e/TOTAL*100)+'%';clock.textContent=fmt(e)+' / '+fmt(TOTAL);requestAnimationFrame(tick)}
+document.getElementById('next').onclick=()=>{if(idx+1<S.length)show(idx+1)};
+document.getElementById('prev').onclick=()=>{if(idx>0)show(idx-1)};
+document.getElementById('play').onclick=e=>{playing=!playing;e.target.textContent=playing?'❚❚':'▶';if(playing)show(idx)};
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById('stage').style.setProperty('--s',s)}
+addEventListener('resize',fit);fit();
+if(location.hash.includes('rec'))document.body.classList.add('rec');
+window.__total=TOTAL;
+document.fonts.ready.then(()=>{window.__start=Date.now();show(0);tick()});
+</script>
+</body>
+</html>

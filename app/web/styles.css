@@ -360,3 +360,13 @@ dl.facts dd { margin: 0; color: var(--text); }
 @media (prefers-reduced-motion: reduce) { .rq.now { animation: none; background: var(--gold-wash); } }
 .toast.has-act { pointer-events: auto; display: flex; align-items: center; gap: 12px; }
 .toast button { font-weight: 600; color: #7a5f2e; text-decoration: underline; text-underline-offset: 3px; }
+.ask-card { width: min(420px, 100%); background: var(--surface-2); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px 18px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.ask-card h2 { margin: 0 0 10px; font-size: 18px; font-weight: 600; color: var(--text); }
+.ask-card p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.6; word-break: keep-all; }
+.ask-card p b { color: var(--text); font-weight: 600; }
+.ask-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+.ask-btns button { padding: 8px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; }
+.ask-cancel { border: 1px solid var(--line); color: var(--text); }
+.ask-cancel:hover { background: var(--hover); }
+.ask-ok { background: #c0564b; color: #fff; }
+.ask-ok:hover { background: #a9473d; }

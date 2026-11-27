@@ -43,6 +43,22 @@
     }
     clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show", "has-act"), onAct ? 5000 : 1800);
   }
+  // GPT 처럼 화면 안 확인 창. 취소: 버튼·Esc·바깥 클릭 / 확인: 버튼·Enter
+  function askConfirm(title, bodyHtml, okLabel) {
+    const m = $("#ask"), back = document.activeElement;
+    $("#askTitle").textContent = title; $("#askBody").innerHTML = bodyHtml; $("#askOk").textContent = okLabel;
+    m.hidden = false; $("#askCancel").focus();
+    return new Promise((resolve) => {
+      const done = (v) => { m.hidden = true; m.onclick = m.onkeydown = null; back?.focus?.(); resolve(v); };
+      $("#askOk").onclick = () => done(true);
+      $("#askCancel").onclick = () => done(false);
+      m.onclick = (e) => { if (e.target === m) done(false); };
+      m.onkeydown = (e) => {
+        if (e.key === "Escape") { e.stopPropagation(); done(false); }
+        if (e.key === "Tab") { e.preventDefault(); (document.activeElement === $("#askOk") ? $("#askCancel") : $("#askOk")).focus(); }
+      };
+    });
+  }
   const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
   function prose(text) {
     return String(text || "").trim().split(/\n{2,}/).map((b) => {
@@ -171,14 +187,14 @@
     }
     const row = e.target.closest(".conv"); if (!row) return;
     if (e.target.closest(".more")) {
-      // 확인 창(confirm)은 일부 브라우저·앱 안 화면에서 막혀 늘 '취소'가 된다 → 바로 지우고 '되돌리기'를 준다
-      const id = row.dataset.id, at = state.convs.findIndex((c) => c.id === id), gone = state.convs[at];
+      const id = row.dataset.id, conv = state.convs.find((c) => c.id === id);
       if (state.pending && id === state.currentId) return toast("답변·풀이가 끝난 뒤에 삭제할 수 있어요");
-      state.convs.splice(at, 1); saveConvs();
-      if (state.currentId === id) newChat(); else renderHistory();
-      toast("대화를 삭제했어요", "되돌리기", () => {
-        if (!state.convs.some((c) => c.id === id)) state.convs.splice(Math.min(at, state.convs.length), 0, gone);
-        saveConvs(); renderHistory();
+      askConfirm("채팅을 삭제할까요?", `<b>${esc(conv?.title || "이 대화")}</b> 대화와 답변이 모두 삭제돼요. 오답 노트에 담은 항목도 함께 빠져요.`, "삭제").then((ok) => {
+        if (!ok) return;
+        state.convs = state.convs.filter((c) => c.id !== id); saveConvs();
+        state.notes = state.notes.filter((n) => n.convId !== id); store.set(KEY.notes, state.notes);
+        if (state.currentId === id) newChat(); else renderHistory();
+        toast("채팅을 삭제했어요");
       });
       return;
     }

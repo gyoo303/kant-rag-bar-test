@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+KR:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="/static/styles.css?v=9">
+  <link rel="stylesheet" href="/static/styles.css?v=10">
 </head>
 <body>
 <div class="app is-empty" id="app">
@@ -110,9 +110,17 @@
     </div>
   </div>
 </div>
+<!-- 확인 창 (브라우저 confirm 은 일부 화면에서 막혀서 직접 만든다) -->
+<div class="modal" id="ask" role="alertdialog" aria-modal="true" aria-labelledby="askTitle" aria-describedby="askBody" hidden>
+  <div class="ask-card">
+    <h2 id="askTitle"></h2>
+    <p id="askBody"></p>
+    <div class="ask-btns"><button class="ask-cancel" id="askCancel">취소</button><button class="ask-ok" id="askOk">삭제</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
-<script src="/static/app.js?v=9"></script>
+<script src="/static/app.js?v=10"></script>
 </body>
 </html>

@@ -259,7 +259,10 @@
       if (r.answer) h += `<div class="prose" style="color:var(--text-2)">${prose(r.answer)}</div>`;
     } else {
       h += `<div class="prose">${prose(r.answer)}${order.length ? `<p style="margin-top:6px">${cites(order, order, i, 0)}</p>` : ""}</div>`;
-      if (r.status === "invalid_citation") h += noteHtml("warn", "info", "검색 결과에 없는 인용은 표시하지 않았어요");
+      if (r.status_kind === "partial") h += noteHtml("warn", "info", "검색된 근거로 확인되는 범위까지만 답했어요", "더 정확한 답이 필요하면 조문 번호나 구체적인 사실관계를 함께 적어 보세요.");
+      if (r.status === "invalid_citation") h += order.length
+        ? noteHtml("warn", "info", "검색 결과에 없는 인용은 표시하지 않았어요")
+        : `<div class="meta">판례·조문 근거를 인용하지 않은 답변이에요</div>`;
     }
     h += refsHtml(docs, order, i, 0);
     h += `<div class="meta">${[order.length ? `근거 ${order.length}개` : "", secs(r.timing_ms), r.model].filter(Boolean).map(esc).join(" · ")}</div>`;

@@ -97,6 +97,77 @@ class Engine:
             self._graph = ChunkGraph(self.retriever.vector.chunks_by_id)
         return self._graph
 
+    @property
+    def refs(self) -> tuple[dict, dict]:
+        """(법령명, '제N조[의M]') → 조문 청크 id, 사건번호 → 판례 청크 id. 질문에 적힌 조문·사건번호를 바로 찾기 위한 색인."""
+        if getattr(self, "_refs", None) is None:
+            arts: dict = {}
+            cases: dict = {}
+            for cid, c in self.retriever.vector.chunks_by_id.items():
+                md = c.metadata or {}
+                if md.get("doc_type") == "statute" and md.get("article"):
+                    arts.setdefault((re.sub(r"\s", "", c.title), md["article"]), []).append(cid)
+                elif md.get("doc_type") == "case" and md.get("case_no"):
+                    cases.setdefault(re.sub(r"\s", "", md["case_no"]).split(",")[0], []).append(cid)
+            self._refs = (arts, cases)
+        return self._refs
+
+    def ask(self, model_id: str | None, question: str, mode) -> dict:
+        """화면용 질의응답. 엔진 함수(쿼리 리라이트·검색·답변 생성)를 그대로 쓰되 화면에서만 다음을 보강한다
+        (평가 CLI 의 KnowledgeAgent 경로와 설정은 그대로):
+          1) 원질문 + 리라이트 질의를 둘 다 검색해 RRF 로 합침 (짧은 단어·비교 질문의 검색 누락 보완)
+          2) 질문에 적힌 '법령명 제N조'·사건번호의 원문을 근거 맨 앞에 넣음 (예: 민법 제134조 → 민사소송법 제134조 오검색 방지)
+          3) 리랭커 점수 문턱(rerank.min_score)으로 생성을 건너뛰지 않음 — 답할 수 있는지는 LLM 이 근거를 보고 판단
+        """
+        import time
+
+        from kant_rag.generation.answer import generate_answer
+        from kant_rag.optimize.rewrite import rewrite_query
+        from kant_rag.retrieval.hybrid import rrf_fuse
+        from kant_rag.schemas import RetrievedChunk
+
+        s = self.settings_for(model_id)
+        s.generation.max_context_chunks = max(s.generation.max_context_chunks, 8)
+        s.generation.max_tokens = max(s.generation.max_tokens, 4000)  # 추론형 모델이 1024 토큰에서 잘려 JSON 이 깨지는 경우 방지
+        t0 = time.perf_counter()
+        query, rw = rewrite_query(question, s)
+        t1 = time.perf_counter()
+        finals = [self.retriever.retrieve(question, mode)["final"]]
+        if query.strip() and query.strip() != question.strip():
+            finals.append(self.retriever.retrieve(query, mode)["final"])
+        fused = finals[0] if len(finals) == 1 else rrf_fuse(
+            {f"q{i}": f for i, f in enumerate(finals)}, rrf_k=s.retrieval.rrf_k, top_k=s.retrieval.final_k)
+        by_id = self.retriever.vector.chunks_by_id
+        have = {r.chunk.chunk_id for r in fused}
+        direct = [RetrievedChunk(chunk=by_id[c], score=1.0, rank=i + 1, source="rerank")
+                  for i, c in enumerate(direct_refs(question, *self.refs)) if c not in have]
+        ctx = [r.model_copy(update={"rank": i + 1}) for i, r in enumerate(direct + list(fused))]
+        t2 = time.perf_counter()
+        answer, info = generate_answer(question, ctx, s, min_rerank_score=None)
+        if answer.status.value == "generation_error":  # 일시적인 호출·형식 오류는 한 번만 다시 시도
+            answer, info = generate_answer(question, ctx, s, min_rerank_score=None)
+        t3 = time.perf_counter()
+        return {"answer": answer.model_dump(mode="json"), "models": s.models.model_dump(),
+                "rewrite": rw, "direct_refs": [r.chunk.chunk_id for r in direct],
+                "timing_ms": {"rewrite": round((t1 - t0) * 1000, 1), "retrieval": round((t2 - t1) * 1000, 1),
+                              "generation": round((t3 - t2) * 1000, 1), "total": round((t3 - t0) * 1000, 1)}}
+
+
+ART_RE = re.compile(r"(?:([가-힣]+(?:법|규칙|법률|시행령))\s*)?제\s*(\d+)\s*조(?:\s*의\s*(\d+))?")
+CASE_RE = re.compile(r"\d{2,4}\s*[가-힣]{1,3}\s*\d{1,7}")
+
+
+def direct_refs(question: str, arts: dict, cases: dict, max_n: int = 4) -> list[str]:
+    """질문에 적힌 '법령명 제N조(의M)'·사건번호 → 그 원문 청크 id (법령명이 없으면 민법). 없는 번호는 무시."""
+    out: list[str] = []
+    for m in ART_RE.finditer(question):
+        law = re.sub(r"\s", "", m.group(1) or "민법")
+        art = f"제{m.group(2)}조" + (f"의{m.group(3)}" if m.group(3) else "")
+        out += [c for c in arts.get((law, art), [])[:2] if c not in out]
+    for m in CASE_RE.finditer(question):
+        out += [c for c in cases.get(re.sub(r"\s", "", m.group(0)), [])[:2] if c not in out]
+    return out[:max_n]
+
 
 ENGINE: Engine | None = None
 
@@ -165,8 +236,14 @@ def normalize_qa(rec: dict) -> dict:
     status = ans.get("status", "generation_error")
     ids = [c["chunk_id"] for c in ans.get("citations") or []]
     docs = {cid: d for cid in ids if (d := doc_info(cid))}
-    return {"type": "qa", "status": status, "status_kind": STATUS_KIND.get(status, "error"),
-            "answer": ans.get("answer") or "", "citations": [c for c in ids if c in docs], "docs": docs,
+    text = ans.get("answer") or ""
+    if text.startswith("제공된 문서에서 이 질문에 답할 근거를 찾지 못했습니다"):  # 엔진 고정 문구(업무 문서용)는 화면 안내로 대신
+        text = ""
+    kind = STATUS_KIND.get(status, "error")
+    if kind == "insufficient" and text and any(c in docs for c in ids):
+        kind = "partial"  # 모델이 '근거가 일부뿐'이라 표시했지만 확인된 범위의 답과 인용이 있음
+    return {"type": "qa", "status": status, "status_kind": kind,
+            "answer": text, "citations": [c for c in ids if c in docs], "docs": docs,
             "error": _safe_error(ans.get("error")) if STATUS_KIND.get(status) == "error" else None,
             "timing_ms": rec.get("timing_ms"), "model": (rec.get("models") or {}).get("llm_model")}
 
@@ -262,7 +339,7 @@ def api_chat(body: ChatIn) -> dict:
     try:
         with eng.lock:
             if intent == "ask":
-                return normalize_qa(eng.agent(body.model).ask(body.text, mode=mode))
+                return normalize_qa(eng.ask(body.model, body.text, mode))
             from kant_rag.mcq.textsolve import parse_pasted
 
             qs, problems = parse_pasted(body.text, id_prefix="WEB")
@@ -282,7 +359,8 @@ def api_chat(body: ChatIn) -> dict:
 
 @app.get("/")
 def index() -> FileResponse:
-    return FileResponse(WEB_DIR / "index.html")
+    # 화면을 고친 뒤에도 브라우저가 예전 index.html(예전 app.js 주소)을 쓰지 않도록 매번 확인하게 한다
+    return FileResponse(WEB_DIR / "index.html", headers={"Cache-Control": "no-cache"})
 
 
 if WEB_DIR.exists():

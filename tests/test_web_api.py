@@ -59,10 +59,10 @@ class FakeEngine:
         self.raise_on = raise_on
         self.graph = None
 
-    def agent(self, model):
+    def ask(self, model, question, mode):
         if self.raise_on == "ask":
             raise TimeoutError("request timed out key=sk-abcdefghijkl")
-        return FakeAgent(self.qa_rec)
+        return FakeAgent(self.qa_rec).ask(question)
 
     def solver(self, model, preset):
         return FakeSolver()
@@ -130,9 +130,31 @@ def test_missing_index_returns_setup_error(client, monkeypatch):
     """엔진이 색인 없음으로 SystemExit 를 보내도 서버는 죽지 않고 안내를 돌려준다."""
     eng = FakeEngine()
 
-    def no_index(model):
+    def no_index(model, question, mode):
         raise SystemExit("색인이 없거나 미완성입니다 (없음: chunks.jsonl).\n→ `uv run kant-rag build-index` 를 끝까지 실행한 뒤 다시 시도하세요.")
-    eng.agent = no_index
+    eng.ask = no_index
     monkeypatch.setattr(api, "ENGINE", eng)
     r = TestClient(api.app).post("/api/chat", json={"text": "질문"}).json()
     assert r["type"] == "error" and r["code"] == "setup" and "build-index" in r["error"]
+
+
+def test_direct_refs_find_cited_article_and_case():
+    arts = {("민법", "제134조"): ["LAW-CIVIL#제134조"], ("민사소송법", "제134조"): ["LAW-CIVPRO#제134조"],
+            ("상법", "제382조의3"): ["LAW-COMM#제382조의3"]}
+    cases = {"2013다213038": ["CASE#2013다213038#1"]}
+    assert api.direct_refs("민법 제134조 내용 알려줘", arts, cases) == ["LAW-CIVIL#제134조"]
+    assert api.direct_refs("제134조는?", arts, cases) == ["LAW-CIVIL#제134조"]  # 법령명 없으면 민법
+    assert api.direct_refs("상법 제382조의 3 내용", arts, cases) == ["LAW-COMM#제382조의3"]
+    assert api.direct_refs("2013다213038 판례 요지", arts, cases) == ["CASE#2013다213038#1"]
+    assert api.direct_refs("해제와 해지의 차이", arts, cases) == []
+
+
+def test_partial_answer_kept_with_citations(monkeypatch):
+    rec = {"answer": {"status": "insufficient_evidence", "answer": "확인되는 범위에서는 …", "citations": [
+        {"chunk_id": "LAW-CIVIL#제130조", "doc_id": "x", "title": "t", "location": "l", "quote": "q"}]}}
+    monkeypatch.setattr(api, "ENGINE", FakeEngine())
+    r = api.normalize_qa(rec)
+    assert r["status_kind"] == "partial" and r["citations"] == ["LAW-CIVIL#제130조"]
+    r2 = api.normalize_qa({"answer": {"status": "insufficient_evidence",
+                                  "answer": "제공된 문서에서 이 질문에 답할 근거를 찾지 못했습니다. 담당 부서에 확인해 주세요.", "citations": []}})
+    assert r2["status_kind"] == "insufficient" and r2["answer"] == ""
